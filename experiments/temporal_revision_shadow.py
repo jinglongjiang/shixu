@@ -86,8 +86,9 @@ def main():
     args = parser.parse_args()
     torch.set_num_threads(1)
     protocol, root = json.loads(PROTOCOL.read_text()), Path(args.root)
-    cfg = configuration(protocol, "actor")
-    policy = ValuePolicy(OrderedValueModel("actor", protocol["width"], protocol["layers"]), cfg, "cuda")
+    contract = json.loads((root / str(args.seed) / "actor/result.json").read_text()).get("feature_contract", "legacy")
+    cfg = configuration(protocol, "actor", contract)
+    policy = ValuePolicy(OrderedValueModel("actor", protocol["width"], protocol["layers"], contract), cfg, "cuda")
     load_weights(policy.model, root / str(args.seed) / "actor/model.pt", "cuda")
     rows, episodes = [], []
     for geometry in protocol["geometries"]:

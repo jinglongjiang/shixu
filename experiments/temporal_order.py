@@ -21,10 +21,11 @@ from shixu.training import train
 PROTOCOL = Path(__file__).with_name("temporal_protocol.json")
 
 
-def configuration(protocol, order):
+def configuration(protocol, order, feature_contract="legacy"):
     cfg = configparser.ConfigParser()
     cfg.read(Path(__file__).resolve().parents[1] / "shixu/default.ini")
     for section, key, value in (("model", "representation", "aligned"), ("model", "order", order),
+                                ("model", "feature_contract", feature_contract),
                                 ("model", "width", protocol["width"]), ("model", "layers", protocol["layers"]),
                                 ("buffer", "seq_len", protocol["history"]), ("train", "il_epochs", protocol["il_epochs"]),
                                 ("train", "updates_per_ep", protocol["rl_updates_per_episode"]),
@@ -65,6 +66,9 @@ def paired_summary(root, protocol):
     rows = []
     for seed in seeds:
         arms = {order: json.loads((root / str(seed) / order / "result.json").read_text()) for order in ("scene", "actor")}
+        if (arms["scene"].get("feature_contract", "legacy") != arms["actor"].get("feature_contract", "legacy")
+                or arms["scene"]["parameters"] != arms["actor"]["parameters"]):
+            raise ValueError("Paired arms differ in feature contract or parameter budget")
         row = {"seed": seed, "scene": arms["scene"]["summary"], "actor": arms["actor"]["summary"]}
         row["sr_delta_pp"] = 100 * (row["actor"]["sr"] - row["scene"]["sr"])
         row["cr_delta_pp"] = 100 * (row["actor"]["cr"] - row["scene"]["cr"])
@@ -108,6 +112,7 @@ def main():
     parser.add_argument("--data")
     parser.add_argument("--root", required=True)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--feature-contract", choices=("legacy", "observed"), default="legacy")
     args = parser.parse_args()
     protocol = json.loads(PROTOCOL.read_text())
     root = Path(args.root)
@@ -120,7 +125,7 @@ def main():
         for order in ("scene", "actor"):
             subprocess.run([sys.executable, str(Path(__file__).resolve()), "run", "--seed", str(args.seed),
                             "--order", order, "--data", args.data, "--root", str(root),
-                            "--device", args.device], check=True)
+                            "--device", args.device, "--feature-contract", args.feature_contract], check=True)
         return
     torch.set_num_threads(1)
     torch.manual_seed(args.seed)
@@ -128,8 +133,8 @@ def main():
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
-    cfg = configuration(protocol, args.order)
-    model = OrderedValueModel(args.order, protocol["width"], protocol["layers"])
+    cfg = configuration(protocol, args.order, args.feature_contract)
+    model = OrderedValueModel(args.order, protocol["width"], protocol["layers"], args.feature_contract)
     policy = ValuePolicy(model, cfg, args.device)
     env = environment(cfg, policy, protocol["training_geometry"], protocol["training_people"])
     data = torch.load(args.data, map_location="cpu", weights_only=False)
@@ -150,11 +155,13 @@ def main():
     training_seconds = time.perf_counter() - started
     started = time.perf_counter()
     records = evaluate(policy, cfg, protocol)
-    result = {"protocol": protocol, "seed": args.seed, "order": args.order,
+    result = {"protocol": protocol, "seed": args.seed, "order": args.order, "feature_contract": args.feature_contract,
               "summary": summarize(records), "episodes": records,
               "parameters": sum(parameter.numel() for parameter in model.parameters()),
               "training_seconds": training_seconds, "evaluation_seconds": time.perf_counter() - started,
               "torch": torch.__version__, "device": str(policy.device), "host": platform.node()}
+    if args.feature_contract == "observed":
+        result["rescue_protocol"] = json.loads(PROTOCOL.with_name("temporal_rescue_protocol.json").read_text())
     (output / "result.json").write_text(json.dumps(result, indent=2))
     print("FINISHED", args.seed, args.order, result["summary"], flush=True)
 

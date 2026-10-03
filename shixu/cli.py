@@ -35,6 +35,8 @@ def main():
         checkpoint = torch.load(args.weights, map_location="cpu", weights_only=False)
         if "config" in checkpoint:
             cfg.read_dict(checkpoint["config"])
+            if "order" in checkpoint["config"].get("model", {}):
+                cfg.set("model", "feature_contract", checkpoint["config"]["model"].get("feature_contract", "legacy"))
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     torch.set_num_threads(1)
@@ -46,7 +48,8 @@ def main():
             parser.error("Processing-order comparison currently uses GRU for both arms")
         cfg.set("model", "representation", "aligned")
         cfg.set("model", "order", order)
-        model = OrderedValueModel(order, cfg.getint("model", "width"), cfg.getint("model", "layers"))
+        model = OrderedValueModel(order, cfg.getint("model", "width"), cfg.getint("model", "layers"),
+                                  cfg.get("model", "feature_contract", fallback="observed"))
     else:
         model = ValueModel(backbone, cfg.getint("model", "width"), cfg.getint("model", "layers"))
     if args.weights:

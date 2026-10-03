@@ -1,0 +1,12 @@
+{
+  "version": "temporal-order-v2-common-feature-subtraction",
+  "reason": "The legacy relation features subtract the ego position from already-relative human coordinates, and extra robot-derived fields use inconsistent metadata indices.",
+  "change": "For both arms consume robot raw state9 and human observed motion9 plus presence; remove repeated relation8 and extra robot-derived4. No additional network.",
+  "feature_contract": "observed",
+  "parameters_per_arm": 300417,
+  "seeds": [17, 29, 43, 71],
+  "fresh_seeds_if_primary_positive": [191, 223],
+  "inherited_budget_and_gate": "All IL data, cases, optimizer, width, depth, history, RL budget, rewards, actions and primary thresholds remain exactly temporal_protocol.json.",
+  "allowed_rescues_used": 1,
+  "boundary": "Common interface correction is not a method contribution. No further rescue or backbone training in this round."
+}

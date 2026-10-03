@@ -19,6 +19,18 @@ class OrderTests(unittest.TestCase):
         for a, b in zip(self.scene.parameters(), self.actor.parameters()):
             self.assertTrue(torch.equal(a, b))
 
+    def test_observed_contract_ignores_redundant_legacy_fields(self):
+        changed = self.tokens.clone()
+        changed[:, :, 0, 9:] += 1000
+        changed[:, :, 1:3] += 1000
+        changed[:, :, 3:8, 9:12] += 1000
+        for model in (self.scene, self.actor):
+            torch.testing.assert_close(model(self.tokens), model(changed), atol=0, rtol=0)
+
+    def test_feature_contract_parameter_counts(self):
+        self.assertEqual(sum(p.numel() for p in OrderedValueModel("scene", 128, 2).parameters()), 300417)
+        self.assertEqual(sum(p.numel() for p in OrderedValueModel("actor", 128, 2, "legacy").parameters()), 302337)
+
     def test_one_step_shape(self):
         # One step is not generally equal: GRU and attention need not commute.
         for model in (self.scene, self.actor):

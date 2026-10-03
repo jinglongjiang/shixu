@@ -30,6 +30,11 @@ human uses the same GRU weights, with independent histories. No dual-memory
 system, contradiction detector, KDA or additional prediction head is added.
 This is a controlled structural experiment, not a selective-revision method.
 
+The observation-only contract consumes robot raw state9 and human observed
+motion9 plus presence. It removes redundant legacy relation features rather
+than adding a predictor or another memory. The explicit legacy feature contract
+remains only for reproducing the first trial and loading its checkpoints.
+
 ## Layout
 
 | File | Responsibility |
@@ -90,7 +95,8 @@ it automatically unless an explicit --config override is supplied.
 The matched trial is driven by experiments/temporal_protocol.json, not test
 results: four paired seeds, a shared 128-episode successful ORCA dataset,
 50 IL epochs, 1,000 MC-RL episodes per arm, and fixed circle/square cases at
-5/10/20 humans. Both arms have 302,337 parameters at width 128 and depth 2.
+5/10/20 humans. The initial legacy contract has 302,337 parameters per arm;
+the observation-only contract has 300,417 at the same width 128 and depth 2.
 Only the final-budget checkpoint is evaluated. Processing-order prototype
 results cannot be represented as a new algorithm or proof of selective memory.
 
@@ -99,6 +105,11 @@ python experiments/temporal_collect.py --output data/demonstrations.pt
 python experiments/temporal_order.py run --seed 17 --order pair \
   --data data/demonstrations.pt --root outputs/temporal_v1 --device cuda
 python experiments/temporal_order.py summarize --root outputs/temporal_v1
+
+# One shared interface rescue: same data/budget, subtract legacy derived inputs.
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --feature-contract observed --data data/demonstrations.pt \
+  --root outputs/temporal_v2 --device cuda
 ```
 
 Run the other seeds in the protocol before requesting the paired summary.
@@ -132,7 +143,11 @@ python -m experiments.temporal_revision_shadow --root outputs/temporal_v1 --seed
 The shadow uses arrived motion evidence and native scene replay. A masked-prefix
 intervention is an offline diagnostic, not a trained or deployable revision
 policy. Full results/checkpoints stay local under outputs; weights and data are
-not committed. Seeds 103/137 are reserved for an unchanged exploratory follow-up.
+not committed. The unchanged fresh follow-up used seeds 103/137: SR changes
+were +7.29 / -12.50 pp, so the initial seed-dispersion signal did not replicate.
+The common observation-only rescue is frozen separately in
+experiments/temporal_rescue_protocol.json; its results must not be pooled with
+the legacy-contract cohort.
 
 ## Baseline Boundary
 

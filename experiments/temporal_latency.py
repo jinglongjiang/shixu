@@ -28,8 +28,9 @@ def main():
     if args.device.startswith("cuda"):
         result["hardware"] = torch.cuda.get_device_name(torch.device(args.device))
     for order in ("scene", "actor"):
-        cfg = configuration(protocol, order)
-        policy = ValuePolicy(OrderedValueModel(order, protocol["width"], protocol["layers"]), cfg, args.device)
+        contract = json.loads((root / str(args.seed) / order / "result.json").read_text()).get("feature_contract", "legacy")
+        cfg = configuration(protocol, order, contract)
+        policy = ValuePolicy(OrderedValueModel(order, protocol["width"], protocol["layers"], contract), cfg, args.device)
         load_weights(policy.model, root / str(args.seed) / order / "model.pt", args.device)
         env = environment(cfg, policy)
         env.reset(options={"test_case": protocol["evaluation_cases"][0]})
