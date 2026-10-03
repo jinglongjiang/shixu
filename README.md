@@ -788,3 +788,70 @@ recurrence separately; production float32 kernels are not bitwise identical.
 The archived optimized seed419 GRU replay changes controls in9/96 episodes
 but changes no terminal outcomes. These checks cannot justify universal action
 parity. Fresh confirmation must use one frozen implementation on one host.
+
+### Physical-memory Results and the Next Readout Test
+
+All20 V6 models completed50 IL epochs,1,000 online MC episodes and96
+reloaded-final-weight evaluations each. Source, data, finite weights and the
+complete episode keys are checked; all77 server artifacts match local checksums
+before the temporary V6 workspace is removed.
+
+| Model | Overall SR % | CR % | Timeout % | Primary10/20 SR % |
+| --- | ---: | ---: | ---: | ---: |
+| Current legal CV-track reference | 81.77 | 4.95 | 13.28 | 79.30 |
+| Context-GRU reference | 85.94 | 5.99 | 8.07 | 85.55 |
+| Physical-memory GRU | 87.50 | 4.43 | 8.07 | 83.59 |
+| Physical KDA, unit observation clock | 80.99 | 3.65 | 15.36 | 76.56 |
+| Physical KDA, elapsed clock | 80.99 | 2.86 | 16.15 | 76.95 |
+| Physical KDA, CV pseudo-writes | 83.07 | 5.47 | 11.46 | 78.13 |
+| KDA capacity control, zero committed history | 86.72 | 6.51 | 6.77 | 83.59 |
+
+Elapsed-minus-unit primary differences are-9.38/+4.69/+7.81/-1.56 pp:
+mean+0.39 pp, two positive and two negative. Elapsed-minus-physical-GRU is
+-6.64 pp, with two losses and two ties. Fewer collisions are accompanied by
+more timeouts, so this version does not meet the fixed success/progress rule.
+The zero-history arm still receives legal interval/age input. These are
+development results, not a family rejection or evidence that history is useless.
+
+On836 uniformly sampled demonstration windows per checkpoint, first-layer
+cross-actor key cosine averages0.297-0.327 across the four trained unit-clock
+KDA models. Thus the earlier near-identical-address symptom is no longer
+observed here; this statistic does not certify useful retrieval. Removing all
+committed memory changes scalar values substantially, including hidden-track
+windows, but value sensitivity does not establish better action ranking.
+
+A separate four-seed CPU shadow checks the fixed2-second retention deadline.
+Only previously seen expired actors still inside the legal history horizon
+are eligible: current truth adds0.39 pp primary SR, while extending ordinary
+CV retention adds0.78 pp. Of602 expired person-frames with a last measurement
+still inside the legal prefix,31 are within2 m of the robot. This demonstrates
+a lifecycle limitation but no large frozen-consumer headroom or residual beyond
+the simple CV control. It does not justify another expiration architecture.
+Raw records are in outputs/occlusion_v6/expiry_shadow.
+
+V7 therefore replaces the readout interface, not another gate. Measured physical
+actor streams write the same KDA memory; existing current robot/human fusion
+moves before access and creates a different query for each candidate action.
+The read-only arm contracts that query with the pre-existing matrix. It never
+treats a hypothetical successor as a new measurement. A private-update KDA
+control uses exactly the same fusion placement and parameters; a same-placement
+GRU and a zero-committed-history control are also trained. No extra network,
+prediction target, reward or data is introduced. Physical V6 references preserve
+their original readout and budgets.
+
+The mechanism hypothesis is that action-relevant retrieval can improve the
+use of physical history beyond a candidate-independent actor summary. It is
+not presumed true. The proposed read-before-write primitive is already present
+in [DRAM](https://arxiv.org/abs/2609.32453), and task-conditioned retrieval is
+not new. [Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610)
+retrieves recurrent navigation experiences across episodes, unlike this bounded
+per-actor measured stream. [Kimi Linear](https://arxiv.org/abs/2510.26692)
+provides the mixer. A possible paper claim must concern the candidate-query/
+occluded-actor interface and validated navigation benefit, not qS, KDA, actor
+identity or generic read/write separation alone. Novelty remains unearned.
+
+V7 is frozen at36d1702 with the same128 demonstrations, four paired seeds,
+5-person training and5/10/20-person evaluation. Its pre-outcome protocol is
+experiments/occlusion_query_protocol.json; results are in outputs/occlusion_v7.
+All controls must remain in the comparison. Fresh seeds/cases remain untouched
+until an eligible development winner is chosen.
