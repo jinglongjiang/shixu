@@ -233,6 +233,38 @@ Final IL and RL weights, all failed versions, raw episode controls and consumed
 compute are retained. Fresh seeds and unseen confirmation cases are not used
 to develop this version.
 
+The complete V4 result is negative. Overall SR/CR/timeout are 68.75/11.72/19.53%
+for actor-addressed KDA, 72.40/10.94/16.67% for vanilla residual KDA and
+77.08/5.47/17.45% for residual GRU. Primary SR falls by 11.72 pp against GRU;
+actor-local addresses do not rescue this version. The final seed-443 address
+probe does recover distinct keys (mean inter-actor cosine 0.8144), so loss of
+actor addresses alone is not an adequate explanation of the navigation failure.
+
+`occlusion_branch_protocol.json` tests the inherited successor-value interface,
+not a new gate or a claim that private branches are novel:
+
+```text
+actual measured actor frames -> shared KDA -> real-history matrix
+candidate CV successor      -> private one-step KDA calculation
+                            -> existing attention/max/value -> original lookahead
+```
+
+Candidate computations never commit into real history. The single-step read
+is algebraically identical to an explicit private matrix update, but avoids
+80 replicated matrices. Its paired control additionally accepts legally
+propagated CV tracks as history pseudomeasurements; it receives no hidden truth.
+Both new arms retain identical parameters, initialization and IL/RL budgets.
+The unchanged V1 current-value and read-only KDA references and the stronger V3
+context-GRU reference remain controls, with configuration and action-parity
+checks before reuse. Any positive development result still requires new seeds
+and unseen cases, with all confirmation arms trained anew.
+
+Engineering optimizations share matrix reads across candidates and pack measured
+GRU frames without changing their recurrence. An exclusive laptop CPU read-only
+benchmark falls from 5.91 to 2.37 ms for five actors and 27.67 to 9.90 ms for
+twenty actors; these are not full-controller latency or navigation gains.
+Frozen checkpoint actions and gradient/recurrence tests validate the changes.
+
 ## Installation
 
 Install a PyTorch build appropriate for your machine first. Then:
