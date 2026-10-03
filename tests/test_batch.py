@@ -15,6 +15,32 @@ from shixu.policy import ValuePolicy, successor
 
 
 class BatchParityTests(unittest.TestCase):
+    def test_read_gate_probe_restores_model_and_history(self):
+        from experiments.temporal_memory import gate_probe
+        torch.set_num_threads(1)
+        cfg = configparser.ConfigParser()
+        cfg.read(Path(__file__).resolve().parents[1] / "shixu/default.ini")
+        cfg.set("model", "representation", "aligned")
+        robot = FullState(.2, -1.4, .1, .2, .3, 0, 4, 1, 0)
+        humans = [ObservableState(1 + i, 1, -.2, .3, .3) for i in range(5)]
+        state = TrackedState(robot, humans, tuple(range(5)))
+        policy = ValuePolicy(MemoryValueModel("kda", "evidence", 32, 1), cfg)
+        policy.history.extend([encode_aligned(state)] * 3)
+        weights = {k: v.clone() for k, v in policy.model.state_dict().items()}
+        reference = policy.score(state)
+        native, stats = gate_probe(policy, state)
+        np.testing.assert_array_equal(native, reference)
+        self.assertGreater(stats["gate_mean"], 0)
+        for mode in ("half_gate", "constant_gate", "ungated", "zero_evidence", "validity_only", "shuffled_motion"):
+            scores, _ = gate_probe(policy, state, mode, torch.full((32,), .5, dtype=torch.float64), torch.zeros(5, 3))
+            self.assertTrue(np.isfinite(scores).all())
+            np.testing.assert_array_equal(policy.score(state), reference)
+        self.assertEqual(len(policy.history), 3)
+        self.assertFalse(policy.model.evidence_gate._forward_hooks)
+        self.assertFalse(policy.model.evidence_gate._forward_pre_hooks)
+        for key, value in policy.model.state_dict().items():
+            torch.testing.assert_close(value, weights[key])
+
     def test_memory_shared_prefix_preserves_candidate_consumer(self):
         torch.set_num_threads(1)
         torch.manual_seed(47)

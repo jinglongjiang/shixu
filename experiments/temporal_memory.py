@@ -234,9 +234,122 @@ def event_shadow(root, protocol, seed, device):
     print(json.dumps({key: result[key] for key in ("native_episodes", "eligible_first_events", "uniform_person_frames", "contrasts")}), flush=True)
 
 
+def gate_probe(policy, state, mode="native", constant=None, shuffled=None):
+    """Read-gate intervention only: weights, memory writes and state stay frozen."""
+    from torch.nn import functional as F
+    model, stats = policy.model, {}
+
+    def intervene(layer, inputs):
+        x = inputs[0]
+        if mode == "zero_evidence":
+            evidence = torch.zeros_like(x[..., -4:])
+        elif mode == "validity_only":
+            evidence = torch.cat((torch.zeros_like(x[..., -4:-1]), x[..., -1:]), -1)
+        elif mode == "shuffled_motion":
+            evidence = torch.cat((shuffled[None, None].expand(*x.shape[:-1], 3), x[..., -1:]), -1)
+        else:
+            return
+        return (torch.cat((x[..., :-4], evidence), -1),)
+
+    def capture(layer, inputs, output):
+        x, width = inputs[0], model.temporal_encoder.width
+        f, m = x[..., :width], x[..., width:2 * width]
+        motion = F.linear(x[..., -4:-1], layer.weight[:, -4:-1])
+        valid = F.linear(x[..., -1:], layer.weight[:, -1:])
+        p = output.sigmoid()
+        stats.update(gate_mean=float(p.mean()), gate_std=float(p.std(unbiased=False)),
+                     gate_low_fraction=float((p < .1).float().mean()),
+                     gate_high_fraction=float((p > .9).float().mean()),
+                     candidate_gate_std=float(p.std(1, unbiased=False).mean()),
+                     motion_logit_mae=float(motion.abs().mean()),
+                     validity_logit_mae=float(valid.abs().mean()),
+                     motion_gate_effect=float((p - (output - motion).sigmoid()).abs().mean()),
+                     all_evidence_gate_effect=float((p - (output - motion - valid).sigmoid()).abs().mean()),
+                     gated_memory_to_current=float((p * m).norm() / f.norm().clamp_min(1e-8)),
+                     channel_means=p.mean((0, 1, 2)).cpu().tolist())
+        if mode == "half_gate":
+            return torch.zeros_like(output)
+        if mode == "ungated":
+            return torch.full_like(output, torch.inf)
+        if mode == "constant_gate":
+            return torch.logit(constant.to(output).clamp(1e-6, 1 - 1e-6)).expand_as(output)
+
+    before = model.evidence_gate.register_forward_pre_hook(intervene)
+    after = model.evidence_gate.register_forward_hook(capture)
+    try:
+        scores = policy.score(state)
+    finally:
+        before.remove()
+        after.remove()
+    return scores, stats
+
+
+def gate_diagnostic(root, protocol, device):
+    from collections import deque
+    from crowd_sim.envs.utils.state import FullState, ObservableState
+    from shixu.features import motion_evidence
+    from shixu.observations import TrackedState
+    from experiments.temporal_revision_shadow import observed_event
+    cfg = configuration(protocol, "actor_gru")
+    parent = ValuePolicy(build_model(cfg), cfg, device)
+    load_weights(parent.model, root / "191/actor_gru/model.pt", device)
+    roots, episodes = [], []
+    for geometry in protocol["geometries"]:
+        for people in protocol["people"]:
+            for case in protocol["evaluation_cases"][:2]:
+                record = run_episode(environment(cfg, parent, geometry, people), parent, case)
+                ticks = set(t for t in (12, 24, 36) if t < len(record["tokens"]))
+                first_event = next((t for t in range(12, len(record["tokens"])) if observed_event(record, t) is not None), None)
+                if first_event is not None:
+                    ticks.add(first_event)
+                episodes.append({"geometry": geometry, "people": people, "case": case, "terminal": record["terminal"], "frames": len(record["tokens"]), "first_event": first_event})
+                for tick in sorted(ticks):
+                    observation = record["observations"][tick]
+                    state = TrackedState(FullState(*observation["robot"]),
+                                         [ObservableState(*h["state"]) for h in observation["humans"]],
+                                         tuple(h["track_id"] for h in observation["humans"]))
+                    roots.append(({"geometry": geometry, "people": people, "case": case, "tick": tick,
+                                   "motion_event": tick == first_event}, state, record["tokens"][max(0, tick - parent.length):tick]))
+    results = []
+    for seed in protocol["seeds"]:
+        for arm in ("kda_gate", "kda_evidence"):
+            cfg = configuration(protocol, arm)
+            policy = ValuePolicy(build_model(cfg), cfg, device)
+            load_weights(policy.model, root / str(seed) / arm / "model.pt", device)
+            native, changes = [], []
+            for info, state, history in roots:
+                policy.history = deque(history, maxlen=policy.length)
+                scores, stats = gate_probe(policy, state)
+                native.append((scores, stats))
+                prefix = torch.as_tensor(np.asarray(history + [policy.encode(state)])[None], device=policy.device)
+                changes.append(motion_evidence(prefix)[0, -1, :, :3])
+            constant = torch.tensor(np.mean([s["channel_means"] for _, s in native], axis=0),
+                                    device=policy.device, dtype=policy.model.evidence_gate.weight.dtype)
+            modes = ("half_gate", "constant_gate", "ungated") if arm == "kda_gate" else ("zero_evidence", "validity_only", "shuffled_motion")
+            rows = []
+            for index, (info, state, history) in enumerate(roots):
+                policy.history = deque(history, maxlen=policy.length)
+                scores, stats = native[index]
+                variants = {}
+                for mode in modes:
+                    other, _ = gate_probe(policy, state, mode, constant, changes[(index + 1) % len(roots)])
+                    variants[mode] = {"action": int(np.argmax(other)), "action_changed": bool(np.argmax(other) != np.argmax(scores)),
+                                      "score_mae": float(np.abs(other - scores).mean())}
+                rows.append({**info, "native_action": int(np.argmax(scores)), "stats": {k: v for k, v in stats.items() if k != "channel_means"}, "interventions": variants})
+            results.append({"seed": seed, "arm": arm, "roots": len(rows),
+                            "channel_mean_root_std": float(np.std([s["channel_means"] for _, s in native], axis=0).mean()),
+                            "constant_channel_gate": constant.cpu().tolist(),
+                            "mean_stats": {k: float(np.mean([r["stats"][k] for r in rows])) for k in rows[0]["stats"]},
+                            "changed_actions": {mode: sum(r["interventions"][mode]["action_changed"] for r in rows) for mode in modes}, "records": rows})
+    result = {"episodes": episodes, "roots": len(roots), "results": results,
+              "scope": "Frozen read-gate diagnostic, no training and no outcome improvement claim. Uniform ticks plus first arrived near motion event from pre-fixed parent episodes. Constant gates estimated on these roots; interventions can be out of distribution and do not isolate training causality."}
+    (root / "gate_diagnostic.json").write_text(json.dumps(result, indent=2))
+    print(json.dumps({"roots": len(roots), "results": [{k: v for k, v in r.items() if k not in ("records", "constant_channel_gate")} for r in results]}), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("run", "queue", "summarize", "latency", "events"))
+    parser.add_argument("mode", choices=("run", "queue", "summarize", "latency", "events", "gate-diagnostic"))
     parser.add_argument("--root", required=True)
     parser.add_argument("--arm", choices=tuple(json.loads(PROTOCOL.read_text())["arms"]))
     parser.add_argument("--seeds", type=int, nargs="+", default=[191, 223])
@@ -254,6 +367,8 @@ def main():
         latency(root, protocol, args.seeds[0], args.device)
     elif args.mode == "events":
         event_shadow(root, protocol, args.seeds[0], args.device)
+    elif args.mode == "gate-diagnostic":
+        gate_diagnostic(root, protocol, args.device)
     elif args.mode == "queue":
         for arm in args.arms or protocol["arms"]:
             for seed in args.seeds:

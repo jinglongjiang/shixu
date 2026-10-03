@@ -386,3 +386,31 @@ Full checkpoints and records remain local in outputs/memory_pilot, excluded
 from Git. The existing strategy report contains the detailed paired contrasts.
 The useful delivered result is a tested, compact architecture and reproducible
 negative mechanism comparison, not a successful new navigation algorithm.
+
+## Frozen KDA Gate Diagnostic
+
+```bash
+python -m experiments.temporal_memory gate-diagnostic \
+  --root outputs/memory_pilot --device cuda
+```
+
+No new training: 38 common roots from 12 fixed native parent episodes, using
+uniform ticks plus six first arrived near-motion events; both trained seeds.
+KDA gating changes memory **readout**, not erase/write. The GDN2 update
+mechanism is not tested by this read-gate diagnostic.
+
+Removing only explicit motion evidence changes 0/76 candidate selections;
+removing motion and validity changes 1/76. The direct mean gate change from
+motion is about 0.00063. This does not support attributing the 9.38 pp SR gap
+to harmful runtime motion gating on these states. Entire trained models differ,
+and online MC refinement collects policy-dependent trajectories.
+
+In the generic model, constant per-channel gates change 7/76 selections, a
+uniform 0.5 gate changes 18/76, and no attenuation changes 35/76. Its mean gate
+is 0.56, without broad saturation. This suggests readout scale calibration,
+not demonstrated semantic stale-motion erasure. Constants use this same root
+cohort; interventions are potentially out of distribution, final rankings
+include the inherited safety filter, and no closed-loop improvement is claimed.
+Raw diagnostics remain in outputs/memory_pilot/gate_diagnostic.json. A new
+read-only intervention/restoration regression brings the local suite to 51
+passing tests.
