@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shixu"
+version = "0.1.0"
+description = "Minimal temporal value-lookahead crowd navigation inherited from local camrl"
+requires-python = ">=3.8"
+dependencies = ["numpy<2", "torch>=2.1", "gymnasium>=0.28,<1", "matplotlib", "einops>=0.6"]
+
+[project.optional-dependencies]
+mamba = ["mamba-ssm==1.2.0", "transformers>=4.30,<4.34"]
+
+[project.scripts]
+shixu = "shixu.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["shixu*", "crowd_sim*"]
+where = [".", "vendor"]
+
+[tool.setuptools.package-data]
+shixu = ["default.ini"]
+
+[tool.setuptools.data-files]
+"share/shixu" = ["vendor/CROWDNAV_LICENSE"]
