@@ -285,6 +285,65 @@ class OcclusionTests(unittest.TestCase):
                 load_weights(other, path, "cpu")
                 torch.testing.assert_close(model(tokens), other(tokens), rtol=0, atol=0)
 
+    def test_broadcast_reads_match_expanded_values_and_gradients(self):
+        import copy
+        from shixu.temporal import ActorMemory
+        for kind in ("gru", "kda"):
+            a = ActorMemory(kind, 32, 2)
+            b = copy.deepcopy(a)
+            batch, people, count = 2, 5, 80
+            features = torch.randn(batch * people, 6, 32)
+            mask = torch.rand(batch * people, 6) > .2
+            evidence = features.new_zeros(batch * people, 6, 4)
+            left, right = a.encode(features, mask, evidence), b.encode(features, mask, evidence)
+            queries = torch.randn(batch, count, people, 32)
+            expanded, shared = [], []
+            for x, y in zip(left, right):
+                if kind == "gru":
+                    expanded.append(x.reshape(2, batch, people, 32)[:, :, None].expand(
+                        -1, -1, count, -1, -1).reshape(2, -1, 32))
+                    shared.append(y.reshape(2, batch, 1, people, 32))
+                else:
+                    expanded.append(x.reshape(batch, people, *x.shape[1:])[:, None].expand(
+                        -1, count, -1, -1, -1, -1).reshape(-1, *x.shape[1:]))
+                    shared.append(y.reshape(batch, 1, people, *y.shape[1:]))
+            flat = queries.reshape(-1, 32)
+            if kind == "gru":
+                old = a.read(tuple(expanded), flat, torch.ones(batch * count * people, dtype=torch.bool))
+            else:
+                old = flat
+                for cell, state in zip(a.cells, expanded):
+                    q = torch.nn.functional.normalize(cell._heads(cell.q(cell.input_norm(old))), dim=-1)
+                    values = (q[..., None] * state).sum(-2) * (cell.head_width ** -.5)
+                    old = old + cell.output(cell.output_norm(values.flatten(-2)))
+                old = old - flat
+            new = b.read(tuple(shared), queries, torch.ones(batch, count, people, dtype=torch.bool))
+            torch.testing.assert_close(old.reshape_as(new), new, rtol=1e-5, atol=1e-5)
+            old.square().mean().backward()
+            new.square().mean().backward()
+            for p, q in zip(a.parameters(), b.parameters()):
+                torch.testing.assert_close(p.grad, q.grad, rtol=1e-4, atol=1e-6)
+
+    def test_packed_observations_match_held_gru_state_and_gradients(self):
+        import copy
+        from shixu.temporal import ActorMemory
+        a = ActorMemory("gru", 32, 2)
+        b = copy.deepcopy(a)
+        features = torch.randn(7, 23, 32)
+        mask = torch.rand(7, 23) > .3
+        mask[0] = False
+        mask[1] = True
+        old = features.new_zeros(2, 7, 32)
+        for tick in range(23):
+            _, proposal = a.gru(features[:, tick:tick + 1], old)
+            old = torch.where(mask[:, tick][None, :, None], proposal, old)
+        new = b.encode(features, mask, features.new_zeros(7, 23, 4))[0]
+        torch.testing.assert_close(old, new, atol=1e-6, rtol=1e-5)
+        old.square().mean().backward()
+        new.square().mean().backward()
+        for p, q in zip(a.gru.parameters(), b.gru.parameters()):
+            torch.testing.assert_close(p.grad, q.grad, atol=1e-6, rtol=1e-4)
+
 
 if __name__ == "__main__":
     unittest.main()
