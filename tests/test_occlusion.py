@@ -84,6 +84,27 @@ class OcclusionTests(unittest.TestCase):
         batch, _ = replay.sample(8, "cpu", np.random.default_rng(1))
         self.assertEqual(batch.shape[-2], 21)
 
+    def test_expired_truth_shadow_never_introduces_unseen_or_updates_evidence(self):
+        from experiments.occlusion_oracle import extend_expired
+        front, back, unseen = Human(1, 0), Human(2, 0, .2), Human(3, 0)
+        observer = OccludedTracks(2)
+        saved = back.get_observable_state()
+        observer.tracks = {front: (0, front.get_observable_state(), 0), back: (1, saved, 0)}
+        back.px, back.vx = 4, -7
+        env = SimpleNamespace(robot=SimpleNamespace(get_full_state=robot), humans=[front, back, unseen], global_time=3)
+        state = observer.observe(env)
+        self.assertEqual(state.track_ids, (0,))
+        before = dict(observer.tracks)
+        restored = extend_expired(observer, env, state, 5.5)
+        self.assertEqual(restored.track_ids, (0, 1))
+        self.assertEqual(restored.observed, (True, False))
+        self.assertEqual(restored.ages, (0, 3))
+        self.assertEqual(restored.human_states[1].px, 4)
+        self.assertEqual(observer.tracks, before)
+        self.assertIs(observer.tracks[back][1], saved)
+        env.global_time = 6
+        self.assertEqual(extend_expired(observer, env, observer.observe(env), 5.5).track_ids, (0,))
+
     def test_hidden_memory_read_candidate_immutability_and_gradients(self):
         model = OcclusionValueModel("kda", 32, 1)
         tokens = torch.zeros(1, 5, 3, 13)

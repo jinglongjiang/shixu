@@ -11,11 +11,32 @@ from experiments.occlusion import evaluate_weights
 from shixu.observations import OccludedTracks
 
 
+def extend_expired(observer, env, state, maximum_age):
+    """Offline truth for already-seen expired actors; never update their stored evidence."""
+    humans, keys, flags, ages = map(list, (state.human_states, state.track_ids, state.observed, state.ages))
+    retained = set(keys)
+    for human, (key, _, stamp) in observer.tracks.items():
+        age = env.global_time - stamp
+        if key not in retained and age <= maximum_age:
+            humans.append(human.get_observable_state())
+            keys.append(key)
+            flags.append(False)
+            ages.append(age)
+    observer.counts["retained_hidden"] = sum(not flag for flag in flags)
+    return state._replace(human_states=humans, track_ids=tuple(keys), observed=tuple(flags), ages=tuple(ages))
+
+
 def evaluate(weights, protocol, seed, device, mode):
     original = OccludedTracks.observe
+    # Prefix has T-1 real frames including the root: its oldest measurement is T-2 ticks old.
+    maximum_age = (protocol["history"] - 2) * .25
 
     def observe(observer, env):
+        if mode == "cv_extended":
+            observer.retention_seconds = maximum_age
         state = original(observer, env)
+        if mode == "truth_expired":
+            return extend_expired(observer, env, state, maximum_age)
         if mode == "truth_retained":
             truth = {row[0]: human.get_observable_state() for human, row in observer.tracks.items()}
             humans = [estimated if measured else truth[key]
@@ -31,10 +52,13 @@ def evaluate(weights, protocol, seed, device, mode):
 
     with patch.object(OccludedTracks, "observe", observe):
         result = evaluate_weights(weights, protocol, device, protocol["development_cases"], seed)
-    result.update(mode=mode, seed=seed, scope="Same frozen consumer, cases, retention lifecycle and controller. "
-                  "Truth substitution changes only currently retained hidden states, never unseen/expired actors "
-                  "or the track store. Not a full-future oracle, upper bound on achievable learning, or deployed "
-                  "method. Visible-only is an input intervention, not a newly trained reference.")
+    result.update(mode=mode, seed=seed, maximum_expired_age_seconds=maximum_age,
+                  scope="Same frozen consumer, cases and controller. truth_retained changes only currently retained "
+                        "hidden states. truth_expired adds current truth only for previously measured expired actors "
+                        "whose last observation is still inside the policy's legal root prefix; retained states remain CV. "
+                        "cv_extended changes only the fixed retention deadline to the same legal-history span. "
+                        "No mode introduces never-seen people or writes hidden truth into the tracker. "
+                        "Frozen-consumer interventions, not a full-future upper bound or trained method comparison.")
     return result
 
 
@@ -44,7 +68,8 @@ def main():
     parser.add_argument("--protocol", required=True)
     parser.add_argument("--seed", type=int, default=419)
     parser.add_argument("--device", default="cpu")
-    parser.add_argument("--mode", choices=("truth_retained", "visible_only", "parent"), default="truth_retained")
+    parser.add_argument("--mode", choices=("truth_retained", "truth_expired", "cv_extended", "visible_only", "parent"),
+                        default="truth_retained")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     torch.set_num_threads(1)

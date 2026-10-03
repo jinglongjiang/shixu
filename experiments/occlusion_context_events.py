@@ -23,8 +23,10 @@ def audit(data_path):
     env = environment(cfg, policy, data["protocol"]["training_geometry"], data["protocol"]["training_people"])
     counts = {key: 0 for key in ("frames", "population_frames", "hidden_frames", "retained_hidden_frames",
                                 "hidden_with_measured_neighbour", "hidden_with_changed_neighbour",
-                                "changed_neighbour_near_robot_2m")}
-    errors = {key: [] for key in ("all_retained", "measured_neighbour", "changed_neighbour")}
+                                "changed_neighbour_near_robot_2m", "known_expired_frames",
+                                "known_expired_inside_prefix", "known_expired_inside_prefix_near_2m")}
+    errors = {key: [] for key in ("all_retained", "measured_neighbour", "changed_neighbour", "expired_inside_prefix")}
+    prefix_seconds = (data["protocol"]["history"] - 2) * cfg.getfloat("env", "time_step")
     records = []
     for ep in data["episodes"]:
         env.reset(options={"test_case": ep["case"]})
@@ -42,6 +44,17 @@ def audit(data_path):
             counts["frames"] += 1
             counts["population_frames"] += len(env.humans)
             counts["hidden_frames"] += len(env.humans) - sum(state.observed)
+            for human, (_, measurement, stamp) in observer.tracks.items():
+                age = env.global_time - stamp
+                if age > observer.retention_seconds:
+                    counts["known_expired_frames"] += 1
+                    if age <= prefix_seconds:
+                        counts["known_expired_inside_prefix"] += 1
+                        counts["known_expired_inside_prefix_near_2m"] += int(
+                            np.hypot(human.px - env.robot.px, human.py - env.robot.py) < 2)
+                        errors["expired_inside_prefix"].append(float(np.hypot(
+                            measurement.px + age * measurement.vx - human.px,
+                            measurement.py + age * measurement.vy - human.py)))
             for key, human, measured, age in zip(state.track_ids, state.human_states, state.observed, state.ages):
                 if measured:
                     continue
@@ -69,7 +82,8 @@ def audit(data_path):
                                            "p90_m": float(np.quantile(rows, .9)) if rows else None,
                                            "above_005_fraction": float(np.mean(np.asarray(rows) > .05)) if rows else None}
                                     for name, rows in errors.items()},
-            "thresholds": {"neighbour_distance_m": 2., "arrived_velocity_change_mps": .1},
+            "thresholds": {"neighbour_distance_m": 2., "arrived_velocity_change_mps": .1,
+                           "root_prefix_span_seconds": prefix_seconds},
             "records": records,
             "scope": "Every frame of the 128 saved successful legal-observation ORCA demonstrations; no event "
                      "selection for the denominator. Neighbour events use only arrived observations and legal CV "
