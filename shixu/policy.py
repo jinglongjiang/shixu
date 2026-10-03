@@ -6,7 +6,7 @@ import torch
 
 from crowd_sim.envs.utils.action import ActionXY
 from crowd_sim.envs.utils.state import FullState, JointState, ObservableState
-from .features import aligned_tokens, encode_aligned, encode_state, window
+from .features import aligned_tokens, encode_aligned, encode_state, encode_tracks, track_tokens, window
 from .observations import TrackedState
 
 
@@ -33,6 +33,9 @@ def successor(state, action, dt):
     next_robot = FullState(robot.px + dt * action.vx, robot.py + dt * action.vy,
                            action.vx, action.vy, robot.radius, robot.gx, robot.gy, robot.v_pref, robot.theta)
     humans = [ObservableState(h.px + dt * h.vx, h.py + dt * h.vy, h.vx, h.vy, h.radius) for h in state.human_states]
+    if hasattr(state, "observed"):
+        return state._replace(self_state=next_robot, human_states=humans,
+                              ages=tuple(age + dt for age in state.ages), observed=(False,) * len(humans))
     return (TrackedState(next_robot, humans, state.track_ids) if hasattr(state, "track_ids")
             else JointState(next_robot, humans))
 
@@ -52,9 +55,9 @@ class ValuePolicy:
         self.last_action = None
         self.phase = "test"
         representation = config.get("model", "representation", fallback="legacy")
-        if representation not in ("legacy", "aligned"):
+        if representation not in ("legacy", "aligned", "tracks"):
             raise ValueError("Unknown observation representation")
-        self.encode = encode_aligned if representation == "aligned" else encode_state
+        self.encode = {"legacy": encode_state, "aligned": encode_aligned, "tracks": encode_tracks}[representation]
 
     def set_phase(self, phase):
         self.phase = phase
@@ -65,8 +68,8 @@ class ValuePolicy:
 
     def immediate_reward(self, current, future, action):
         robot = future.self_state
-        clearance = min(np.hypot(robot.px - h.px, robot.py - h.py) - robot.radius - h.radius
-                        for h in future.human_states)
+        clearance = min((np.hypot(robot.px - h.px, robot.py - h.py) - robot.radius - h.radius
+                         for h in future.human_states), default=float("inf"))
         if clearance < 0:
             return self.config.getfloat("reward", "collision_penalty"), clearance
         if np.hypot(robot.px - robot.gx, robot.py - robot.gy) < self.config.getfloat("robot", "success_radius"):
@@ -91,9 +94,11 @@ class ValuePolicy:
         robots[:, 2:4] = velocities
         humans = np.array([[h.px, h.py, h.vx, h.vy, h.radius] for h in state.human_states]).reshape(-1, 5)
         humans[:, :2] += self.time_step * humans[:, 2:4]
-        tokens = aligned_tokens(robots, humans, state.track_ids)
+        tokens = (track_tokens(robots, state, self.time_step) if self.encode is encode_tracks
+                  else aligned_tokens(robots, humans, state.track_ids))
         offsets = robots[:, None, :2] - humans[None, :, :2]
-        clearances = np.min(np.hypot(offsets[:, :, 0], offsets[:, :, 1]) - robot.radius - humans[:, 4], axis=1)
+        clearances = (np.min(np.hypot(offsets[:, :, 0], offsets[:, :, 1]) - robot.radius - humans[:, 4], axis=1)
+                      if len(humans) else np.full(len(robots), np.inf))
         distances = np.hypot(robots[:, 0] - robot.gx, robots[:, 1] - robot.gy)
         cfg = self.config
         progress = np.hypot(robot.px - robot.gx, robot.py - robot.gy) - distances
@@ -109,9 +114,10 @@ class ValuePolicy:
     def score(self, state):
         self.model.eval()
         current = self.encode(state)
-        if self.encode is encode_aligned:
+        if self.encode in (encode_aligned, encode_tracks):
             tokens, rewards, clearances = self.aligned_candidates(state)
-            prefix = window(list(self.history) + [current], self.length)[1:]
+            prefix = window(list(self.history) + [current], self.length,
+                            "zero" if self.encode is encode_tracks else "repeat")[1:]
             if hasattr(self.model, "score_candidates"):
                 values = self.model.score_candidates(torch.as_tensor(prefix[None], device=self.device),
                                                        torch.as_tensor(tokens[None], device=self.device)).squeeze(0)

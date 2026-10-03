@@ -51,6 +51,48 @@ remains only for reproducing the first trial and loading its checkpoints.
 | vendor/crowd_sim | Frozen local simulator dependency |
 | experiments/ | Frozen protocol, immutable ORCA collection and paired processing-order trial |
 
+## Occlusion Development Loop
+
+The new `occlusion` architecture removes the five-person input cap. It uses
+episode-local identity slots, actual-measurement write masks and a separate
+retained-track read mask. A previously observed actor can remain relevant while
+occluded; an actor that has never been seen cannot enter the model. Missing
+positions use the last legally measured velocity for at most two seconds.
+Predicted positions and candidate successors are read-only queries, not new
+measurements. There is one shared actor memory and no external memory gate,
+auxiliary predictor, dual-memory branch or changed reward.
+
+```text
+body-occluded observations -> legal track histories -> shared KDA memory
+                          -> retained-track candidate reads -> scalar value
+                          -> inherited 80-action value lookahead
+```
+
+This is a functional research prototype, not an established novelty or
+performance claim. The common retention interface is also used by the
+current-state and recurrent comparisons. Previously reported full-observation
+results are not occlusion results.
+
+```bash
+# Pin the vendored simulator when another CrowdNav is installed locally.
+export PYTHONPATH=vendor:.
+python -m unittest discover -s tests -v
+python -m experiments.occlusion collect \
+  --data outputs/occlusion_v1/demonstrations.pt
+python -m experiments.occlusion queue \
+  --root outputs/occlusion_v1 --data outputs/occlusion_v1/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize --root outputs/occlusion_v1
+```
+
+`experiments/occlusion_protocol.json` freezes shared demonstrations, four
+paired development seeds, 50 IL epochs, 1,000 online MC-RL episodes and
+5/10/20-person evaluation. Every reported model is reconstructed and loaded
+from its final saved checkpoint before evaluation. Development cases guide
+diagnosis; fresh seeds and separate confirmation cases remain reserved until
+an architecture is selected. A negative version is diagnosed, not relabeled
+as a failed research family. Raw weights, logs and episodes remain local.
+
 ## Installation
 
 Install a PyTorch build appropriate for your machine first. Then:

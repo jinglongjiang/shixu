@@ -24,6 +24,32 @@ def encode_aligned(state):
     return aligned_tokens(robots, humans, state.track_ids)[0]
 
 
+def encode_tracks(state):
+    return track_tokens(state.self_state.to_array()[None], state)[0]
+
+
+def track_tokens(robots, state, dt=0.0):
+    """Variable-size identity slots; measurement validity differs from retention."""
+    robots = np.asarray(robots, dtype=np.float32)
+    tokens = np.zeros((len(robots), 1 + max(1, state.track_count), 13), dtype=np.float32)
+    tokens[:, 0, :9] = robots
+    for key, human, measured, age in zip(state.track_ids, state.human_states, state.observed, state.ages):
+        position = np.array([human.px + dt * human.vx, human.py + dt * human.vy])
+        relative = position - robots[:, :2]
+        velocity = np.array([human.vx, human.vy]) - robots[:, 2:4]
+        distance = np.sqrt((relative ** 2).sum(1) + 1e-6)
+        closing = -(relative * velocity).sum(1) / distance
+        inverse = np.maximum(closing, 0) / distance
+        tokens[:, 1 + key, :9] = np.column_stack((relative, distance,
+            np.full(len(robots), human.vx), np.full(len(robots), human.vy),
+            np.full(len(robots), np.hypot(human.vx, human.vy)),
+            np.full(len(robots), human.radius), np.minimum(inverse, 10), distance < 2))
+        tokens[:, 1 + key, 9] = age + dt
+        tokens[:, 1 + key, 10] = measured and dt == 0
+        tokens[:, 1 + key, 12] = 1
+    return tokens
+
+
 def aligned_tokens(robots, humans, keys):
     """Batch candidate robots against a shared observed/predicted human state."""
     tokens = robot_tokens(np.asarray(robots, dtype=np.float32))
@@ -88,11 +114,19 @@ def robot_tokens(states):
     return tokens
 
 
-def window(frames, length):
+def window(frames, length, left_pad="repeat"):
     if len(frames) == 0 or length <= 0:
         raise ValueError("A positive history length and at least one observed frame are required")
     selected = list(frames)[-length:]
-    return np.asarray([selected[0]] * (length - len(selected)) + selected, dtype=np.float32)
+    people = max(frame.shape[-2] for frame in selected)
+    selected = [np.pad(frame, ((0, people - frame.shape[-2]), (0, 0))) for frame in selected]
+    first = selected[0] if left_pad == "repeat" else np.zeros_like(selected[0])
+    return np.asarray([first] * (length - len(selected)) + selected, dtype=np.float32)
+
+
+def stack_histories(histories):
+    people = max(row.shape[-2] for row in histories)
+    return np.stack([np.pad(row, ((0, 0), (0, people - row.shape[-2]), (0, 0))) for row in histories])
 
 
 def motion_evidence(tokens):

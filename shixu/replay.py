@@ -3,7 +3,7 @@
 import numpy as np
 import torch
 
-from .features import window
+from .features import stack_histories, window
 
 
 def returns(rewards, gamma):
@@ -16,16 +16,17 @@ def returns(rewards, gamma):
 
 
 class Replay:
-    def __init__(self, capacity=200000, length=24, gamma=0.99):
+    def __init__(self, capacity=200000, length=24, gamma=0.99, left_pad="repeat"):
         if capacity <= 0 or length <= 0:
             raise ValueError("Replay capacity and history length must be positive")
         self.samples = []
         self.capacity, self.pointer = capacity, 0
         self.length, self.gamma = length, gamma
+        self.left_pad = left_pad
 
     def add(self, episode):
         targets = returns(episode["rewards"], self.gamma)
-        frames = np.asarray(episode["tokens"], dtype=np.float32).copy()
+        frames = window(episode["tokens"], len(episode["tokens"])).copy()
         if len(frames) != len(targets):
             raise ValueError("Observation and reward sequence lengths differ")
         for index, target in enumerate(targets):
@@ -41,7 +42,8 @@ class Replay:
             raise ValueError("Cannot sample an empty replay")
         indices = rng.integers(len(self.samples), size=batch_size)
         selected = [self.samples[index] for index in indices]
-        histories = torch.as_tensor(np.stack([window(row[0][max(0, row[1] + 1 - self.length):row[1] + 1], self.length)
-                                             for row in selected]), device=device)
+        histories = torch.as_tensor(stack_histories([
+            window(row[0][max(0, row[1] + 1 - self.length):row[1] + 1], self.length, self.left_pad)
+            for row in selected]), device=device)
         labels = torch.as_tensor([row[2] for row in selected], device=device, dtype=torch.float32)
         return histories, labels

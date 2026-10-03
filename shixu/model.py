@@ -211,9 +211,76 @@ class MemoryValueModel(OrderedValueModel):
         return self.score_candidates(tokens[:, :-1], tokens[:, -1:]).squeeze(1)
 
 
+class OcclusionValueModel(OrderedValueModel):
+    """Measured actor history -> shared temporal memory -> retained-track value.
+
+    Predicted locations are queries, never measurement writes. All actors share
+    parameters; the number of visible/retained actors is not fixed to five.
+    """
+
+    def __init__(self, substrate="kda", width=128, layers=2):
+        from .temporal import ActorMemory
+        super().__init__("actor", width, layers, "observed")
+        self.substrate = substrate
+        self.human_encoder = nn.Sequential(nn.Linear(11, width), nn.ReLU())
+        self.temporal_encoder = (ActorMemory(substrate, width, layers)
+                                 if substrate != "current" else None)
+
+    def _features(self, tokens):
+        if tokens.ndim != 4 or tokens.shape[-1] != 13 or tokens.shape[-2] < 2:
+            raise ValueError("Expected variable actor history [B,T,1+N,13], N>=1")
+        humans = tokens[:, :, 1:]
+        active = humans[..., 12] > 0
+        measured = (humans[..., 10] > 0) & active
+        # Observation validity controls writes, not the hypothetical query stem.
+        actor_input = torch.cat((humans[..., :10], active[..., None].to(humans.dtype)), -1)
+        robot = self.robot_encoder(tokens[:, :, 0, :9])[..., None, :].expand(
+            -1, -1, humans.shape[2], -1)
+        features = self.fusion(torch.cat((robot, self.human_encoder(actor_input)), -1))
+        return features, active, measured
+
+    def encode_history(self, prefix):
+        features, _, measured = self._features(prefix)
+        batch, length, people, width = features.shape
+        if self.temporal_encoder is None:
+            return None, measured.any(1)
+        sequence = features.permute(0, 2, 1, 3).reshape(batch * people, length, width)
+        masks = measured.permute(0, 2, 1).reshape(batch * people, length)
+        states = self.temporal_encoder.encode(sequence, masks, sequence.new_zeros(batch * people, length, 4))
+        return states, measured.any(1)
+
+    def read_history(self, memory, queries):
+        features, active, _ = self._features(queries)
+        states, seen = memory
+        batch, count, people, width = features.shape
+        if seen.shape != (batch, people):
+            raise ValueError("Track slots must agree between history and candidates")
+        if states is not None:
+            expanded = []
+            for state in states:
+                if self.substrate == "gru":
+                    expanded.append(state.reshape(state.shape[0], batch, people, width)[:, :, None].expand(
+                        -1, -1, count, -1, -1).reshape(state.shape[0], batch * count * people, width))
+                else:
+                    expanded.append(state.reshape(batch, people, *state.shape[1:])[:, None].expand(
+                        -1, count, -1, -1, -1, -1).reshape(batch * count * people, *state.shape[1:]))
+            recalled = self.temporal_encoder.read(tuple(expanded), features.reshape(-1, width),
+                                                  active.reshape(-1)).reshape(batch, count, people, width)
+            features = features + recalled * (active & seen[:, None])[..., None]
+        return self.value_head(self._pool(features, active)).squeeze(-1)
+
+    def score_candidates(self, prefix, queries):
+        return self.read_history(self.encode_history(prefix), queries)
+
+    def forward(self, tokens):
+        return self.score_candidates(tokens[:, :-1], tokens[:, -1:]).squeeze(1)
+
+
 def build_model(config):
     section = config["model"]
     width, layers = int(section["width"]), int(section["layers"])
+    if section.get("architecture") == "occlusion":
+        return OcclusionValueModel(section.get("backbone", "kda"), width, layers)
     if section.get("architecture") == "memory":
         return MemoryValueModel(section.get("backbone", "kda"), section.get("readout", "evidence"), width, layers)
     if section.get("order"):

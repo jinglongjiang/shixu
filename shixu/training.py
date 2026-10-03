@@ -26,7 +26,8 @@ def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
         raise ValueError("IL episodes must be positive and RL episodes nonnegative")
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
-    replay = Replay(cfg.getint("buffer", "capacity"), policy.length, policy.gamma)
+    replay = Replay(cfg.getint("buffer", "capacity"), policy.length, policy.gamma,
+                    "zero" if cfg.get("model", "representation", fallback="legacy") == "tracks" else "repeat")
     accepted = 0
     limit = cfg.getint("imitation_learning", "max_il_prefill")
     if demonstrations is not None:
