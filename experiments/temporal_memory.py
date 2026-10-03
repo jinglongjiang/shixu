@@ -179,10 +179,24 @@ def latency(root, protocol, seed, device):
                 samples.append(1000 * (time.perf_counter() - started))
         rows[label] = {"median_ms": float(np.median(samples)), "p95_ms": float(np.quantile(samples, .95)), "samples_ms": samples}
     result = {"hardware": torch.cuda.get_device_name() if device.startswith("cuda") else "CPU", "torch": torch.__version__,
+              "host": platform.node(), "threads": torch.get_num_threads(),
               "seed": seed, "repetitions": 100, "warmup": 20,
               "scope": "Complete 80-action score, shared real prefix, no simulator or smoothing", "arms": rows}
     (root / "latency.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({arm: row["median_ms"] for arm, row in rows.items()}), flush=True)
+
+
+def shadow_contrasts(events, pairs):
+    contrasts = []
+    for custom, control in pairs:
+        paired = [(row["branches"][custom], row["branches"][control]) for row in events]
+        contrasts.append({"custom": custom, "control": control,
+                          "different_root_actions": sum(int(a["root_index"] != b["root_index"]) for a, b in paired),
+                          "safe_progress_wins_005m": sum(int(a["progress"] - b["progress"] >= .05 and a["minimum_clearance"] >= 0) for a, b in paired),
+                          "safe_progress_losses_005m": sum(int(b["progress"] - a["progress"] >= .05 and b["minimum_clearance"] >= 0) for a, b in paired),
+                          "custom_collisions": sum(int(a["terminal"] == "collision") for a, _ in paired),
+                          "control_collisions": sum(int(b["terminal"] == "collision") for _, b in paired)})
+    return contrasts
 
 
 def event_shadow(root, protocol, seed, device):
@@ -212,18 +226,9 @@ def event_shadow(root, protocol, seed, device):
                 branches = {arm: branch(policy, policy.config, geometry, record, tick, key, "full", 12)
                             for arm, policy in policies.items()}
                 events.append({"geometry": geometry, "case": case, "tick": tick, "actor_key": key, "branches": branches})
-    contrasts = []
-    for custom, control in protocol["contrast_pairs"]:
-        paired = [(row["branches"][custom], row["branches"][control]) for row in events]
-        contrasts.append({"custom": custom, "control": control,
-                          "different_root_actions": sum(a["root_index"] != b["root_index"] for a, b in paired),
-                          "safe_progress_wins_005m": sum(a["progress"] - b["progress"] >= .05 and a["minimum_clearance"] >= 0 for a, b in paired),
-                          "safe_progress_losses_005m": sum(b["progress"] - a["progress"] >= .05 and b["minimum_clearance"] >= 0 for a, b in paired),
-                          "custom_collisions": sum(a["terminal"] == "collision" for a, _ in paired),
-                          "control_collisions": sum(b["terminal"] == "collision" for _, b in paired)})
     result = {"seed": seed, "native_episodes": len(episodes), "eligible_first_events": len(events),
               "uniform_person_frames": 5 * sum(ep["frames"] for ep in episodes),
-              "episodes": episodes, "events": events, "contrasts": contrasts,
+              "episodes": episodes, "events": events, "contrasts": shadow_contrasts(events, protocol["contrast_pairs"]),
               "scope": "Exploratory common-root 3-second continuations. First legal near motion event per parent episode; no favorable-root selection. Does not establish motion/context disentanglement or population recovery."}
     (root / "event_shadow.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({key: result[key] for key in ("native_episodes", "eligible_first_events", "uniform_person_frames", "contrasts")}), flush=True)
@@ -257,7 +262,12 @@ def main():
     else:
         if not args.arm or not args.data or len(args.seeds) != 1 or args.seeds[0] not in protocol["seeds"]:
             parser.error("Run needs one frozen seed, one arm and the fixed IL data")
-        run_arm(root, protocol, args.arm, args.seeds[0], args.data, args.device)
+        import fcntl
+        output = root / str(args.seeds[0]) / args.arm
+        output.mkdir(parents=True, exist_ok=True)
+        with (output / ".run.lock").open("w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            run_arm(root, protocol, args.arm, args.seeds[0], args.data, args.device)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,11 @@
 import ast
 import configparser
+import json
 import os
 from pathlib import Path
 import unittest
 
+import numpy as np
 import torch
 from torch.nn import functional as F
 
@@ -191,6 +193,19 @@ class MemoryTests(unittest.TestCase):
             windows = torch.cat((prefix[:, None].expand(-1, 3, -1, -1, -1), queries[:, :, None]), 2)
             expected = model(windows.reshape(6, length + 1, 8, 13)).reshape(2, 3)
             torch.testing.assert_close(shared, expected, rtol=2e-5, atol=2e-6)
+
+    def test_shadow_counts_are_json_safe(self):
+        from experiments.temporal_memory import shadow_contrasts
+        custom = {"root_index": np.int64(2), "progress": np.float64(.2),
+                  "minimum_clearance": np.float64(.1), "terminal": "running"}
+        control = dict(custom, root_index=np.int64(1), progress=np.float64(.1))
+        rows = [{"branches": {"custom": custom, "control": control}},
+                {"branches": {"custom": control, "control": custom}}]
+        result = json.loads(json.dumps(shadow_contrasts(rows, [("custom", "control")])))
+        self.assertEqual(result[0]["different_root_actions"], 2)
+        self.assertEqual(result[0]["safe_progress_wins_005m"], 1)
+        self.assertEqual(result[0]["safe_progress_losses_005m"], 1)
+        self.assertEqual(result[0]["custom_collisions"], 0)
 
 
 if __name__ == "__main__":

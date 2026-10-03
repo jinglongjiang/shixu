@@ -232,8 +232,9 @@ candidate successor  -> query that state       -> current feature + memory
                      -> original attention/max pool -> scalar value/lookahead
 ```
 
-Training uses the first T-1 real frames as the prefix and the last real frame
-as the query. In inference, the query is an analytic candidate successor. It
+Training uses the first T-1 observed-history slots as the prefix and the last
+real frame as the query. Episode starts inherit first-frame replication padding.
+In inference, the query is an analytic candidate successor. It
 never changes the persistent observation history. All 80 queries share one
 prefix encoding. The full-window control updates a disposable state copy with
 the query; it also never persists hypothetical observations.
@@ -268,6 +269,8 @@ reference commit 9f38d24980c46d46bd38614e743cdacd21906578.
 
 The two evidence-specific contrasts are parameter matched; comparisons between
 different substrates are not. GRU evidence fusion is the strong cheap control.
+Matrix-state capacity is also different: at these dimensions KDA/GDN2 store
+40,960 floats versus the original GRU's 1,280, not a matched state-size control.
 The frozen protocol uses seeds 191/223, the same immutable 128-episode ORCA
 dataset, 50 IL epochs, 1,000 online MC episodes, four updates/episode, width128,
 depth2, T24, reward/actions/simulator and 96 development cases/model. These
@@ -289,6 +292,9 @@ evidence, masks/re-entry, read-only candidate queries, shared-prefix versus
 full-window values/gradients, and native candidate scores. Operator provenance
 is not novelty: actor memory, separate current/history consumption and generic
 gating have close priors, including ReCAT (https://intuitive-robots.github.io/ReCAT/).
+TRACER (https://arxiv.org/html/2609.18776v1) also separates executed evidence
+updates from candidate-trajectory queries in social navigation. That principle
+is not a novel claim of this implementation.
 Navigation results and evidence-specific ablations must justify any narrower
 claim before the architecture is selected as a paper method.
 
@@ -298,3 +304,85 @@ generic prefix reuse to a new memory operator. Natural-event shadow comparisons
 use common roots from the first legal near-motion event in each pre-fixed parent
 episode, not the best events for a new arm. They remain exploratory supporting
 evidence, not a replacement for a negative paired SR result.
+
+## Completed Memory Pilot
+
+All eight arms finished both paired seeds (191/223): 16 final checkpoints,
+50 IL epochs and 1,000 online MC episodes each, with 1,536 fixed evaluation
+episodes in total. This cohort is separate from the older processing-order
+experiments. No reward, action support, demonstration data or training budget
+was changed after observing outcomes.
+
+| Arm | SR | Collision | Timeout | Successful time (s) | RTX 4090 score (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| actor_gru | 82.81% | 6.25% | 10.94% | 18.20 | 3.013 |
+| gru_evidence | 78.12% | 7.29% | 14.58% | 17.56 | 3.839 |
+| kda_full | 74.48% | 15.62% | 9.90% | 19.51 | 11.678 |
+| kda_read | 80.21% | 6.77% | 13.02% | 22.56 | 9.590 |
+| kda_gate | 84.90% | 7.81% | 7.29% | 20.56 | 9.726 |
+| kda_evidence | 75.52% | 6.25% | 18.23% | 23.47 | 9.716 |
+| gdn2_read | 77.08% | 8.85% | 14.06% | 20.46 | 9.788 |
+| gdn2_revision | 75.00% | 7.29% | 17.71% | 22.70 | 9.799 |
+
+The parameter-matched mechanism tests are negative in both seeds:
+
+- KDA evidence versus generic gate: SR -8.33 / -10.42 pp; mean -9.38 pp,
+  timeout +10.94 pp. Adding motion evidence does not justify this gate.
+- GDN2 evidence revision versus zero-evidence update: SR -1.04 / -3.13 pp;
+  mean -2.08 pp, timeout +3.65 pp.
+- Against the original actor GRU, the custom KDA/GDN2 arms lose 7.29 / 7.81 pp
+  mean SR. Neither beats the GRU evidence control either.
+
+Generic KDA gating has the highest mean SR, but its gain over actor GRU is only
++2.08 pp with one positive seed and one tie. Successful-episode time rises
+about 13%; different success sets make this a descriptive, not causal, time
+comparison. Its pooled 20-human SR is 76.56% versus 65.63% for actor GRU, but
+this secondary reused-case slice does not rescue the failed primary gate or
+establish a social-specific mechanism.
+
+Every frozen contrast returns NO_CONSISTENT_PILOT_GAIN. This is
+**VERSION_NEGATIVE, not FAMILY_NEGATIVE**; two seeds cannot establish permanent
+dominance or a paper-ready method. No extra fresh training was launched.
+
+### Cost and Validation
+
+The timing table measures the complete 80-action score on an otherwise idle
+RTX 4090, PyTorch 2.9.1+cu128, one CPU thread, 20 warmups and 100 synchronized
+samples. The output-equivalent cached actor GRU takes 3.373 ms, so generic
+prefix reuse is not a GPU speedup in this workload. KDA/GDN2 are roughly three
+times slower than the original GRU here. These compact PyTorch cells are not
+optimized official FLA kernels; this result does not benchmark those kernels.
+
+On the i7-1165G7 laptop (PyTorch 2.4.1, one thread), actor GRU / cached GRU
+take 64.032 / 5.530 ms. KDA evidence / GDN2 revision take 11.403 / 11.276 ms.
+Thus the CPU caching benefit is already available without a new operator.
+The local RTX 3060 replay is supplemental only: an unrelated RustDesk compute
+process was active, so it is not an idle-device performance claim. Timings
+across different devices/PyTorch versions are not pooled.
+
+Training wall times per model are 573-778 s for the GRU arms and 1,446-2,063 s
+for the matrix-memory arms. Varying concurrent worker counts and episode lengths
+make these descriptive resource records, not matched throughput estimates.
+Peak allocated memory is 692-724 MiB / 1,889-1,980 MiB respectively.
+
+The common-root shadow covers 12 native parent episodes, 4,365 person-frames
+and six first legal near-motion events. Over three-second continuations,
+KDA evidence versus generic gate has three progress wins and three losses;
+GDN2 revision versus its matched control has zero wins and four losses
+(>=0.05 m). All branches are collision-free. Changed root actions therefore
+do not establish recovery value or selective motion/context retention.
+
+All 16 artifacts were checked for finite weights/losses, 50 IL epochs,
+1,000 RL episodes, identical case sets and the shared data checksum. Source
+and result/checkpoint/log hashes were compared with the training host. Normal
+CLI loading was also checked for both custom checkpoints, not used as extra
+performance evidence. The final local suite passes 50 tests, including legacy
+Mamba parity and the NumPy-to-JSON shadow-export regression. The laptop runs
+50 tests with 46 passing and four explicit optional-asset skips. All remote
+artifacts were retrieved and checksum-verified before this run's temporary
+4090 workspace was removed; existing environments were left untouched.
+
+Full checkpoints and records remain local in outputs/memory_pilot, excluded
+from Git. The existing strategy report contains the detailed paired contrasts.
+The useful delivered result is a tested, compact architecture and reproducible
+negative mechanism comparison, not a successful new navigation algorithm.
