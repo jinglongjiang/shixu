@@ -95,6 +95,15 @@ class DeltaCell(nn.Module):
         values = torch.einsum("...hk,...hkv->...hv", q, state) * (self.head_width ** -0.5)
         return self.output(self.output_norm(values.flatten(-2)))
 
+    def imagine(self, state, query):
+        """Read after one private successor update, without materializing or committing it."""
+        q, k, v, decay, erase, write = self._parameters_for(query, query.new_zeros(*query.shape[:-1], 4))
+        discount = decay.exp()
+        correction = write * v - torch.einsum("...hk,...hkv->...hv", erase * k * discount, state)
+        values = (torch.einsum("...hk,...hkv->...hv", q * discount, state)
+                  + (q * k).sum(-1, keepdim=True) * correction) * self.head_width ** -.5
+        return self.output(self.output_norm(values.flatten(-2)))
+
 
 class ActorMemory(nn.Module):
     """One shared temporal operator; a separate state belongs to each actor."""
@@ -151,9 +160,7 @@ class ActorMemory(nn.Module):
         current = query
         for cell, state in zip(self.cells, states):
             if advance:
-                output, _ = cell.encode(query[:, None], visible[:, None],
-                                        query.new_zeros(len(query), 1, 4), initial_state=state)
-                query = query + output[:, 0]
+                query = query + cell.imagine(state, query) * visible[..., None]
             else:
                 query = query + cell.read(state, query)
         return query - current
