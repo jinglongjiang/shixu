@@ -82,6 +82,12 @@ class MotionKDACell(nn.Module):
                   + (q * k).sum(-1, keepdim=True) * error) * self.head_width ** -.5
         return self.project(values, x)
 
+    def read(self, state, features):
+        x = self.input_norm(features)
+        q = F.normalize(self._heads(F.silu(self.q(x))), dim=-1)
+        values = torch.einsum("...hk,...hkv->...hv", q, state) * self.head_width ** -.5
+        return self.project(values, x)
+
 
 class MotionMemory(nn.Module):
     def __init__(self, kind, width, layers):
@@ -125,16 +131,31 @@ class MotionMemory(nn.Module):
             query = query + cell.successor(state, query, intervals)
         return query
 
+    def query(self, states, features, advance):
+        if self.kind == "gru":
+            if not advance:
+                raise ValueError("A GRU control uses a private query step, not a matrix read")
+            return self.successor(states, features, features.new_ones(features.shape[:-1]))
+        for cell, state in zip(self.cells, states):
+            recalled = (cell.successor(state, features, features.new_ones(features.shape[:-1]))
+                        if advance else cell.read(state, features))
+            features = features + recalled
+        return features
+
 
 class MotionValueModel(OrderedValueModel):
     """One physical actor stream; current geometry and goals enter only after it."""
 
-    def __init__(self, kind="kda", width=128, layers=2, clock="elapsed", use_history=True, time_step=.25):
+    def __init__(self, kind="kda", width=128, layers=2, clock="elapsed", use_history=True, time_step=.25,
+                 motion_query="physical"):
         super().__init__("actor", width, layers, "observed")
         self.width = width
         if clock not in ("elapsed", "observation", "imputed") or time_step <= 0:
             raise ValueError("Invalid motion-memory clock")
         self.clock, self.use_history, self.time_step = clock, use_history, time_step
+        if motion_query not in ("physical", "branch", "read") or (kind == "gru" and motion_query == "read"):
+            raise ValueError("Unknown physical-memory query contract")
+        self.motion_query = motion_query
         self.human_encoder = nn.Sequential(nn.Linear(8, width), nn.ReLU())
         self.fusion = nn.Sequential(nn.Linear(2 * width + 11, width), nn.ReLU())
         self.temporal_encoder = MotionMemory(kind, width, layers)
@@ -168,13 +189,25 @@ class MotionValueModel(OrderedValueModel):
         # CV human successors are common to every candidate robot action.
         physical = self.physical_features(queries[:, :1], gaps[:, None]).reshape(batch * people, width)
         durations = gaps if self.clock == "elapsed" else torch.ones_like(gaps)
-        actors = self.temporal_encoder.successor(states, physical, durations.reshape(-1))
-        actors = actors.reshape(batch, 1, people, width).expand(-1, count, -1, -1)
         humans = queries[:, :, 1:]
         active = humans[..., 12] > 0
         geometry = torch.cat((humans[..., :10], active[..., None].to(humans.dtype)), -1)
         robots = self.robot_encoder(queries[:, :, 0, :9])[:, :, None].expand(-1, -1, people, -1)
-        features = self.fusion(torch.cat((robots, actors, geometry), -1))
+        if self.motion_query == "physical":
+            actors = self.temporal_encoder.successor(states, physical, durations.reshape(-1))
+            actors = actors.reshape(batch, 1, people, width).expand(-1, count, -1, -1)
+            features = self.fusion(torch.cat((robots, actors, geometry), -1))
+        else:
+            current = physical.reshape(batch, 1, people, width).expand(-1, count, -1, -1)
+            features = self.fusion(torch.cat((robots, current, geometry), -1))
+            if self.temporal_encoder.kind == "gru":
+                shared = states.reshape(states.shape[0], batch, people, width)[:, :, None].expand(
+                    -1, -1, count, -1, -1).reshape(states.shape[0], batch * count * people, width)
+                features = self.temporal_encoder.query(shared, features.reshape(-1, width), True)
+                features = features.reshape(batch, count, people, width)
+            else:
+                shared = tuple(state.reshape(batch, 1, people, *state.shape[1:]) for state in states)
+                features = self.temporal_encoder.query(shared, features, self.motion_query == "branch")
         return self.value_head(self._pool(features, active)).squeeze(-1)
 
     def score_candidates(self, prefix, queries):

@@ -48,6 +48,65 @@ class MotionTests(unittest.TestCase):
         for a, b in zip(first, second):
             torch.testing.assert_close(a, b, rtol=1e-9, atol=1e-9)
 
+    def test_read_only_query_matches_matrix_contraction_and_does_not_write(self):
+        cell = MotionKDACell(32).double()
+        features = torch.randn(2, 7, 3, 32, dtype=torch.float64, requires_grad=True)
+        states = torch.randn(2, 1, 3, 4, 8, 8, dtype=torch.float64, requires_grad=True)
+        before = states.detach().clone()
+        normalized = cell.input_norm(features)
+        query = F.normalize(cell._heads(F.silu(cell.q(normalized))), dim=-1)
+        expected = cell.project(torch.einsum("...hk,...hkv->...hv", query, states) / math.sqrt(8), normalized)
+        actual = cell.read(states, features)
+        torch.testing.assert_close(actual, expected, rtol=1e-10, atol=1e-10)
+        actual.square().sum().backward()
+        self.assertTrue(torch.isfinite(features.grad).all())
+        self.assertTrue(torch.isfinite(states.grad).all())
+        torch.testing.assert_close(states, before, rtol=0, atol=0)
+
+    def test_candidate_query_contracts_are_parameter_matched_and_immutable(self):
+        tokens = self.tokens(time=5, people=5)
+        for kind, mode in (("kda", "read"), ("kda", "branch"), ("gru", "branch")):
+            model = MotionValueModel(kind, 32, 2, "observation", motion_query=mode).eval()
+            physical = MotionValueModel(kind, 32, 2, "observation").eval()
+            physical.load_state_dict(model.state_dict(), strict=True)
+            self.assertEqual(sum(p.numel() for p in model.parameters()),
+                             sum(p.numel() for p in physical.parameters()))
+            memory = model.encode_history(tokens[:, :-1])
+            states = memory[0] if kind == "kda" else (memory[0],)
+            before = [state.clone() for state in states]
+            queries = tokens[:, -1:].expand(-1, 80, -1, -1).clone()
+            shift = torch.randn(2, 80, 2)
+            queries[:, :, 0, :2] += shift
+            queries[:, :, 1:, :2] -= shift[:, :, None]
+            values = model.read_history(memory, queries)
+            separate = torch.cat([model.read_history(memory, queries[:, t:t+1]) for t in range(80)], 1)
+            torch.testing.assert_close(values, separate, rtol=1e-5, atol=1e-5)
+            for a, b in zip(states, before):
+                torch.testing.assert_close(a, b, rtol=0, atol=0)
+            self.assertGreater(float((values - physical.read_history(memory, queries)).abs().max()), 1e-5)
+            values.mean().backward()
+            self.assertTrue(all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None))
+            permuted = tokens[:, :, [0, *range(5, 0, -1)]]
+            torch.testing.assert_close(model(tokens), model(permuted), rtol=1e-5, atol=1e-5)
+
+    def test_zero_history_read_reduces_to_current_fusion_and_hidden_frames_do_not_write(self):
+        model = MotionValueModel("kda", 32, 2, "observation", use_history=False, motion_query="read")
+        tokens = self.tokens(time=5, people=5)
+        memory = model.encode_history(tokens[:, :-1])
+        query = tokens[:, -1:]
+        physical = model.physical_features(query, memory[1][:, None])
+        humans = query[:, :, 1:]
+        active = humans[..., 12] > 0
+        geometry = torch.cat((humans[..., :10], active[..., None].float()), -1)
+        robots = model.robot_encoder(query[:, :, 0, :9])[:, :, None].expand(-1, -1, 5, -1)
+        expected = model.value_head(model._pool(model.fusion(torch.cat((robots, physical, geometry), -1)), active)).squeeze(-1)
+        torch.testing.assert_close(model(tokens), expected[:, 0], rtol=0, atol=0)
+        observed = MotionValueModel("kda", 32, 2, "observation", motion_query="read")
+        changed = tokens.clone()
+        changed[:, 1:3, 1:, :10] *= -9
+        for a, b in zip(observed.encode_history(tokens[:, :-1])[0], observed.encode_history(changed[:, :-1])[0]):
+            torch.testing.assert_close(a, b, rtol=0, atol=0)
+
     def test_official_no_convolution_mixer_parity(self):
         root = Path(os.environ.get("FLA_REFERENCE", "/home/abc/workspace/il_x_rl_candidates_20261003/repos/flash-linear-attention"))
         if not (root / "fla/layers/kda.py").exists():
