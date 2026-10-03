@@ -1,4 +1,5 @@
 import ast
+import configparser
 import math
 import os
 from pathlib import Path
@@ -153,6 +154,29 @@ class MotionTests(unittest.TestCase):
         for model in (a, b, MotionValueModel("gru", 32, 2), MotionValueModel("kda", 32, 2, use_history=False)):
             self.assertTrue(torch.isfinite(model(torch.zeros(2, 1, 2, 13))).all())
             self.assertTrue(torch.isfinite(model(torch.zeros(2, 5, 2, 13))).all())
+
+    def test_factory_reload_and_candidate_reads_preserve_committed_state(self):
+        from shixu.model import build_model
+        for kind in ("kda", "gru"):
+            config = configparser.ConfigParser()
+            config.read_dict({"model": {"architecture": "motion", "backbone": kind,
+                                        "width": "32", "layers": "2", "clock": "elapsed"},
+                              "env": {"time_step": ".25"}})
+            model, restored = build_model(config).eval(), build_model(config).eval()
+            restored.load_state_dict(model.state_dict(), strict=True)
+            tokens = self.tokens()
+            torch.testing.assert_close(model(tokens), restored(tokens), rtol=0, atol=0)
+            memory = model.encode_history(tokens[:, :-1])
+            states = memory[0] if kind == "kda" else (memory[0],)
+            before = [state.clone() for state in states]
+            query = tokens[:, -1:]
+            first = model.read_history(memory, query)
+            changed = query.clone()
+            changed[:, :, 0, 5:7] *= -2
+            model.read_history(memory, changed)
+            torch.testing.assert_close(model.read_history(memory, query), first, rtol=0, atol=0)
+            for actual, expected in zip(states, before):
+                torch.testing.assert_close(actual, expected, rtol=0, atol=0)
 
 
 if __name__ == "__main__":
