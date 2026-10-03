@@ -276,6 +276,68 @@ def collision_diagnostic(root, protocol, destination):
     print(json.dumps({k: v["counts"] for k, v in result.items() if isinstance(v, dict)}, indent=2), flush=True)
 
 
+def recall_probe(weights, visits, device, destination):
+    """Frozen legal states and weights; memory removal is diagnostic, not retraining."""
+    from crowd_sim.envs.utils.action import ActionXY
+    checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(checkpoint["config"])
+    policy = ValuePolicy(build_model(cfg), cfg, device)
+    load_weights(policy.model, weights, device)
+    archived = json.loads(Path(visits).read_text())
+    chosen, cells = [], {}
+    for row in archived["episodes"]:
+        key = (row["people"], row["geometry"])
+        if cells.get(key, 0) < 2:
+            chosen.append(row)
+            cells[key] = cells.get(key, 0) + 1
+    records = []
+    original = policy.model.read_history
+    for row in chosen:
+        env = environment(cfg, policy, row["geometry"], row["people"])
+        env.reset(options={"test_case": row["case"]})
+        observer = OccludedTracks(cfg.getfloat("observation", "retention_seconds"))
+        policy.reset()
+        for tick, command in enumerate(row["actions"]):
+            state = observer.observe(env)
+            if tick % 4 == 0:
+                scores = {}
+                for scope in ("all", "visible", "none"):
+                    def read(memory, queries):
+                        states, seen, latest = memory
+                        allowed = torch.zeros_like(seen)
+                        if scope == "all":
+                            allowed = torch.ones_like(seen)
+                        elif scope == "visible":
+                            for key, measured in zip(state.track_ids, state.observed):
+                                allowed[:, key] = measured
+                        return original((states, seen & allowed, latest), queries)
+                    policy.model.read_history = read
+                    try:
+                        scores[scope] = policy.score(state)
+                    finally:
+                        policy.model.read_history = original
+                records.append({"case": row["case"], "geometry": row["geometry"], "people": row["people"],
+                                "tick": tick, "hidden": observer.counts["retained_hidden"],
+                                "selected": {name: int(np.argmax(values)) for name, values in scores.items()},
+                                "hidden_recall_changes_action": int(np.argmax(scores["all"]) != np.argmax(scores["visible"])),
+                                "all_recall_changes_action": int(np.argmax(scores["all"]) != np.argmax(scores["none"]))})
+            policy.history.append(policy.encode(state))
+            _, _, done, truncated, _ = env.step(ActionXY(*command))
+            if done or truncated:
+                break
+    hidden = [row for row in records if row["hidden"]]
+    result = {"checkpoint_sha256": hashlib.sha256(Path(weights).read_bytes()).hexdigest(),
+              "states": len(records), "states_with_retained_hidden": len(hidden),
+              "hidden_recall_action_changes": sum(r["hidden_recall_changes_action"] for r in hidden),
+              "all_recall_action_changes": sum(r["all_recall_changes_action"] for r in records), "records": records,
+              "scope": "Twelve prespecified archived current-value visits (first two cases per geometry/population), "
+                       "uniform every-fourth-step sampling. Identical states and weights for all ablations. "
+                       "Root candidate changes are not proof of better actions or closed-loop improvement."}
+    Path(destination).write_text(json.dumps(result, indent=2))
+    print(json.dumps({k: v for k, v in result.items() if k != "records"}, indent=2), flush=True)
+
+
 def evaluate_weights(path, protocol, device, cases, seed, read_clock=None):
     path = Path(path)
     checkpoint = torch.load(path, map_location="cpu", weights_only=False)
@@ -475,7 +537,7 @@ def comparison(root, protocol):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose", "history-probe", "collisions"))
+    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose", "history-probe", "collisions", "recall-probe"))
     parser.add_argument("--protocol", default=str(PROTOCOL))
     parser.add_argument("--data")
     parser.add_argument("--root")
@@ -507,6 +569,8 @@ def main():
         reentry_probe(args.data, args.root)
     elif args.mode == "collisions":
         collision_diagnostic(Path(args.root), protocol, Path(args.root) / "collision_diagnostic.json")
+    elif args.mode == "recall-probe":
+        recall_probe(args.weights, args.data, args.device, args.root)
     else:
         rows = evaluate_weights(args.weights, protocol, args.device,
                                 protocol["confirmation_cases"] if args.confirmation else protocol["development_cases"],
