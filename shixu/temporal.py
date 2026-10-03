@@ -134,7 +134,7 @@ class ActorMemory(nn.Module):
                 hidden = hidden * visible.any(1)[None, :, None]
             elif features.shape[1]:
                 # A held state is exactly the recurrence over measured frames only.
-                order = torch.argsort(~visible, dim=1, stable=True)
+                order = torch.argsort((~visible).to(torch.int8), dim=1, stable=True)
                 measured = features.gather(1, order[..., None].expand_as(features))
                 lengths = visible.sum(1).cpu().clamp_min(1)
                 packed = nn.utils.rnn.pack_padded_sequence(measured, lengths, batch_first=True, enforce_sorted=False)
