@@ -155,11 +155,12 @@ class MemoryValueModel(OrderedValueModel):
     def __init__(self, substrate="kda", readout="evidence", width=128, layers=2):
         from .temporal import ActorMemory
         super().__init__("actor", width, layers, "observed")
-        if readout not in ("full", "read", "gate", "evidence", "revision"):
+        if readout not in ("full", "read", "static", "gate", "evidence", "revision"):
             raise ValueError("Unknown memory readout")
         self.substrate, self.readout = substrate, readout
         self.temporal_encoder = ActorMemory(substrate, width, layers, evidence_update=readout == "revision")
         self.evidence_gate = nn.Linear(2 * width + 4, width) if readout in ("gate", "evidence") else None
+        self.memory_scale = nn.Parameter(torch.zeros(width)) if readout == "static" else None
 
     def encode_history(self, prefix):
         from .features import motion_evidence
@@ -197,6 +198,8 @@ class MemoryValueModel(OrderedValueModel):
             changes = changes[:, None].expand(-1, count, -1, -1)
             gate = self.evidence_gate(torch.cat((features, m, changes), -1)).sigmoid()
             m = m * gate
+        if self.memory_scale is not None:
+            m = m * self.memory_scale.sigmoid()
         return self.value_head(self._pool(features + m, visible)).squeeze(-1)
 
     def score_candidates(self, prefix, queries):

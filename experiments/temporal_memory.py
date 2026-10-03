@@ -78,6 +78,12 @@ def run_arm(root, protocol, arm, seed, data, device):
             row["elapsed_seconds"] = time.perf_counter() - started
             log.write(json.dumps(row) + "\n")
             log.flush()
+            marker = "il" + str(row["epoch"]) if row["phase"] == "il" else "rl" + str(row["episode"])
+            if marker in protocol.get("diagnostic_snapshots", []):
+                torch.save({"model": model.state_dict(), "seed": seed, "phase": marker,
+                            "config": {section: dict(cfg[section]) for section in cfg.sections()},
+                            "scope": "Diagnostic snapshot, not eligible for final checkpoint selection"},
+                           output / (marker + ".pt"))
             if (row["phase"] == "il" and row["epoch"] % 10 == 0
                     or row["phase"] == "rl" and row["episode"] % 100 == 0):
                 print(seed, arm, row, flush=True)
@@ -115,7 +121,7 @@ def paired_summary(root, protocol):
         custom_time, control_time = [means[arm]["summary"]["success_time"] for arm in (custom, control)]
         time_change = custom_time / control_time - 1 if custom_time and control_time else None
         positive = (np.mean(differences["sr"]) >= protocol["meaningful_success_gain_pp"]
-                    and all(d > 0 for d in differences["sr"])
+                    and sum(d > 0 for d in differences["sr"]) >= protocol.get("direction_agreement_required", len(protocol["seeds"]))
                     and np.mean(differences["cr"]) <= protocol["maximum_collision_increase_pp"]
                     and np.mean(differences["tr"]) <= protocol["maximum_timeout_increase_pp"]
                     and time_change is not None and time_change <= protocol["maximum_success_time_increase_fraction"])
@@ -123,6 +129,16 @@ def paired_summary(root, protocol):
                           "mean_differences_pp": {key: float(np.mean(value)) for key, value in differences.items()},
                           "success_time_change_fraction": time_change,
                           "verdict": "PILOT_POSITIVE" if positive else "NO_CONSISTENT_PILOT_GAIN"})
+        if "paired_sr_90ci_tcritical" in protocol:
+            if len(protocol["seeds"]) != 4:
+                raise ValueError("The frozen t critical value is for four paired seeds only")
+            sr = np.asarray(differences["sr"])
+            radius = protocol["paired_sr_90ci_tcritical"] * sr.std(ddof=1) / np.sqrt(len(sr))
+            interval = [float(sr.mean() - radius), float(sr.mean() + radius)]
+            margin = protocol["practical_equivalence_margin_pp"]
+            contrasts[-1].update(paired_sr_90ci_pp=interval,
+                                 pooled_sr_practical_equivalence=interval[0] > -margin and interval[1] < margin,
+                                 equivalence_scope="Paired aggregate SR only, not safety/time equivalence or absence of a difference")
     result = {"protocol": protocol, "models": means, "contrasts": contrasts,
               "scope": protocol["scope"], "method_entry": False}
     (root / "paired_summary.json").write_text(json.dumps(result, indent=2))
@@ -351,16 +367,27 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("run", "queue", "summarize", "latency", "events", "gate-diagnostic"))
     parser.add_argument("--root", required=True)
-    parser.add_argument("--arm", choices=tuple(json.loads(PROTOCOL.read_text())["arms"]))
-    parser.add_argument("--seeds", type=int, nargs="+", default=[191, 223])
+    parser.add_argument("--protocol", default=str(PROTOCOL))
+    parser.add_argument("--arm")
+    parser.add_argument("--seeds", type=int, nargs="+")
     parser.add_argument("--arms", nargs="+")
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--data")
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
     torch.set_num_threads(1)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-    protocol, root = json.loads(PROTOCOL.read_text()), Path(args.root)
+    protocol, root = json.loads(Path(args.protocol).read_text()), Path(args.root)
+    args.seeds = args.seeds or protocol["seeds"]
+    if args.arm and args.arm not in protocol["arms"]:
+        parser.error("Arm is not part of this frozen protocol")
+    if any(seed not in protocol["seeds"] for seed in args.seeds):
+        parser.error("Seeds must belong to the frozen protocol")
+    if args.arms and any(arm not in protocol["arms"] for arm in args.arms):
+        parser.error("Queue arms must belong to the frozen protocol")
+    if args.workers < 1:
+        parser.error("Workers must be positive")
     if args.mode == "summarize":
         paired_summary(root, protocol)
     elif args.mode == "latency":
@@ -370,10 +397,15 @@ def main():
     elif args.mode == "gate-diagnostic":
         gate_diagnostic(root, protocol, args.device)
     elif args.mode == "queue":
-        for arm in args.arms or protocol["arms"]:
-            for seed in args.seeds:
-                subprocess.run([sys.executable, "-m", "experiments.temporal_memory", "run", "--root", str(root),
-                                "--arm", arm, "--seeds", str(seed), "--data", args.data, "--device", args.device], check=True)
+        if not args.data:
+            parser.error("Queue needs the fixed demonstration data")
+        from concurrent.futures import ThreadPoolExecutor
+        commands = [[sys.executable, "-m", "experiments.temporal_memory", "run", "--root", str(root),
+                     "--protocol", args.protocol, "--arm", arm, "--seeds", str(seed),
+                     "--data", args.data, "--device", args.device]
+                    for seed in args.seeds for arm in args.arms or protocol["arms"]]
+        with ThreadPoolExecutor(max_workers=args.workers) as pool:
+            list(pool.map(lambda command: subprocess.run(command, check=True), commands))
     else:
         if not args.arm or not args.data or len(args.seeds) != 1 or args.seeds[0] not in protocol["seeds"]:
             parser.error("Run needs one frozen seed, one arm and the fixed IL data")

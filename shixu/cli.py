@@ -17,7 +17,7 @@ def main():
     parser.add_argument("command", choices=("smoke", "evaluate", "collect", "train"))
     parser.add_argument("--config")
     parser.add_argument("--backbone", choices=("gru", "mamba", "kda", "gdn2"))
-    parser.add_argument("--readout", choices=("full", "read", "gate", "evidence", "revision"))
+    parser.add_argument("--readout", choices=("full", "read", "static", "gate", "evidence", "revision"))
     parser.add_argument("--order", choices=("scene", "actor"))
     parser.add_argument("--weights")
     parser.add_argument("--device", default="cpu")

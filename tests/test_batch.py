@@ -51,7 +51,7 @@ class BatchParityTests(unittest.TestCase):
         humans = [ObservableState(1 + i, 1, -.2, .3, .3) for i in range(5)]
         state = TrackedState(robot, humans, tuple(range(5)))
         for kind, readout in (("gru", "evidence"), ("kda", "full"), ("kda", "read"),
-                              ("kda", "gate"), ("kda", "evidence"),
+                              ("kda", "static"), ("kda", "gate"), ("kda", "evidence"),
                               ("gdn2", "read"), ("gdn2", "revision")):
             policy = ValuePolicy(MemoryValueModel(kind, readout, 32, 1), cfg)
             policy.set_phase("train")

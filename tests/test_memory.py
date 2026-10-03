@@ -3,7 +3,9 @@ import configparser
 import json
 import os
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -120,7 +122,7 @@ class MemoryTests(unittest.TestCase):
 
     def test_shared_prefix_values_gradients_and_read_only(self):
         for substrate, readout in (("gru", "evidence"), ("kda", "full"), ("kda", "read"),
-                                    ("kda", "gate"), ("kda", "evidence"),
+                                    ("kda", "static"), ("kda", "gate"), ("kda", "evidence"),
                                     ("gdn2", "read"), ("gdn2", "revision")):
             model = MemoryValueModel(substrate, readout, 16, 2).eval()
             x = tokens()
@@ -173,12 +175,35 @@ class MemoryTests(unittest.TestCase):
             self.assertEqual(sum(p.numel() for p in a.parameters()), sum(p.numel() for p in b.parameters()))
             b.load_state_dict(a.state_dict(), strict=True)
 
+    def test_static_scale_is_shared_learnable_and_matches_constant_gate(self):
+        static = MemoryValueModel("kda", "static", 16, 2).eval()
+        dynamic = MemoryValueModel("kda", "gate", 16, 2).eval()
+        common = {k: v for k, v in static.state_dict().items() if k != "memory_scale"}
+        loaded = dynamic.load_state_dict(common, strict=False)
+        self.assertEqual(set(loaded.missing_keys), {"evidence_gate.weight", "evidence_gate.bias"})
+        self.assertFalse(loaded.unexpected_keys)
+        with torch.no_grad():
+            dynamic.evidence_gate.weight.zero_()
+            dynamic.evidence_gate.bias.zero_()
+        self.assertEqual(static.memory_scale.shape, (16,))
+        x = tokens(time=7)
+        torch.testing.assert_close(static(x), dynamic(x), rtol=2e-5, atol=2e-6)
+        static(x).square().sum().backward()
+        self.assertTrue(torch.isfinite(static.memory_scale.grad).all())
+        self.assertGreater(static.memory_scale.grad.abs().sum().item(), 0)
+        self.assertNotIn("memory_scale", MemoryValueModel("kda", "read", 16, 2).state_dict())
+
     def test_factory_and_state_dictionary_roundtrip(self):
         cfg = configparser.ConfigParser()
         cfg.read_dict({"model": {"architecture": "memory", "backbone": "gdn2", "readout": "revision", "width": "16", "layers": "2"}})
         model, restored = build_model(cfg), build_model(cfg)
         restored.load_state_dict(model.state_dict(), strict=True)
         x = tokens()
+        torch.testing.assert_close(model(x), restored(x))
+        cfg.set("model", "backbone", "kda")
+        cfg.set("model", "readout", "static")
+        model, restored = build_model(cfg), build_model(cfg)
+        restored.load_state_dict(model.state_dict(), strict=True)
         torch.testing.assert_close(model(x), restored(x))
 
     def test_cached_gru_compute_control_preserves_values(self):
@@ -206,6 +231,39 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(result[0]["safe_progress_wins_005m"], 1)
         self.assertEqual(result[0]["safe_progress_losses_005m"], 1)
         self.assertEqual(result[0]["custom_collisions"], 0)
+
+    def test_four_seed_gain_and_equivalence_are_different_decisions(self):
+        from experiments.temporal_memory import paired_summary
+        protocol = {"seeds": [307, 331, 359, 383], "arms": {"dynamic": {}, "static": {}},
+                    "people": [5], "geometries": ["circle"], "contrast_pairs": [["dynamic", "static"]],
+                    "meaningful_success_gain_pp": 3, "direction_agreement_required": 3,
+                    "maximum_collision_increase_pp": 2, "maximum_timeout_increase_pp": 2,
+                    "maximum_success_time_increase_fraction": .1, "scope": "Synthetic unit fixture",
+                    "paired_sr_90ci_tcritical": 2.3533634348018234, "practical_equivalence_margin_pp": 3}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for seed, successes in zip(protocol["seeds"], (75, 75, 75, 69)):
+                for arm, count in (("dynamic", successes), ("static", 70)):
+                    output = root / str(seed) / arm
+                    output.mkdir(parents=True)
+                    rows = [{"terminal": "reach_goal" if i < count else "timeout", "navigation_time": 10,
+                             "path": 10, "minimum_clearance": .1, "people": 5, "geometry": "circle"} for i in range(100)]
+                    result = {"episodes": rows, "summary": {"sr": count / 100, "cr": 0, "tr": 1 - count / 100},
+                              "parameters": 1, "training_seconds": 1}
+                    (output / "result.json").write_text(json.dumps(result))
+            with patch("builtins.print"):
+                paired_summary(root, protocol)
+            contrast = json.loads((root / "paired_summary.json").read_text())["contrasts"][0]
+            self.assertEqual(contrast["verdict"], "PILOT_POSITIVE")
+            self.assertFalse(contrast["pooled_sr_practical_equivalence"])
+            for seed in protocol["seeds"]:
+                same = root / str(seed) / "static/result.json"
+                (root / str(seed) / "dynamic/result.json").write_text(same.read_text())
+            with patch("builtins.print"):
+                paired_summary(root, protocol)
+            contrast = json.loads((root / "paired_summary.json").read_text())["contrasts"][0]
+            self.assertEqual(contrast["verdict"], "NO_CONSISTENT_PILOT_GAIN")
+            self.assertTrue(contrast["pooled_sr_practical_equivalence"])
 
 
 if __name__ == "__main__":

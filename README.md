@@ -414,3 +414,33 @@ include the inherited safety filter, and no closed-loop improvement is claimed.
 Raw diagnostics remain in outputs/memory_pilot/gate_diagnostic.json. A new
 read-only intervention/restoration regression brings the local suite to 51
 passing tests.
+
+## Frozen Static-versus-Dynamic Follow-up
+
+This follow-up trains read-only KDA with coefficient1, 128 learned
+state-independent sigmoid channel scales, or the existing generic dynamic
+gate. Actor GRU remains an external reference. Static scales initialize at0.5;
+all shared KDA weights have identical initialization for a paired seed.
+Parameters: 268,177 / 268,305 / 301,585; actor GRU has300,417. Capacity
+differences are reported, not hidden using unused new parameters.
+
+The separate frozen protocol uses four new seeds307/331/359/383 and cases
+400-415 in circle/square with5/10/20 humans. Data, reward, actions,
+50 IL epochs and1,000 MC-RL episodes are unchanged. Diagnostic IL50/RL500
+snapshots are retained, but only the final checkpoint is eligible for the
+primary comparison. Online trajectories still depend on the learned policy.
+
+```bash
+python -m experiments.temporal_memory queue \
+  --protocol experiments/temporal_scale_protocol.json \
+  --data data/demonstrations.pt --root outputs/scale_followup --device cuda
+python -m experiments.temporal_memory summarize \
+  --protocol experiments/temporal_scale_protocol.json --root outputs/scale_followup
+```
+
+Dynamic versus static is the primary contrast. A meaningful gain is at least
+3 pp SR with3/4 positive seed pairs and the unchanged safety/progress limits.
+Practical equivalence requires the paired90% t interval inside +/-3 pp for
+aggregate SR only; failure to find a gain is not equivalence. No result is
+available at protocol freeze, and ordinary dynamic gating is not automatically
+a new social-navigation mechanism.
