@@ -44,11 +44,12 @@ def main():
     backbone = args.backbone or cfg.get("model", "backbone")
     cfg.set("model", "backbone", backbone)
     order = args.order or cfg.get("model", "order", fallback=None)
-    if backbone in ("kda", "gdn2") or args.readout:
+    if (backbone in ("kda", "gdn2") or args.readout) and cfg.get("model", "architecture", fallback=None) != "occlusion":
         cfg.set("model", "architecture", "memory")
     if args.readout:
         cfg.set("model", "readout", args.readout)
-    if order or cfg.get("model", "architecture", fallback=None) == "memory":
+    if (order or cfg.get("model", "architecture", fallback=None) == "memory") and cfg.get(
+            "model", "architecture", fallback=None) != "occlusion":
         cfg.set("model", "representation", "aligned")
         if order:
             cfg.set("model", "order", order)

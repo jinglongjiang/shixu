@@ -218,10 +218,13 @@ class OcclusionValueModel(OrderedValueModel):
     parameters; the number of visible/retained actors is not fixed to five.
     """
 
-    def __init__(self, substrate="kda", width=128, layers=2):
+    def __init__(self, substrate="kda", width=128, layers=2, read_clock="candidate"):
         from .temporal import ActorMemory
         super().__init__("actor", width, layers, "observed")
         self.substrate = substrate
+        if read_clock not in ("candidate", "observation"):
+            raise ValueError("Memory reads use either the candidate or observation clock")
+        self.read_clock = read_clock
         self.human_encoder = nn.Sequential(nn.Linear(11, width), nn.ReLU())
         self.temporal_encoder = (ActorMemory(substrate, width, layers)
                                  if substrate != "current" else None)
@@ -243,19 +246,23 @@ class OcclusionValueModel(OrderedValueModel):
         features, _, measured = self._features(prefix)
         batch, length, people, width = features.shape
         if self.temporal_encoder is None:
-            return None, measured.any(1)
+            return None, measured.any(1), None
         sequence = features.permute(0, 2, 1, 3).reshape(batch * people, length, width)
         masks = measured.permute(0, 2, 1).reshape(batch * people, length)
         states = self.temporal_encoder.encode(sequence, masks, sequence.new_zeros(batch * people, length, 4))
-        return states, measured.any(1)
+        latest = features[:, -1] if length else features.new_zeros(batch, people, width)
+        return states, measured.any(1), latest
 
     def read_history(self, memory, queries):
         features, active, _ = self._features(queries)
-        states, seen = memory
+        states, seen, latest = memory
         batch, count, people, width = features.shape
         if seen.shape != (batch, people):
             raise ValueError("Track slots must agree between history and candidates")
-        if states is not None:
+        if states is not None and self.read_clock == "observation":
+            recalled = self.temporal_encoder.read(states, latest.reshape(batch * people, width), seen.reshape(-1))
+            features = features + recalled.reshape(batch, 1, people, width) * (active & seen[:, None])[..., None]
+        elif states is not None:
             expanded = []
             for state in states:
                 if self.substrate == "gru":
@@ -280,7 +287,8 @@ def build_model(config):
     section = config["model"]
     width, layers = int(section["width"]), int(section["layers"])
     if section.get("architecture") == "occlusion":
-        return OcclusionValueModel(section.get("backbone", "kda"), width, layers)
+        return OcclusionValueModel(section.get("backbone", "kda"), width, layers,
+                                   section.get("read_clock", "candidate"))
     if section.get("architecture") == "memory":
         return MemoryValueModel(section.get("backbone", "kda"), section.get("readout", "evidence"), width, layers)
     if section.get("order"):

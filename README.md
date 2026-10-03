@@ -93,6 +93,35 @@ diagnosis; fresh seeds and separate confirmation cases remain reserved until
 an architecture is selected. A negative version is diagnosed, not relabeled
 as a failed research family. Raw weights, logs and episodes remain local.
 
+The second frozen version, `occlusion_observation_protocol.json`, changes only
+the read clock. Memory is read from the latest legal history frame once per
+actor, then shared by all candidate actions. Candidate geometry remains in the
+spatial value encoder, but it no longer changes the actor's remembered state.
+The weights and parameter count are unchanged by this switch. Both versions
+receive byte-identical episode observations and rewards. The current-track
+reference is reused because it has no learned temporal read; the temporal
+arms are retrained through the complete IL/MC-RL schedule.
+
+```bash
+python -m experiments.occlusion collect \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --data outputs/occlusion_v2/demonstrations.pt
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2 --data outputs/occlusion_v2/demonstrations.pt \
+  --arms gru kda --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2
+```
+
+The observation-clock design is a hypothesis under test, not a claim that
+action-dependent retrieval is generally invalid. In this inherited simulator,
+humans do not react to robot actions, which motivates separating actor memory
+inference from candidate-conditioned geometry evaluation. The change also
+avoids replicating each actor's matrix memory 80 times. Physical consistency,
+runtime reduction and navigation improvement are evaluated separately.
+
 ## Installation
 
 Install a PyTorch build appropriate for your machine first. Then:

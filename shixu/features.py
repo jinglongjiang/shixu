@@ -119,14 +119,16 @@ def window(frames, length, left_pad="repeat"):
         raise ValueError("A positive history length and at least one observed frame are required")
     selected = list(frames)[-length:]
     people = max(frame.shape[-2] for frame in selected)
-    selected = [np.pad(frame, ((0, people - frame.shape[-2]), (0, 0))) for frame in selected]
+    selected = [frame if frame.shape[-2] == people else
+                np.pad(frame, ((0, people - frame.shape[-2]), (0, 0))) for frame in selected]
     first = selected[0] if left_pad == "repeat" else np.zeros_like(selected[0])
     return np.asarray([first] * (length - len(selected)) + selected, dtype=np.float32)
 
 
 def stack_histories(histories):
     people = max(row.shape[-2] for row in histories)
-    return np.stack([np.pad(row, ((0, 0), (0, people - row.shape[-2]), (0, 0))) for row in histories])
+    return np.stack([row if row.shape[-2] == people else
+                     np.pad(row, ((0, 0), (0, people - row.shape[-2]), (0, 0))) for row in histories])
 
 
 def motion_evidence(tokens):

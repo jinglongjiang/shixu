@@ -106,6 +106,30 @@ class OcclusionTests(unittest.TestCase):
                 load_weights(other, path, "cpu")
                 torch.testing.assert_close(model(torch.zeros(1, 4, 2, 13)), other(torch.zeros(1, 4, 2, 13)))
 
+    def test_observation_clock_read_is_shared_and_parameter_matched(self):
+        from unittest.mock import patch
+        candidate = OcclusionValueModel("kda", 32, 1)
+        real = OcclusionValueModel("kda", 32, 1, "observation")
+        real.load_state_dict(candidate.state_dict())
+        self.assertEqual(sum(p.numel() for p in candidate.parameters()), sum(p.numel() for p in real.parameters()))
+        history = torch.randn(2, 4, 6, 13)
+        history[:, :, 1:, 10] = 1
+        history[:, :, 1:, 12] = 1
+        queries = history[:, -1:].expand(-1, 80, -1, -1).clone()
+        queries[:, :, 0, 0] += torch.linspace(-1, 1, 80)
+        memory = real.encode_history(history)
+        with patch.object(real.temporal_encoder, "read", wraps=real.temporal_encoder.read) as called:
+            values = real.read_history(memory, queries)
+            self.assertEqual(called.call_args.args[1].shape, (10, 32))
+        self.assertTrue(torch.isfinite(values).all())
+        self.assertGreater(float(values.std().detach()), 1e-6)
+        values.sum().backward()
+        self.assertTrue(all(torch.isfinite(p.grad).all() for p in real.parameters() if p.grad is not None))
+        a = OcclusionValueModel("current", 32, 1, "candidate")
+        b = OcclusionValueModel("current", 32, 1, "observation")
+        b.load_state_dict(a.state_dict())
+        torch.testing.assert_close(a(history), b(history), rtol=0, atol=0)
+
 
 if __name__ == "__main__":
     unittest.main()

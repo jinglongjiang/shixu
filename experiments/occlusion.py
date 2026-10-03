@@ -16,6 +16,7 @@ import torch
 from experiments.temporal_order import summarize
 from shixu.model import build_model, load_weights
 from shixu.policy import ValuePolicy
+from shixu.observations import OccludedTracks
 from shixu.runner import environment, orca_teacher, run_episode
 from shixu.training import train
 
@@ -30,6 +31,7 @@ def configuration(protocol, arm):
     for section, key, value in (
         ("model", "architecture", "occlusion"), ("model", "representation", "tracks"),
         ("model", "backbone", arm), ("model", "width", protocol["width"]),
+        ("model", "read_clock", protocol.get("read_clock", "candidate")),
         ("model", "layers", protocol["layers"]), ("buffer", "seq_len", protocol["history"]),
         ("observation", "retention_seconds", protocol["retention_seconds"]),
         ("train", "il_epochs", protocol["il_epochs"]),
@@ -84,7 +86,60 @@ def exposure(episode):
             "reentries": reentries}
 
 
+def retention_diagnostic(data_path, protocol, destination):
+    """Replay natural demonstrations; privileged geometry is diagnostic only."""
+    from crowd_sim.envs.utils.action import ActionXY
+    from shixu.features import encode_tracks
+    data = torch.load(data_path, map_location="cpu", weights_only=False)
+    cfg = configuration(protocol, "current")
+    policy = ValuePolicy(build_model(cfg), cfg)
+    env = environment(cfg, policy, protocol["training_geometry"], protocol["training_people"])
+    errors, near_errors, ages, velocity_errors = [], [], [], []
+    compared, different_safe_sets = 0, {str(h): 0 for h in (.25, 1., 2.)}
+    for episode in data["episodes"]:
+        env.reset(options={"test_case": episode["case"]})
+        observer = OccludedTracks(protocol["retention_seconds"])
+        for frame, command in zip(episode["tokens"], episode["actions"]):
+            state = observer.observe(env)
+            np.testing.assert_allclose(encode_tracks(state), frame, atol=2e-5, rtol=1e-5)
+            by_key = {row[0]: obj for obj, row in observer.tracks.items()}
+            true_humans = []
+            has_hidden = False
+            for key, estimate, measured, age in zip(state.track_ids, state.human_states, state.observed, state.ages):
+                truth = by_key[key].get_observable_state()
+                true_humans.append(truth)
+                if not measured:
+                    has_hidden = True
+                    error = float(np.hypot(estimate.px - truth.px, estimate.py - truth.py))
+                    errors.append(error)
+                    ages.append(age)
+                    velocity_errors.append(float(np.hypot(estimate.vx - truth.vx, estimate.vy - truth.vy)))
+                    if np.hypot(truth.px - state.self_state.px, truth.py - state.self_state.py) < 2:
+                        near_errors.append(error)
+            if has_hidden:
+                compared += 1
+                for horizon in (.25, 1., 2.):
+                    policy.time_step = horizon
+                    _, _, nominal = policy.aligned_candidates(state)
+                    _, _, actual = policy.aligned_candidates(state._replace(human_states=true_humans))
+                    different_safe_sets[str(horizon)] += int(np.any((nominal >= .2) != (actual >= .2)))
+                policy.time_step = cfg.getfloat("env", "time_step")
+            env.step(ActionXY(*command))
+    def distribution(values):
+        return {"count": len(values), "mean": float(np.mean(values)) if values else None,
+                "quantiles_50_90_99": np.quantile(values, [.5, .9, .99]).tolist() if values else None,
+                "above_005": float(np.mean(np.array(values) > .05)) if values else None}
+    result = {"episodes": len(data["episodes"]), "position_error_m": distribution(errors),
+              "near_2m_position_error_m": distribution(near_errors),
+              "velocity_error_mps": distribution(velocity_errors), "ages_seconds": distribution(ages),
+              "states_with_retained_hidden": compared, "endpoint_safe_support_changed_by_horizon": different_safe_sets,
+              "scope": "Offline hidden-current-state truth substitution with linear endpoint projection. Not full-future truth, swept-path safety, a deployed oracle or proof of closed-loop gain"}
+    Path(destination).write_text(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2), flush=True)
+
+
 def evaluate_weights(path, protocol, device, cases, seed):
+    path = Path(path)
     checkpoint = torch.load(path, map_location="cpu", weights_only=False)
     cfg = configparser.ConfigParser()
     cfg.read_dict(checkpoint["config"])
@@ -206,14 +261,25 @@ def queue(args, protocol):
 def comparison(root, protocol):
     models = {}
     for arm in protocol["arms"]:
-        rows = [json.loads((root / str(seed) / arm / "result.json").read_text()) for seed in protocol["seeds"]]
-        if any(r["protocol"] != protocol for r in rows):
+        reference = protocol.get("reference_roots", {}).get(arm)
+        origin = Path(reference) if reference else root
+        rows = [json.loads((origin / str(seed) / arm / "result.json").read_text()) for seed in protocol["seeds"]]
+        if reference:
+            if arm != "current":
+                raise ValueError("Only the unchanged current-track arm may be reused")
+            shared = ("width", "layers", "history", "retention_seconds", "sensor", "association", "il_episodes",
+                      "il_epochs", "il_case_start", "rl_episodes", "rl_case_start", "batch_size",
+                      "rl_updates_per_episode", "training_people", "training_geometry", "people", "geometries",
+                      "development_cases", "seeds")
+            if any(any(r["protocol"][key] != protocol[key] for key in shared) for r in rows):
+                raise ValueError("Reused baseline has different data, budget or evaluation")
+        elif any(r["protocol"] != protocol for r in rows):
             raise ValueError("Result protocol mismatch")
         models[arm] = {"summary": summarize([e for r in rows for e in r["episodes"]]),
                        "primary_by_seed": [summarize([e for e in r["episodes"] if e["people"] > 5]) for r in rows],
                        "cells": [{"people": n, **summarize([e for r in rows for e in r["episodes"] if e["people"] == n])}
                                  for n in protocol["people"]],
-                       "parameters": rows[0]["parameters"],
+                       "parameters": rows[0]["parameters"], "reference_root": reference,
                        "training_seconds": [r["training_seconds"] for r in rows],
                        "inference_median_ms": [r["score_median_ms"] for r in rows],
                        "exposure": {key: sum(e["exposure"][key] for r in rows for e in r["episodes"])
@@ -242,7 +308,7 @@ def comparison(root, protocol):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize"))
+    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose"))
     parser.add_argument("--protocol", default=str(PROTOCOL))
     parser.add_argument("--data")
     parser.add_argument("--root")
@@ -265,6 +331,8 @@ def main():
         queue(args, protocol)
     elif args.mode == "summarize":
         comparison(Path(args.root), protocol)
+    elif args.mode == "diagnose":
+        retention_diagnostic(args.data, protocol, args.root)
     else:
         rows = evaluate_weights(args.weights, protocol, args.device,
                                 protocol["confirmation_cases"] if args.confirmation else protocol["development_cases"], args.seed)
