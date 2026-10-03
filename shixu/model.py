@@ -322,6 +322,11 @@ class OcclusionValueModel(OrderedValueModel):
 def build_model(config):
     section = config["model"]
     width, layers = int(section["width"]), int(section["layers"])
+    if section.get("architecture") == "motion":
+        from .motion import MotionValueModel
+        return MotionValueModel(section.get("backbone", "kda"), width, layers,
+                                section.get("clock", "elapsed"), section.getboolean("use_history", fallback=True),
+                                config.getfloat("env", "time_step", fallback=.25))
     if section.get("architecture") == "occlusion":
         return OcclusionValueModel(section.get("backbone", "kda"), width, layers,
                                    section.get("read_clock", "candidate"), section.get("interaction_order", "read"),

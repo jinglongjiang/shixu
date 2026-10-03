@@ -728,3 +728,54 @@ local SHA256 checksums; laptop timing also matches its original checksum.
 The server-only temporary workspace is removed after verification, with the
 installed environment left intact. No additional training or architecture
 is started by this analysis.
+
+## Occlusion Research Loop
+
+The occlusion experiments use legal measured/retained tracks, five-person
+ORCA IL and online MC refinement, followed by reloaded-final-weight tests on
+5/10/20 people in circle and square. The frozen primary endpoint is equally
+weighted 10/20-person success, with collision, timeout and progress checks.
+The teacher may use simulator truth; the student receives only legal input.
+Temporary server outputs are copied locally before deletion. Development
+results are not final evidence: a promising mechanism needs unseen seeds and
+cases, with all controls retrained on the same host.
+
+The V5 private-successor comparison completed all four seeds419/443/467/491.
+Overall SR/CR/timeout are75.00/10.16/14.84% for measured-only KDA branches,
+77.34/10.68/11.98% for CV-pseudowrite branches, and85.94/5.99/8.07% for the
+strongest completed context-GRU reference. Their primary SRs are71.48/74.61/
+85.55%. Measured-only branching loses to that reference in4/4 pairs. Neither
+private branching nor excluding legal CV writes establishes a navigation gain.
+Results remain in outputs/occlusion_v5; this is a version-level negative result.
+
+A separate frozen-consumer shadow replaces only currently retained hidden
+positions/velocities with current simulator truth, without introducing unseen
+people or modifying tracker memory. Four-seed primary gain is only0.39 pp
+(one positive, two negative, one tie). This is not a full-future upper bound:
+it shows no large demonstrated hidden-state accuracy headroom for that frozen
+consumer, not that temporal reasoning or occlusion handling is unnecessary.
+Records remain in outputs/occlusion_v1/*/current/truth_retained.json.
+
+V6 tests physical actor memory before current candidate geometry/goal fusion.
+It uses the official-shaped KDA no-short-convolution mixer, verified against
+the pinned FLA layer, rather than claiming that mixer or its output gate as new.
+All motion-family models receive the same physical features and legal elapsed
+interval input. Only the custom elapsed-clock arm scales channel log-decay by
+the real interval; vanilla KDA uses unit decay per measurement. Controls include
+same-placement GRU, CV pseudowrites, identical-capacity zero motion history,
+current-only and the strong completed context-GRU. There is no extra loss or
+prediction model. The clock mechanism is a hypothesis, not a demonstrated win.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_motion_protocol.json \
+  --root outputs/occlusion_v6 --data outputs/occlusion_v6/demonstrations.pt \
+  --arms motion_gru motion_kda motion_elapsed motion_imputed motion_nohistory \
+  --device cuda --workers 2
+```
+
+Generic time-aware recurrence already exists in GRU-D and time-aware LSTM;
+actor memory and delta-rule erase/write are also existing mechanisms. The
+remaining question is whether legal observation-time semantics and this
+physical/current fusion improve closed-loop navigation beyond those controls.
+No novelty or safety guarantee is earned by passing numerical tests.
