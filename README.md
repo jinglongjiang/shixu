@@ -779,3 +779,12 @@ actor memory and delta-rule erase/write are also existing mechanisms. The
 remaining question is whether legal observation-time semantics and this
 physical/current fusion improve closed-loop navigation beyond those controls.
 No novelty or safety guarantee is earned by passing numerical tests.
+
+V6 scientific source is frozen at54d19cc. The 4090 runs PyTorch2.9.1/cu128,
+and the3060 runs2.1.0/cu121; development comparisons retain this host boundary.
+The CUDA packed-GRU test on2.9.1 differed from explicit stepping by2.36e-4
+with default cuDNN TF32, and3.86e-6 with TF32 disabled. Float64 validates the
+recurrence separately; production float32 kernels are not bitwise identical.
+The archived optimized seed419 GRU replay changes controls in9/96 episodes
+but changes no terminal outcomes. These checks cannot justify universal action
+parity. Fresh confirmation must use one frozen implementation on one host.

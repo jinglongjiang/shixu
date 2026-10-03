@@ -37,8 +37,9 @@ class OcclusionTests(unittest.TestCase):
     @unittest.skipUnless(torch.cuda.is_available(), "CUDA unavailable")
     def test_measured_sequence_pack_runs_on_cuda(self):
         from shixu.temporal import ActorMemory
-        memory = ActorMemory("gru", 32, 2).cuda()
-        sequence = torch.randn(4, 6, 32, device="cuda")
+        # Check recurrence semantics without cuDNN's shape-dependent TF32 rounding.
+        memory = ActorMemory("gru", 32, 2).cuda().double()
+        sequence = torch.randn(4, 6, 32, device="cuda", dtype=torch.float64)
         measured = torch.tensor([[1, 0, 1, 0, 1, 0], [0, 0, 0, 0, 0, 0],
                                  [0, 1, 0, 0, 0, 1], [1, 1, 1, 1, 1, 1]], device="cuda", dtype=torch.bool)
         packed = memory.encode(sequence, measured, sequence.new_zeros(4, 6, 4))[0]
@@ -46,7 +47,7 @@ class OcclusionTests(unittest.TestCase):
         for tick in range(6):
             _, proposed = memory.gru(sequence[:, tick:tick + 1], explicit)
             explicit = torch.where(measured[:, tick][None, :, None], proposed, explicit)
-        torch.testing.assert_close(packed, explicit, rtol=1e-5, atol=1e-6)
+        torch.testing.assert_close(packed, explicit, rtol=1e-9, atol=1e-10)
 
     def test_unseen_and_hidden_truth_do_not_leak(self):
         front, back = Human(1, 0), Human(2, 0, .2)
