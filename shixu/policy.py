@@ -112,7 +112,12 @@ class ValuePolicy:
         if self.encode is encode_aligned:
             tokens, rewards, clearances = self.aligned_candidates(state)
             prefix = window(list(self.history) + [current], self.length)[1:]
-            sequences = np.concatenate((np.broadcast_to(prefix, (len(tokens), *prefix.shape)), tokens[:, None]), axis=1)
+            if hasattr(self.model, "score_candidates"):
+                values = self.model.score_candidates(torch.as_tensor(prefix[None], device=self.device),
+                                                       torch.as_tensor(tokens[None], device=self.device)).squeeze(0)
+            else:
+                sequences = np.concatenate((np.broadcast_to(prefix, (len(tokens), *prefix.shape)), tokens[:, None]), axis=1)
+                values = self.model(torch.as_tensor(sequences, device=self.device))
         else:
             sequences, rewards, clearances = [], [], []
             for action in self.action_space:
@@ -121,7 +126,7 @@ class ValuePolicy:
                 reward, clearance = self.immediate_reward(state, future, action)
                 rewards.append(reward)
                 clearances.append(clearance)
-        values = self.model(torch.as_tensor(np.asarray(sequences), device=self.device))
+            values = self.model(torch.as_tensor(np.asarray(sequences), device=self.device))
         scores = torch.as_tensor(rewards, device=self.device) + self.gamma * values
         cfg = self.config
         if self.phase != "train":

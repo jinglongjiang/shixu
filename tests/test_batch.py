@@ -9,12 +9,39 @@ import torch
 
 from crowd_sim.envs.utils.state import FullState, ObservableState
 from shixu.features import encode_aligned, window
-from shixu.model import OrderedValueModel
+from shixu.model import MemoryValueModel, OrderedValueModel
 from shixu.observations import TrackedState
 from shixu.policy import ValuePolicy, successor
 
 
 class BatchParityTests(unittest.TestCase):
+    def test_memory_shared_prefix_preserves_candidate_consumer(self):
+        torch.set_num_threads(1)
+        torch.manual_seed(47)
+        cfg = configparser.ConfigParser()
+        cfg.read(Path(__file__).resolve().parents[1] / "shixu/default.ini")
+        cfg.set("model", "representation", "aligned")
+        robot = FullState(0.2, -1.4, 0.1, 0.2, 0.3, 0, 4, 1, 0)
+        humans = [ObservableState(1 + i, 1, -.2, .3, .3) for i in range(5)]
+        state = TrackedState(robot, humans, tuple(range(5)))
+        for kind, readout in (("gru", "evidence"), ("kda", "full"), ("kda", "read"),
+                              ("kda", "gate"), ("kda", "evidence"),
+                              ("gdn2", "read"), ("gdn2", "revision")):
+            policy = ValuePolicy(MemoryValueModel(kind, readout, 32, 1), cfg)
+            policy.set_phase("train")
+            policy.history.extend([encode_aligned(state)] * 3)
+            sequences = [window(list(policy.history) + [encode_aligned(state), encode_aligned(successor(state, a, .25))], 24)
+                         for a in policy.action_space]
+            with torch.inference_mode():
+                values = policy.model(torch.as_tensor(np.array(sequences))).numpy()
+            rewards = [policy.immediate_reward(state, successor(state, a, .25), a)[0] for a in policy.action_space]
+            expected = np.array(rewards) + (policy.gamma * torch.as_tensor(values)).numpy()
+            expected[0] -= 1e-3
+            actual = policy.score(state)
+            np.testing.assert_allclose(actual, expected, atol=2e-6, rtol=2e-5)
+            self.assertEqual(np.argmax(actual), np.argmax(expected))
+            self.assertEqual(len(policy.history), 3)
+
     def test_candidates_and_scores_match_scalar_reference(self):
         torch.set_num_threads(1)
         cfg = configparser.ConfigParser()

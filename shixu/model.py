@@ -120,7 +120,7 @@ class OrderedValueModel(nn.Module):
             hidden = torch.where(visible[:, tick][None, :, None], proposed, hidden)
         return self.temporal_encoder.norm(hidden[-1])
 
-    def forward(self, tokens):
+    def _features(self, tokens):
         if tokens.ndim != 4 or tokens.shape[-2:] != (8, 13):
             raise ValueError("Expected aligned history [B,T,8,13]")
         robot, humans = tokens[:, :, 0], tokens[:, :, 3:8]
@@ -134,6 +134,10 @@ class OrderedValueModel(nn.Module):
         robot_features = self.robot_encoder(robot_input)[..., None, :].expand(-1, -1, 5, -1)
         human_features = self.human_encoder(human_input)
         features = self.fusion(torch.cat((robot_features, human_features), -1))
+        return features, visible
+
+    def forward(self, tokens):
+        features, visible = self._features(tokens)
         if self.order == "scene":
             last = self.temporal_encoder(self._pool(features, visible))[:, -1]
         else:
@@ -143,6 +147,77 @@ class OrderedValueModel(nn.Module):
             last = self._actor_last(sequences, masks).reshape(batch, people, width)
             last = self._pool(last, visible[:, -1])
         return self.value_head(last).squeeze(-1)
+
+
+class MemoryValueModel(OrderedValueModel):
+    """Same observed stem and planner; explicit shared-prefix temporal queries."""
+
+    def __init__(self, substrate="kda", readout="evidence", width=128, layers=2):
+        from .temporal import ActorMemory
+        super().__init__("actor", width, layers, "observed")
+        if readout not in ("full", "read", "gate", "evidence", "revision"):
+            raise ValueError("Unknown memory readout")
+        self.substrate, self.readout = substrate, readout
+        self.temporal_encoder = ActorMemory(substrate, width, layers, evidence_update=readout == "revision")
+        self.evidence_gate = nn.Linear(2 * width + 4, width) if readout in ("gate", "evidence") else None
+
+    def encode_history(self, prefix):
+        from .features import motion_evidence
+        features, visible = self._features(prefix)
+        batch, length, people, width = features.shape
+        evidence = motion_evidence(prefix)
+        sequences = features.permute(0, 2, 1, 3).reshape(batch * people, length, width)
+        masks = visible.permute(0, 2, 1).reshape(batch * people, length)
+        changes = evidence.permute(0, 2, 1, 3).reshape(batch * people, length, 4)
+        states = self.temporal_encoder.encode(sequences, masks, changes)
+        last_change = evidence[:, -1] if length else prefix.new_zeros(batch, people, 4)
+        return states, visible.any(1), last_change
+
+    def read_history(self, memory, queries):
+        states, seen, evidence = memory
+        features, visible = self._features(queries)
+        batch, count, people, width = features.shape
+        if seen.shape != (batch, people):
+            raise ValueError("Prefix and query batches differ")
+        repeated = []
+        for state in states:
+            if self.substrate == "gru":
+                repeated.append(state.reshape(state.shape[0], batch, people, width)[:, :, None].expand(
+                    -1, -1, count, -1, -1).reshape(state.shape[0], batch * count * people, width))
+            else:
+                repeated.append(state.reshape(batch, people, *state.shape[1:])[:, None].expand(
+                    -1, count, -1, -1, -1, -1).reshape(batch * count * people, *state.shape[1:]))
+        flat = features.reshape(batch * count * people, width)
+        m = self.temporal_encoder.read(tuple(repeated), flat, visible.reshape(-1), advance=self.readout == "full")
+        m = m.reshape(batch, count, people, width)
+        usable = visible if self.readout == "full" else visible & seen[:, None]
+        m = m * usable[..., None]
+        if self.evidence_gate is not None:
+            changes = evidence if self.readout == "evidence" else torch.zeros_like(evidence)
+            changes = changes[:, None].expand(-1, count, -1, -1)
+            gate = self.evidence_gate(torch.cat((features, m, changes), -1)).sigmoid()
+            m = m * gate
+        return self.value_head(self._pool(features + m, visible)).squeeze(-1)
+
+    def score_candidates(self, prefix, queries):
+        return self.read_history(self.encode_history(prefix), queries)
+
+    def forward(self, tokens):
+        if tokens.shape[1] < 1:
+            raise ValueError("A value query needs at least one frame")
+        return self.score_candidates(tokens[:, :-1], tokens[:, -1:]).squeeze(1)
+
+
+def build_model(config):
+    section = config["model"]
+    width, layers = int(section["width"]), int(section["layers"])
+    if section.get("architecture") == "memory":
+        return MemoryValueModel(section.get("backbone", "kda"), section.get("readout", "evidence"), width, layers)
+    if section.get("order"):
+        if section.get("backbone", "gru") != "gru":
+            raise ValueError("The original processing-order model uses GRU")
+        return OrderedValueModel(section["order"], width, layers, section.get("feature_contract", "observed"))
+    return ValueModel(section.get("backbone", "gru"), width, layers)
 
 
 def load_weights(model, path, device):

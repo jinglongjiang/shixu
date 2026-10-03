@@ -23,4 +23,4 @@ where = [".", "vendor"]
 shixu = ["default.ini"]
 
 [tool.setuptools.data-files]
-"share/shixu" = ["vendor/CROWDNAV_LICENSE"]
+"share/shixu" = ["vendor/CROWDNAV_LICENSE", "vendor/FLA_LICENSE"]

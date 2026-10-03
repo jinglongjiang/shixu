@@ -1,6 +1,7 @@
 """Checkpoint-compatible local camrl observation encoding."""
 
 import numpy as np
+import torch
 
 
 def encode_state(state):
@@ -92,3 +93,24 @@ def window(frames, length):
         raise ValueError("A positive history length and at least one observed frame are required")
     selected = list(frames)[-length:]
     return np.asarray([selected[0]] * (length - len(selected)) + selected, dtype=np.float32)
+
+
+def motion_evidence(tokens):
+    """Causal velocity innovation at each real prefix frame, never at a query."""
+    humans = tokens[:, :, 3:8]
+    velocity, visible = humans[..., 3:5], humans[..., 12] > 0
+    if tokens.shape[1] == 0:
+        return tokens.new_zeros(tokens.shape[0], 0, 5, 4)
+    valid = visible.to(velocity.dtype)
+    sums = torch.cat((torch.zeros_like(velocity[:, :1]), (velocity * valid[..., None]).cumsum(1)), 1)
+    counts = torch.cat((torch.zeros_like(valid[:, :1]), valid.cumsum(1)), 1)
+    ticks = torch.arange(tokens.shape[1], device=tokens.device)
+    starts = (ticks - 3).clamp_min(0)
+    count = counts[:, ticks] - counts[:, starts]
+    old = (sums[:, ticks] - sums[:, starts]) / count.clamp_min(1)[..., None]
+    previous = torch.cat((torch.zeros_like(visible[:, :1]), visible[:, :-1]), 1)
+    allowed = visible & previous & (count > 0)
+    change = velocity - old
+    speed = velocity.norm(dim=-1) - old.norm(dim=-1)
+    row = torch.cat((change, speed[..., None], allowed[..., None].to(velocity.dtype)), -1)
+    return row * allowed[..., None]

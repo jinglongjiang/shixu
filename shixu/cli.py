@@ -7,7 +7,7 @@ import time
 import numpy as np
 import torch
 
-from .model import OrderedValueModel, ValueModel, load_weights
+from .model import build_model, load_weights
 from .policy import ValuePolicy
 from .runner import environment, orca_teacher, run_episode
 
@@ -16,7 +16,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("smoke", "evaluate", "collect", "train"))
     parser.add_argument("--config")
-    parser.add_argument("--backbone", choices=("gru", "mamba"))
+    parser.add_argument("--backbone", choices=("gru", "mamba", "kda", "gdn2"))
+    parser.add_argument("--readout", choices=("full", "read", "gate", "evidence", "revision"))
     parser.add_argument("--order", choices=("scene", "actor"))
     parser.add_argument("--weights")
     parser.add_argument("--device", default="cpu")
@@ -43,15 +44,15 @@ def main():
     backbone = args.backbone or cfg.get("model", "backbone")
     cfg.set("model", "backbone", backbone)
     order = args.order or cfg.get("model", "order", fallback=None)
-    if order:
-        if backbone != "gru":
-            parser.error("Processing-order comparison currently uses GRU for both arms")
+    if backbone in ("kda", "gdn2") or args.readout:
+        cfg.set("model", "architecture", "memory")
+    if args.readout:
+        cfg.set("model", "readout", args.readout)
+    if order or cfg.get("model", "architecture", fallback=None) == "memory":
         cfg.set("model", "representation", "aligned")
-        cfg.set("model", "order", order)
-        model = OrderedValueModel(order, cfg.getint("model", "width"), cfg.getint("model", "layers"),
-                                  cfg.get("model", "feature_contract", fallback="observed"))
-    else:
-        model = ValueModel(backbone, cfg.getint("model", "width"), cfg.getint("model", "layers"))
+        if order:
+            cfg.set("model", "order", order)
+    model = build_model(cfg)
     if args.weights:
         load_weights(model, args.weights, args.device)
     elif args.command == "evaluate":

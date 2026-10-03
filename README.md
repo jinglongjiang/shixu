@@ -1,8 +1,8 @@
 # shixu
 
 A small temporal crowd-navigation research framework extracted from the user's
-local camrl Mamba-VL project. This is a cleaned baseline, not a new algorithm or
-a claim that actor-specific memory has already improved navigation.
+local camrl Mamba-VL project. It contains the cleaned parent and explicit
+temporal architecture experiments, not an established new-method claim.
 
 ## One Main Path
 
@@ -26,9 +26,9 @@ identity-bound human histories -> shared temporal encoder -> crowd pooling
 
 The processing-order prototype now compares scene-first and actor-first GRU
 using identical aligned observations and exactly the same parameters. Every
-human uses the same GRU weights, with independent histories. No dual-memory
-system, contradiction detector, KDA or additional prediction head is added.
-This is a controlled structural experiment, not a selective-revision method.
+human uses the same GRU weights, with independent histories. That trial adds no
+dual-memory system, contradiction detector or additional prediction head.
+That processing-order experiment remains a baseline, not a selective-revision method.
 
 The observation-only contract consumes robot raw state9 and human observed
 motion9 plus presence. It removes redundant legacy relation features rather
@@ -42,6 +42,7 @@ remains only for reproducing the first trial and loading its checkpoints.
 | shixu/features.py | Legacy observation contract and history windows |
 | shixu/observations.py | Episode-local observed association keys, never numeric ID features |
 | shixu/model.py | Frame encoder, replaceable temporal encoder, value head |
+| shixu/temporal.py | Compact GRU/KDA/GDN2 actor memories; real-write/candidate-read interface |
 | shixu/policy.py | Original action support and successor-value evaluation |
 | shixu/replay.py | Episode-safe windows and MC targets; no duplicated window archive |
 | shixu/runner.py | One runner for collection, training and evaluation |
@@ -133,7 +134,7 @@ the frozen +3 pp / 3-of-4 direction gate: NO_STABLE_GAIN. Pooled square gains
 and smaller actor seed dispersion are exploratory, not a new-method claim.
 Same-device RTX 3060 scoring medians are 3.110 / 4.418 ms for scene / actor;
 actor-first is not a computation-saving result. No GDN/KDA/revision cell is
-installed on the strength of these mixed outcomes.
+claimed successful on the strength of these mixed outcomes.
 
 ```bash
 python -m experiments.temporal_latency --root outputs/temporal_v1 --seed 17
@@ -176,8 +177,8 @@ the small masked-prefix intervention does not reject the research family.
 Attention and pooling both move relative to recurrence, so this comparison
 does not isolate identity continuity alone.
 
-Reserved fresh rescue seeds 191/223 were not run because the primary gate
-failed. No GDN/KDA, new reward, extra teacher or further rescue was added.
+Reserved fresh rescue seeds 191/223 were not run within that study because the
+primary gate failed. That study added no GDN/KDA, new reward or extra teacher.
 Across the separate initial, fresh and rescue cohorts, 20 models and 1,920
 matched evaluation episodes are retained locally. None is relabeled as a new
 method. All 38 local tests pass with the original comparison assets configured;
@@ -219,3 +220,81 @@ Simulator IDs are association keys attached to observed states, not neural
 features. Human goals/future states are not written into deployable inputs.
 Weights, data, videos, credentials and old experiment artifacts are excluded
 from version control.
+
+## Explicit Memory Architecture Pilot
+
+A separately authorized pilot compares two mechanisms without assuming the
+newer operator is better:
+
+```text
+observed actor prefix -> one shared GRU/KDA/GDN2 -> per-actor state
+candidate successor  -> query that state       -> current feature + memory
+                     -> original attention/max pool -> scalar value/lookahead
+```
+
+Training uses the first T-1 real frames as the prefix and the last real frame
+as the query. In inference, the query is an analytic candidate successor. It
+never changes the persistent observation history. All 80 queries share one
+prefix encoding. The full-window control updates a disposable state copy with
+the query; it also never persists hypothetical observations.
+
+KDA evidence fusion compares `f + gate(f,m,e)*m` with the same-capacity generic
+gate using zero evidence. GDN2 evidence revision supplies `e` to the existing
+channel-wise erase/write projections, compared with zero evidence at exactly
+the same parameter count. Here `e` is causal observed velocity innovation,
+signed speed change and a validity bit, computed only from real prefix frames.
+It is not a hidden intent, goal change timestamp or future truth.
+
+There is one actor memory, not separate motion/context networks. Channel-wise
+gates do not guarantee semantic motion/context separation or safe forgetting;
+that is a hypothesis to test, not an architectural property already proved.
+
+The compact cells implement the exact MIT FLA reference recurrence and omit
+language-model convolutions, hybrid attention and large decoders. They do not
+claim to reproduce the full Kimi Linear or GDN2 language-model architecture.
+They need no additional CUDA package. Credit/license: vendor/FLA_LICENSE;
+reference commit 9f38d24980c46d46bd38614e743cdacd21906578.
+
+| Arm | Temporal/read interface | Parameters |
+| --- | --- | ---: |
+| actor_gru | Original actor-first GRU | 300,417 |
+| gru_evidence | GRU prefix/read and evidence fusion | 366,593 |
+| kda_full | Compact KDA with disposable query write | 268,177 |
+| kda_read | KDA read-only query, current residual | 268,177 |
+| kda_gate | KDA generic gated residual | 301,585 |
+| kda_evidence | KDA evidence-gated residual | 301,585 |
+| gdn2_read | GDN2 read, zero evidence at write gates | 335,241 |
+| gdn2_revision | GDN2 evidence-conditioned write gates | 335,241 |
+
+The two evidence-specific contrasts are parameter matched; comparisons between
+different substrates are not. GRU evidence fusion is the strong cheap control.
+The frozen protocol uses seeds 191/223, the same immutable 128-episode ORCA
+dataset, 50 IL epochs, 1,000 online MC episodes, four updates/episode, width128,
+depth2, T24, reward/actions/simulator and 96 development cases/model. These
+seeds are a new architecture pilot, not fresh confirmation of earlier trials.
+Two seeds and reused cases cannot establish METHOD_ENTRY_FOUND.
+
+```bash
+python -m experiments.temporal_memory queue --data data/demonstrations.pt \
+  --root outputs/memory_pilot --device cuda
+python -m experiments.temporal_memory summarize --root outputs/memory_pilot
+python -m experiments.temporal_memory latency --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+python -m experiments.temporal_memory events --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+```
+
+Tests compare recurrence and gradients, official reference equations, causal
+evidence, masks/re-entry, read-only candidate queries, shared-prefix versus
+full-window values/gradients, and native candidate scores. Operator provenance
+is not novelty: actor memory, separate current/history consumption and generic
+gating have close priors, including ReCAT (https://intuitive-robots.github.io/ReCAT/).
+Navigation results and evidence-specific ablations must justify any narrower
+claim before the architecture is selected as a paper method.
+
+The latency replay also measures the original trained actor GRU with a shared
+prefix computation, preserving its value function. This prevents attributing
+generic prefix reuse to a new memory operator. Natural-event shadow comparisons
+use common roots from the first legal near-motion event in each pre-fixed parent
+episode, not the best events for a new arm. They remain exploratory supporting
+evidence, not a replacement for a negative paired SR result.
