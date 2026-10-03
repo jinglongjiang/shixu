@@ -338,6 +338,53 @@ def recall_probe(weights, visits, device, destination):
     print(json.dumps({k: v for k, v in result.items() if k != "records"}, indent=2), flush=True)
 
 
+def address_probe(weights, data_path, device, destination):
+    """Compare legal actor addresses and matrix states, without fitting a probe."""
+    from shixu.features import stack_histories, window
+    checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(checkpoint["config"])
+    model = build_model(cfg).to(device).eval()
+    load_weights(model, weights, device)
+    if model.substrate != "kda":
+        raise ValueError("Address probe requires a KDA matrix memory")
+    data = torch.load(data_path, map_location="cpu", weights_only=False)
+    windows = [window(ep["tokens"][:tick + 1], 24, "zero") for ep in data["episodes"]
+               for tick in range(0, len(ep["tokens"]), 8)]
+    values = {name: [] for name in ("own_features", "contextual_features", "keys", "first_matrix", "last_matrix")}
+    with torch.inference_mode():
+        for start in range(0, len(windows), 64):
+            tokens = torch.as_tensor(stack_histories(windows[start:start + 64]), device=device)
+            prefix = tokens[:, :-1]
+            own, _, valid = model._features(prefix)
+            contextual = model._attend(own, valid)
+            encoded = contextual if model.interaction_order == "write" else own
+            cell = model.temporal_encoder.cells[0]
+            keys = cell.k(cell.input_norm(encoded[:, -1]))
+            states, seen, _ = model.encode_history(prefix)
+            batch, _, people, _ = own.shape
+            mask = valid[:, -1] & seen
+            pairs = (mask[:, :, None] & mask[:, None, :]) & torch.ones(people, people, device=device, dtype=torch.bool).triu(1)
+            representations = {"own_features": own[:, -1], "contextual_features": contextual[:, -1], "keys": keys,
+                               "first_matrix": states[0].reshape(batch, people, -1),
+                               "last_matrix": states[-1].reshape(batch, people, -1)}
+            for name, representation in representations.items():
+                normed = torch.nn.functional.normalize(representation, dim=-1)
+                cosine = normed @ normed.transpose(-1, -2)
+                values[name].extend(cosine[pairs].cpu().tolist())
+    result = {"checkpoint_sha256": hashlib.sha256(Path(weights).read_bytes()).hexdigest(),
+              "phase": checkpoint.get("phase", "final"), "interaction_order": model.interaction_order,
+              "states": len(windows),
+              "pairwise_cosine": {name: {"pairs": len(rows), "mean": float(np.mean(rows)),
+                                        "median": float(np.median(rows)), "above_099": float(np.mean(np.asarray(rows) > .99))}
+                                  for name, rows in values.items()},
+              "scope": "Uniform every-eighth-frame successful-demonstration probe. Only simultaneously measured, "
+                       "previously seen actors are compared. High cosine is not proof of information equivalence "
+                       "or poor navigation. Compare matched training phases; this does not select checkpoints."}
+    Path(destination).write_text(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2), flush=True)
+
+
 def evaluate_weights(path, protocol, device, cases, seed, read_clock=None):
     path = Path(path)
     checkpoint = torch.load(path, map_location="cpu", weights_only=False)
@@ -537,7 +584,7 @@ def comparison(root, protocol):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose", "history-probe", "collisions", "recall-probe"))
+    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose", "history-probe", "collisions", "recall-probe", "address-probe"))
     parser.add_argument("--protocol", default=str(PROTOCOL))
     parser.add_argument("--data")
     parser.add_argument("--root")
@@ -571,6 +618,8 @@ def main():
         collision_diagnostic(Path(args.root), protocol, Path(args.root) / "collision_diagnostic.json")
     elif args.mode == "recall-probe":
         recall_probe(args.weights, args.data, args.device, args.root)
+    elif args.mode == "address-probe":
+        address_probe(args.weights, args.data, args.device, args.root)
     else:
         rows = evaluate_weights(args.weights, protocol, args.device,
                                 protocol["confirmation_cases"] if args.confirmation else protocol["development_cases"],
