@@ -5,7 +5,6 @@ from pathlib import Path
 import unittest
 
 import torch
-from einops import rearrange
 from torch import nn
 from torch.nn import functional as F
 
@@ -52,6 +51,7 @@ class MotionTests(unittest.TestCase):
         root = Path(os.environ.get("FLA_REFERENCE", "/home/abc/workspace/il_x_rl_candidates_20261003/repos/flash-linear-attention"))
         if not (root / "fla/layers/kda.py").exists():
             self.skipTest("Optional pinned official FLA reference not installed")
+        from einops import rearrange
 
         class StripAnnotations(ast.NodeTransformer):
             def visit_arg(self, node):
