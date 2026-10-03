@@ -326,7 +326,8 @@ def build_model(config):
         from .motion import MotionValueModel
         return MotionValueModel(section.get("backbone", "kda"), width, layers,
                                 section.get("clock", "elapsed"), section.getboolean("use_history", fallback=True),
-                                config.getfloat("env", "time_step", fallback=.25))
+                                config.getfloat("env", "time_step", fallback=.25),
+                                section.get("motion_query", "physical"))
     if section.get("architecture") == "occlusion":
         return OcclusionValueModel(section.get("backbone", "kda"), width, layers,
                                    section.get("read_clock", "candidate"), section.get("interaction_order", "read"),
