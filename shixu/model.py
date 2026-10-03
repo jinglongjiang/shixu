@@ -98,15 +98,24 @@ class OrderedValueModel(nn.Module):
         self.temporal_encoder = TemporalEncoder("gru", width, layers)
         self.value_head = nn.Linear(width, 1)
 
-    def _pool(self, features, visible):
+    def _attend(self, features, visible):
         shape = features.shape
         values = features.reshape(-1, shape[-2], shape[-1])
+        if values.shape[0] == 0:
+            return features
         mask = visible.reshape(-1, visible.shape[-1]).clone()
         empty = ~mask.any(-1)
         mask[empty, 0] = True
         attended, _ = self.attention(values, values, values, key_padding_mask=~mask, need_weights=False)
-        pooled = attended.masked_fill(~mask[..., None], -torch.inf).max(1).values
-        return pooled.masked_fill(empty[:, None], 0).reshape(*shape[:-2], shape[-1])
+        return attended.masked_fill(empty[:, None, None], 0).reshape(shape)
+
+    @staticmethod
+    def _max_pool(features, visible):
+        pooled = features.masked_fill(~visible[..., None], -torch.inf).max(-2).values
+        return pooled.masked_fill(~visible.any(-1)[..., None], 0)
+
+    def _pool(self, features, visible):
+        return self._max_pool(self._attend(features, visible), visible)
 
     def _actor_last(self, features, visible):
         # Complete tracks use the fused sequence kernel; gaps preserve the previous state.
@@ -218,13 +227,16 @@ class OcclusionValueModel(OrderedValueModel):
     parameters; the number of visible/retained actors is not fixed to five.
     """
 
-    def __init__(self, substrate="kda", width=128, layers=2, read_clock="candidate"):
+    def __init__(self, substrate="kda", width=128, layers=2, read_clock="candidate", interaction_order="read"):
         from .temporal import ActorMemory
         super().__init__("actor", width, layers, "observed")
         self.substrate = substrate
         if read_clock not in ("candidate", "observation"):
             raise ValueError("Memory reads use either the candidate or observation clock")
         self.read_clock = read_clock
+        if interaction_order not in ("read", "write"):
+            raise ValueError("Actor interaction occurs before memory writes or after memory reads")
+        self.interaction_order = interaction_order
         self.human_encoder = nn.Sequential(nn.Linear(11, width), nn.ReLU())
         self.temporal_encoder = (ActorMemory(substrate, width, layers)
                                  if substrate != "current" else None)
@@ -247,6 +259,9 @@ class OcclusionValueModel(OrderedValueModel):
         batch, length, people, width = features.shape
         if self.temporal_encoder is None:
             return None, measured.any(1), None
+        if self.interaction_order == "write":
+            # Only arrived measurements supply neighbour context to real writes.
+            features = self._attend(features, measured)
         sequence = features.permute(0, 2, 1, 3).reshape(batch * people, length, width)
         masks = measured.permute(0, 2, 1).reshape(batch * people, length)
         states = self.temporal_encoder.encode(sequence, masks, sequence.new_zeros(batch * people, length, 4))
@@ -255,6 +270,8 @@ class OcclusionValueModel(OrderedValueModel):
 
     def read_history(self, memory, queries):
         features, active, _ = self._features(queries)
+        if self.interaction_order == "write":
+            features = self._attend(features, active)
         states, seen, latest = memory
         batch, count, people, width = features.shape
         if seen.shape != (batch, people):
@@ -274,7 +291,8 @@ class OcclusionValueModel(OrderedValueModel):
             recalled = self.temporal_encoder.read(tuple(expanded), features.reshape(-1, width),
                                                   active.reshape(-1)).reshape(batch, count, people, width)
             features = features + recalled * (active & seen[:, None])[..., None]
-        return self.value_head(self._pool(features, active)).squeeze(-1)
+        pooled = self._max_pool(features, active) if self.interaction_order == "write" else self._pool(features, active)
+        return self.value_head(pooled).squeeze(-1)
 
     def score_candidates(self, prefix, queries):
         return self.read_history(self.encode_history(prefix), queries)
@@ -288,7 +306,7 @@ def build_model(config):
     width, layers = int(section["width"]), int(section["layers"])
     if section.get("architecture") == "occlusion":
         return OcclusionValueModel(section.get("backbone", "kda"), width, layers,
-                                   section.get("read_clock", "candidate"))
+                                   section.get("read_clock", "candidate"), section.get("interaction_order", "read"))
     if section.get("architecture") == "memory":
         return MemoryValueModel(section.get("backbone", "kda"), section.get("readout", "evidence"), width, layers)
     if section.get("order"):

@@ -147,6 +147,42 @@ An exact CPU pipeline test checks identical full-run versus final-IL-reuse RL
 updates. Different GPU/software environments can still introduce numerical
 differences and are recorded with each run.
 
+The complete observation-read trial is negative: overall SR is 63.54% for
+KDA versus 79.43% for GRU; primary 10/20-person SR is 64.45% versus 76.56%.
+KDA loses primary SR in all four paired seeds. Fewer collisions come with
+substantially more timeouts (30.47% overall), so this version is not retained
+as the candidate architecture. Shared observation reads are not an established
+correction to the original action-dependent read design.
+
+The next structural test, `occlusion_context_protocol.json`, returns to the
+original candidate clock and moves the existing attention before actor memory:
+
+```text
+real actor observations -> attention (actor outputs, no scene pooling)
+                        -> shared, measurement-masked KDA writes
+candidate geometry     -> same attention -> read each actor memory
+                        -> masked max -> scalar value -> original lookahead
+```
+
+There is still one attention and one temporal operator. The parameter counts
+are unchanged. Prefix attention keys use actual measurements; hidden tracks
+cannot supply fresh write evidence. Query attention can use legally retained
+CV tracks. The non-temporal current-value arm is mathematically unchanged;
+its existing saved weights reproduce every executed action and terminal outcome
+in all 96 seed-419 development episodes after the helper refactor.
+
+This tests whether historical neighbour context is useful. The old actor
+memory is exactly insensitive to another actor's past when its own history is
+fixed. The replacement removes that insensitivity in a fixture, but this is
+not proof of navigation headroom or novelty. A separate episode-disjoint
+linear probe of 887 natural re-entries does not improve average velocity
+prediction over CV, so richer context is not presumed useful in every task.
+Archived collision replays also show visible colliders and no margin-safe
+action at the final step; they do not establish that occlusion caused the
+earlier poor decisions. DS-RNN and [PaS](https://github.com/yejimun/PaS_CrowdNav)
+already study temporal/social inference. Moving attention is an experimental
+representation choice, not a standalone new-method claim.
+
 ## Installation
 
 Install a PyTorch build appropriate for your machine first. Then:

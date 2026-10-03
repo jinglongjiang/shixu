@@ -40,6 +40,8 @@ def configuration(protocol, arm):
         ("train", "updates_per_ep", protocol["rl_updates_per_episode"])
     ):
         cfg.set(section, key, str(value))
+    if "interaction_order" in protocol:
+        cfg.set("model", "interaction_order", protocol["interaction_order"])
     return cfg
 
 
@@ -136,6 +138,142 @@ def retention_diagnostic(data_path, protocol, destination):
               "scope": "Offline hidden-current-state truth substitution with linear endpoint projection. Not full-future truth, swept-path safety, a deployed oracle or proof of closed-loop gain"}
     Path(destination).write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2), flush=True)
+
+
+def reentry_probe(data_path, destination):
+    """Grouped linear probe; all predictors are frozen at the last visible frame."""
+    data = torch.load(data_path, map_location="cpu", weights_only=False)
+    rows = []
+    for group, episode in enumerate(data["episodes"]):
+        history, previous = {}, {}
+        for observation in episode["observations"]:
+            now = observation["time"]
+            robot = np.asarray(observation["robot"])
+            humans = {h["track_id"]: np.asarray(h["state"]) for h in observation["humans"]}
+            visible = dict(zip(humans, observation["observed"]))
+            for key, human in humans.items():
+                past = [p for p in history.get(key, []) if now - p[0] <= 5.75]
+                if visible[key] and previous.get(key) is False and len(past) >= 2:
+                    stamp, last, neighbours, distance = past[-1]
+                    gap = now - stamp
+                    if gap > .25 + 1e-6:
+                        velocities = np.array([p[1][2:4] for p in past[-4:]])
+                        relative_velocity = np.mean([h[2:4] - last[2:4] for h in neighbours], axis=0) if neighbours else np.zeros(2)
+                        features = np.r_[last[2:4], velocities.mean(0), velocities[-1] - velocities[0],
+                                         gap, distance, relative_velocity, len(neighbours)]
+                        rows.append((group, features, human[2:4], last[2:4], distance < 2, gap))
+                if visible[key]:
+                    neighbours = [h.copy() for j, h in humans.items() if j != key and visible[j]
+                                  and np.linalg.norm(h[:2] - human[:2]) < 2]
+                    distance = float(np.linalg.norm(human[:2] - robot[:2]))
+                    history.setdefault(key, []).append((now, human.copy(), neighbours, distance))
+                previous[key] = visible[key]
+    if not rows:
+        raise RuntimeError("No eligible natural re-entry observations")
+    groups = np.asarray([r[0] for r in rows])
+    features = np.asarray([r[1] for r in rows])
+    targets, cv = [np.asarray([r[index] for r in rows]) for index in (2, 3)]
+    near = np.asarray([r[4] for r in rows])
+    def metrics(predicted):
+        error = np.linalg.norm(predicted - targets, axis=1)
+        return {"mean_mps": float(error.mean()), "median_mps": float(np.median(error)),
+                "p90_mps": float(np.quantile(error, .9)),
+                "near_2m_mean_mps": float(error[near].mean()) if near.any() else None}
+    errors = {"CV": metrics(cv)}
+    for name, columns in (("own_history", slice(0, 8)), ("own_history_plus_neighbour_summary", slice(None))):
+        prediction = np.zeros_like(targets)
+        for fold in range(5):
+            test = groups % 5 == fold
+            train = ~test
+            inputs = features[:, columns]
+            mean, scale = inputs[train].mean(0), np.maximum(inputs[train].std(0), 1e-4)
+            inputs = np.c_[(inputs - mean) / scale, np.ones(len(inputs))]
+            penalty = np.eye(inputs.shape[1])
+            penalty[-1, -1] = 0
+            weights = np.linalg.solve(inputs[train].T @ inputs[train] + 5 * penalty,
+                                      inputs[train].T @ (targets[train] - cv[train]))
+            prediction[test] = cv[test] + inputs[test] @ weights
+        errors[name] = metrics(prediction)
+    result = {"scope": "Five-fold episode-disjoint linear probe on successful ORCA visits, fixed ridge penalty 5. "
+                       "Inputs use last-visible measurements only; gap is elapsed prediction time. Future re-entry "
+                       "velocity is an offline target. Not navigation training or action-value headroom proof.",
+              "rows": len(rows), "near_2m_rows": int(near.sum()), "prediction_errors": errors,
+              "gap_median_seconds": float(np.median([r[5] for r in rows]))}
+    Path(destination).write_text(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2), flush=True)
+
+
+def collision_diagnostic(root, protocol, destination):
+    """Replay archived controls; privileged identities classify failures only."""
+    from crowd_sim.envs.utils.action import ActionXY
+    result = {}
+    for arm in protocol["arms"]:
+        origin = Path(protocol.get("reference_roots", {}).get(arm, root))
+        records = []
+        for seed in protocol["seeds"]:
+            archived = json.loads((origin / str(seed) / arm / "result.json").read_text())
+            cfg = configuration(archived["protocol"], arm)
+            policy = ValuePolicy(build_model(cfg), cfg)
+            for row in archived["episodes"]:
+                if row["terminal"] != "collision":
+                    continue
+                env = environment(cfg, policy, row["geometry"], row["people"])
+                env.reset(options={"test_case": row["case"]})
+                observer = OccludedTracks(protocol["retention_seconds"])
+                measured_run, previous_command = {}, None
+                for command in row["actions"]:
+                    command = np.asarray(command)
+                    state = observer.observe(env)
+                    measured_keys = {key for key, measured in zip(state.track_ids, state.observed) if measured}
+                    for key in range(state.track_count):
+                        measured_run[key] = measured_run.get(key, 0) + 1 if key in measured_keys else 0
+                    action = ActionXY(*command)
+                    collision_human = None
+                    for human in env.humans:
+                        relative = np.array([human.px - env.robot.px, human.py - env.robot.py])
+                        displacement = env.time_step * (np.array([human.vx, human.vy]) - command)
+                        fraction = float(np.clip(-relative @ displacement / max(displacement @ displacement, 1e-12), 0, 1))
+                        clearance = np.linalg.norm(relative + fraction * displacement) - human.radius - env.robot.radius
+                        if clearance < 0:
+                            collision_human = human
+                            break
+                    _, _, done, truncated, info = env.step(action)
+                    if done or truncated:
+                        if info["event"] != "collision" or collision_human is None:
+                            raise RuntimeError("Archived collision could not be reproduced")
+                        stored = observer.tracks.get(collision_human)
+                        if stored is None:
+                            category = "never_observed"
+                        elif stored[0] not in state.track_ids:
+                            category = "known_but_expired"
+                        elif state.observed[state.track_ids.index(stored[0])]:
+                            category = "visible"
+                        else:
+                            category = "retained_hidden"
+                        estimates = np.array([[h.px, h.py, h.vx, h.vy, h.radius] for h in state.human_states]).reshape(-1, 5)
+                        endpoint = np.array([state.self_state.px, state.self_state.py]) + env.time_step * command
+                        clearance = float(np.min(np.linalg.norm(estimates[:, :2] + env.time_step * estimates[:, 2:4] - endpoint, axis=1)
+                                                 - estimates[:, 4] - state.self_state.radius)) if len(estimates) else None
+                        _, _, support_clearance = policy.aligned_candidates(state)
+                        alpha = cfg.getfloat("eval_protocol", "action_smoothing") if previous_command is not None else 0
+                        selected = (command - alpha * previous_command) / (1 - alpha) if alpha else command
+                        index = int(np.argmin(np.linalg.norm(np.asarray(policy.action_space) - selected, axis=1)))
+                        records.append({"seed": seed, "case": row["case"], "people": row["people"],
+                                        "geometry": row["geometry"], "category": category,
+                                        "visible_streak_steps": measured_run.get(stored[0], 0) if stored else 0,
+                                        "safe_actions_before_smoothing": int(np.sum(support_clearance >= .2)),
+                                        "selected_before_smoothing_endpoint_clearance": float(support_clearance[index]),
+                                        "executed_action_retained_endpoint_clearance": clearance})
+                        break
+                    previous_command = command
+        result[arm] = {"counts": {name: sum(r["category"] == name for r in records)
+                                  for name in ("visible", "retained_hidden", "known_but_expired", "never_observed")},
+                       "records": records}
+    result["scope"] = ("Archived executed-action collision replay only. Simulator truth classifies the collider, "
+                       "never enters the policy. Different visited trajectories preclude a causal comparison. "
+                       "Executed controls include inherited smoothing; endpoint safety is not swept-path safety.")
+    Path(destination).write_text(json.dumps(result, indent=2))
+    print(json.dumps({k: v["counts"] for k, v in result.items() if isinstance(v, dict)}, indent=2), flush=True)
 
 
 def evaluate_weights(path, protocol, device, cases, seed, read_clock=None):
@@ -337,7 +475,7 @@ def comparison(root, protocol):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose"))
+    parser.add_argument("mode", choices=("collect", "run", "evaluate", "queue", "summarize", "diagnose", "history-probe", "collisions"))
     parser.add_argument("--protocol", default=str(PROTOCOL))
     parser.add_argument("--data")
     parser.add_argument("--root")
@@ -365,6 +503,10 @@ def main():
         comparison(Path(args.root), protocol)
     elif args.mode == "diagnose":
         retention_diagnostic(args.data, protocol, args.root)
+    elif args.mode == "history-probe":
+        reentry_probe(args.data, args.root)
+    elif args.mode == "collisions":
+        collision_diagnostic(Path(args.root), protocol, Path(args.root) / "collision_diagnostic.json")
     else:
         rows = evaluate_weights(args.weights, protocol, args.device,
                                 protocol["confirmation_cases"] if args.confirmation else protocol["development_cases"],

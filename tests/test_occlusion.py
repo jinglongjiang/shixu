@@ -167,6 +167,55 @@ class OcclusionTests(unittest.TestCase):
             for a, b in zip(model.parameters(), reused.parameters()):
                 torch.testing.assert_close(a, b, rtol=0, atol=0)
 
+    def test_context_write_retains_other_actor_history_without_extra_parameters(self):
+        parent = OcclusionValueModel("kda", 32, 1)
+        context = OcclusionValueModel("kda", 32, 1, interaction_order="write")
+        context.load_state_dict(parent.state_dict())
+        self.assertEqual(sum(p.numel() for p in parent.parameters()), sum(p.numel() for p in context.parameters()))
+        tokens = torch.randn(1, 5, 3, 13)
+        tokens[:, :, 1:, 10] = 1
+        tokens[:, :, 1:, 12] = 1
+        changed = tokens.clone()
+        changed[:, :3, 2, :9] *= -2
+        for model, expected in ((parent, False), (context, True)):
+            first = model.encode_history(tokens[:, :-1])[0][0][0]
+            other = model.encode_history(changed[:, :-1])[0][0][0]
+            self.assertEqual(bool((first - other).abs().max() > 1e-6), expected)
+        context(tokens).sum().backward()
+        self.assertTrue(all(torch.isfinite(p.grad).all() for p in context.parameters() if p.grad is not None))
+        torch.testing.assert_close(context(tokens), context(tokens[:, :, [0, 2, 1]]), rtol=1e-5, atol=1e-5)
+
+    def test_context_writes_ignore_unmeasured_neighbour_numeric_fields(self):
+        model = OcclusionValueModel("kda", 32, 1, interaction_order="write")
+        tokens = torch.randn(1, 4, 3, 13)
+        tokens[:, :, 1:, 12] = 1
+        tokens[:, :, 1, 10] = 1
+        tokens[:, :, 2, 10] = 0
+        changed = tokens.clone()
+        changed[:, :, 2, :10] *= 10
+        first = model.encode_history(tokens)
+        other = model.encode_history(changed)
+        for left, right in zip(first[0], other[0]):
+            torch.testing.assert_close(left, right, rtol=0, atol=0)
+
+    def test_current_value_and_checkpoint_contract_survive_attention_relocation(self):
+        a = OcclusionValueModel("current", 32, 1)
+        b = OcclusionValueModel("current", 32, 1, interaction_order="write")
+        b.load_state_dict(a.state_dict())
+        tokens = torch.randn(3, 6, 21, 13)
+        tokens[:, :, 1:, 12] = torch.rand(3, 6, 20) > .4
+        tokens[0, :, 1:, 12] = 0
+        torch.testing.assert_close(a(tokens), b(tokens), rtol=0, atol=0)
+        for kind in ("gru", "kda"):
+            model = OcclusionValueModel(kind, 32, 1, interaction_order="write")
+            self.assertTrue(torch.isfinite(model(torch.zeros(1, 1, 2, 13))).all())
+            with TemporaryDirectory() as directory:
+                path = Path(directory) / "model.pt"
+                torch.save({"model": model.state_dict()}, path)
+                other = OcclusionValueModel(kind, 32, 1, interaction_order="write")
+                load_weights(other, path, "cpu")
+                torch.testing.assert_close(model(tokens), other(tokens))
+
 
 if __name__ == "__main__":
     unittest.main()
