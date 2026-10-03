@@ -20,22 +20,30 @@ def update(model, replay, optimizer, batch_size, device, rng):
     return float(loss.detach())
 
 
-def train(env, policy, cfg, output, seed, il_episodes, rl_episodes):
+def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
+          demonstrations=None, rl_case_start=None, report=None):
     if il_episodes <= 0 or rl_episodes < 0:
         raise ValueError("IL episodes must be positive and RL episodes nonnegative")
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
     replay = Replay(cfg.getint("buffer", "capacity"), policy.length, policy.gamma)
-    teacher = orca_teacher(cfg)
     accepted = 0
     limit = cfg.getint("imitation_learning", "max_il_prefill")
-    for attempt in range(limit):
-        episode = run_episode(env, policy, seed + attempt, teacher=teacher, phase="train")
-        if episode["terminal"] == "reach_goal":
+    if demonstrations is not None:
+        if len(demonstrations) != il_episodes or any(row["terminal"] != "reach_goal" for row in demonstrations):
+            raise ValueError("Expected the fixed successful IL cohort")
+        for episode in demonstrations:
             replay.add(episode)
             accepted += 1
-        if accepted == il_episodes:
-            break
+    else:
+        teacher = orca_teacher(cfg)
+        for attempt in range(limit):
+            episode = run_episode(env, policy, seed + attempt, teacher=teacher, phase="train")
+            if episode["terminal"] == "reach_goal":
+                replay.add(episode)
+                accepted += 1
+            if accepted == il_episodes:
+                break
     if accepted < il_episodes:
         raise RuntimeError("ORCA did not supply the requested successful IL episodes")
     batch = cfg.getint("train", "il_batch_size")
@@ -43,17 +51,23 @@ def train(env, policy, cfg, output, seed, il_episodes, rl_episodes):
     batches = max(1, (len(replay.samples) + batch - 1) // batch)
     total = cfg.getint("train", "il_epochs") * batches
     schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total)
-    for _ in range(total):
-        update(policy.model, replay, optimizer, batch, policy.device, rng)
+    for step in range(total):
+        loss = update(policy.model, replay, optimizer, batch, policy.device, rng)
         schedule.step()
+        if report is not None and (step + 1) % batches == 0:
+            report({"phase": "il", "epoch": (step + 1) // batches, "loss": loss})
     optimizer = torch.optim.AdamW(policy.model.parameters(), lr=cfg.getfloat("train", "learning_rate"), weight_decay=0.01)
     for episode_number in range(rl_episodes):
         fraction = min(1.0, episode_number / cfg.getint("sarl", "epsilon_decay_episodes"))
         epsilon = cfg.getfloat("sarl", "epsilon_start") * (1 - fraction) + cfg.getfloat("sarl", "epsilon_end") * fraction
-        episode = run_episode(env, policy, seed + limit + episode_number, epsilon=epsilon, phase="train")
+        case = (seed + limit if rl_case_start is None else rl_case_start) + episode_number
+        episode = run_episode(env, policy, case, epsilon=epsilon, phase="train")
         replay.add(episode)
         for _ in range(cfg.getint("train", "updates_per_ep")):
-            update(policy.model, replay, optimizer, cfg.getint("train", "batch_size"), policy.device, rng)
+            loss = update(policy.model, replay, optimizer, cfg.getint("train", "batch_size"), policy.device, rng)
+        if report is not None:
+            report({"phase": "rl", "episode": episode_number + 1, "terminal": episode["terminal"],
+                    "return": float(sum(episode["rewards"])), "loss": loss, "epsilon": epsilon})
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model": policy.model.state_dict(), "seed": seed, "il_episodes": il_episodes,

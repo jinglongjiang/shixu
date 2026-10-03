@@ -7,7 +7,7 @@ import time
 import numpy as np
 import torch
 
-from .model import ValueModel, load_weights
+from .model import OrderedValueModel, ValueModel, load_weights
 from .policy import ValuePolicy
 from .runner import environment, orca_teacher, run_episode
 
@@ -15,8 +15,9 @@ from .runner import environment, orca_teacher, run_episode
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("smoke", "evaluate", "collect", "train"))
-    parser.add_argument("--config", default=str(Path(__file__).with_name("default.ini")))
+    parser.add_argument("--config")
     parser.add_argument("--backbone", choices=("gru", "mamba"))
+    parser.add_argument("--order", choices=("scene", "actor"))
     parser.add_argument("--weights")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--people", type=int, default=5)
@@ -28,14 +29,26 @@ def main():
     parser.add_argument("--output", default="outputs/result.json")
     args = parser.parse_args()
     cfg = configparser.ConfigParser()
-    if not cfg.read(args.config):
+    if not cfg.read(args.config or Path(__file__).with_name("default.ini")):
         parser.error("Config not found")
+    if args.weights and args.config is None:
+        checkpoint = torch.load(args.weights, map_location="cpu", weights_only=False)
+        if "config" in checkpoint:
+            cfg.read_dict(checkpoint["config"])
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     torch.set_num_threads(1)
     backbone = args.backbone or cfg.get("model", "backbone")
     cfg.set("model", "backbone", backbone)
-    model = ValueModel(backbone, cfg.getint("model", "width"), cfg.getint("model", "layers"))
+    order = args.order or cfg.get("model", "order", fallback=None)
+    if order:
+        if backbone != "gru":
+            parser.error("Processing-order comparison currently uses GRU for both arms")
+        cfg.set("model", "representation", "aligned")
+        cfg.set("model", "order", order)
+        model = OrderedValueModel(order, cfg.getint("model", "width"), cfg.getint("model", "layers"))
+    else:
+        model = ValueModel(backbone, cfg.getint("model", "width"), cfg.getint("model", "layers"))
     if args.weights:
         load_weights(model, args.weights, args.device)
     elif args.command == "evaluate":

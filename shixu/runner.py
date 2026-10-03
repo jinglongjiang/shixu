@@ -6,8 +6,7 @@ import numpy as np
 from crowd_sim.envs.crowd_sim import CrowdSim
 from crowd_sim.envs.policy.orca import ORCA
 from crowd_sim.envs.utils.robot import Robot
-from crowd_sim.envs.utils.state import JointState
-from .features import encode_state
+from .observations import TrackKeys
 
 
 def environment(config, policy, geometry="circle", people=5):
@@ -41,17 +40,18 @@ def run_episode(env, policy, case, epsilon=0.0, teacher=None, phase="test"):
     policy.set_phase(phase)
     env.phase = "test"
     env.reset(options={"test_case": int(case)})
+    tracks = TrackKeys()
     if teacher is not None:
         teacher.sim, teacher._last_pref_vel = None, None
     record = {"case": int(case), "tokens": [], "observations": [], "actions": [], "rewards": [], "clearances": []}
     done, truncated, path = False, False, 0.0
     while not done and not truncated:
-        state = JointState(env.robot.get_full_state(), [h.get_observable_state() for h in env.humans])
-        record["tokens"].append(encode_state(state))
+        state = tracks.observe(env)
+        record["tokens"].append(policy.encode(state))
         # Simulator identity is a stable association key, never a learned numeric feature.
         record["observations"].append({"time": env.global_time, "robot": state.self_state.to_array().tolist(),
-                                        "humans": [{"track_id": index, "state": h.to_array().tolist()}
-                                                   for index, h in enumerate(state.human_states)]})
+                                        "humans": [{"track_id": key, "state": h.to_array().tolist()}
+                                                   for key, h in zip(state.track_ids, state.human_states)]})
         if teacher is None:
             action = policy.predict(state, epsilon)
         else:

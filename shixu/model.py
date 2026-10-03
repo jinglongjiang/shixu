@@ -76,6 +76,71 @@ class ValueModel(nn.Module):
         return self.value_head(temporal[:, -1]).squeeze(-1)
 
 
+class OrderedValueModel(nn.Module):
+    """Same parameters and aligned inputs; only temporal/pooling order differs."""
+
+    def __init__(self, order="scene", width=128, layers=2):
+        super().__init__()
+        if order not in ("scene", "actor") or width % 4:
+            raise ValueError("Order must be scene/actor and width divisible by four")
+        self.order = order
+        self.robot_encoder = nn.Sequential(nn.Linear(13, width), nn.ReLU())
+        self.human_encoder = nn.Sequential(nn.Linear(21, width), nn.ReLU())
+        self.fusion = nn.Sequential(nn.Linear(2 * width, width), nn.LayerNorm(width), nn.ReLU())
+        self.attention = nn.MultiheadAttention(width, 4, batch_first=True)
+        self.temporal_encoder = TemporalEncoder("gru", width, layers)
+        self.value_head = nn.Linear(width, 1)
+
+    def _pool(self, features, visible):
+        shape = features.shape
+        values = features.reshape(-1, shape[-2], shape[-1])
+        mask = visible.reshape(-1, visible.shape[-1]).clone()
+        empty = ~mask.any(-1)
+        mask[empty, 0] = True
+        attended, _ = self.attention(values, values, values, key_padding_mask=~mask, need_weights=False)
+        pooled = attended.masked_fill(~mask[..., None], -torch.inf).max(1).values
+        return pooled.masked_fill(empty[:, None], 0).reshape(*shape[:-2], shape[-1])
+
+    def _actor_last(self, features, visible):
+        # Complete tracks use the fused sequence kernel; gaps preserve the previous state.
+        stable = visible.all(1) | ~visible.any(1)
+        if bool(stable.all()):
+            return self.temporal_encoder(features)[:, -1]
+        gru = self.temporal_encoder.backend
+        hidden = features.new_zeros(gru.num_layers, len(features), gru.hidden_size)
+        for tick in range(features.shape[1]):
+            _, proposed = gru(features[:, tick:tick + 1], hidden)
+            hidden = torch.where(visible[:, tick][None, :, None], proposed, hidden)
+        return self.temporal_encoder.norm(hidden[-1])
+
+    def forward(self, tokens):
+        if tokens.ndim != 4 or tokens.shape[-2:] != (8, 13):
+            raise ValueError("Expected aligned history [B,T,8,13]")
+        robot, humans = tokens[:, :, 0], tokens[:, :, 3:8]
+        visible = humans[..., 12] > 0
+        # Both arms inherit identical feature conventions; no feature repair is an arm-specific advantage.
+        relative = humans[..., :2] - robot[..., None, :2]
+        velocity = humans[..., 3:5] - robot[..., None, 2:4]
+        distance = torch.sqrt((relative ** 2).sum(-1) + 1e-6)
+        speed = torch.sqrt((velocity ** 2).sum(-1) + 1e-6)
+        closing = -(relative * velocity).sum(-1) / (distance + 1e-6)
+        inverse = torch.where(closing > 0, closing / (distance + 1e-6), torch.zeros_like(closing))
+        relation = torch.stack((relative[..., 0], relative[..., 1], distance,
+                                velocity[..., 0], velocity[..., 1], speed, closing, inverse), -1)
+        robot_features = self.robot_encoder(robot)[..., None, :].expand(-1, -1, 5, -1)
+        human_features = self.human_encoder(torch.cat((humans, relation), -1))
+        features = self.fusion(torch.cat((robot_features, human_features), -1))
+        if self.order == "scene":
+            last = self.temporal_encoder(self._pool(features, visible))[:, -1]
+        else:
+            batch, time, people, width = features.shape
+            sequences = features.permute(0, 2, 1, 3).reshape(batch * people, time, width)
+            masks = visible.permute(0, 2, 1).reshape(batch * people, time)
+            last = self._actor_last(sequences, masks).reshape(batch, people, width)
+            last = self._pool(last, visible[:, -1])
+        return self.value_head(last).squeeze(-1)
+
+
 def load_weights(model, path, device):
     checkpoint = torch.load(str(path), map_location=device)
     raw = checkpoint.get("policy_state", checkpoint.get("model", checkpoint))

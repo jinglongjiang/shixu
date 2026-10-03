@@ -17,22 +17,25 @@ GRU is the default temporal baseline. Mamba is optional and retained only for
 legacy comparison. There are no Double-Q/PPO/SAC branches, auxiliary prediction
 heads, Bayesian modules, teacher networks at deployment, or fallback backbones.
 
-The intended next change is to move temporal encoding before crowd pooling:
+The explicit actor-first alternative moves temporal encoding before crowd pooling:
 
 ```text
 identity-bound human histories -> shared temporal encoder -> crowd pooling
                               -> scalar value -> unchanged lookahead
 ```
 
-That actor-specific variant is not implemented or trained in this initial
-baseline. No dual-memory system or contradiction detector is being added in
-advance of the problem/headroom audit.
+The processing-order prototype now compares scene-first and actor-first GRU
+using identical aligned observations and exactly the same parameters. Every
+human uses the same GRU weights, with independent histories. No dual-memory
+system, contradiction detector, KDA or additional prediction head is added.
+This is a controlled structural experiment, not a selective-revision method.
 
 ## Layout
 
 | File | Responsibility |
 | --- | --- |
 | shixu/features.py | Legacy observation contract and history windows |
+| shixu/observations.py | Episode-local observed association keys, never numeric ID features |
 | shixu/model.py | Frame encoder, replaceable temporal encoder, value head |
 | shixu/policy.py | Original action support and successor-value evaluation |
 | shixu/replay.py | Episode-safe windows and MC targets; no duplicated window archive |
@@ -40,6 +43,7 @@ advance of the problem/headroom audit.
 | shixu/training.py | ORCA value initialization and online MC refinement |
 | shixu/cli.py | Explicit collection/evaluation/training commands |
 | vendor/crowd_sim | Frozen local simulator dependency |
+| experiments/ | Frozen protocol, immutable ORCA collection and paired processing-order trial |
 
 ## Installation
 
@@ -71,7 +75,7 @@ python -m shixu.cli collect --cases 0 1 --output data/orca.json
 python -m shixu.cli evaluate --backbone mamba --device cuda \
   --weights /path/to/rl_model_ep10000_T24.pth --cases 0 1
 
-# Explicitly opt into training; not executed during this repository cleanup.
+# Explicitly opt into training.
 python -m shixu.cli train --il-episodes 5 --rl-episodes 10 \
   --device cuda --output weights/gru.pt
 ```
@@ -80,6 +84,55 @@ Models must use the same config when comparing them. The optional local-source
 regression tests use environment variables CAMRL_PARENT and CAMRL_CHECKPOINT;
 they check features, value outputs, actions and history against the original
 source. They skip explicitly when those local assets are unavailable.
+New checkpoints include their model/observation configuration; evaluation uses
+it automatically unless an explicit --config override is supplied.
+
+The matched trial is driven by experiments/temporal_protocol.json, not test
+results: four paired seeds, a shared 128-episode successful ORCA dataset,
+50 IL epochs, 1,000 MC-RL episodes per arm, and fixed circle/square cases at
+5/10/20 humans. Both arms have 302,337 parameters at width 128 and depth 2.
+Only the final-budget checkpoint is evaluated. Processing-order prototype
+results cannot be represented as a new algorithm or proof of selective memory.
+
+```bash
+python experiments/temporal_collect.py --output data/demonstrations.pt
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --data data/demonstrations.pt --root outputs/temporal_v1 --device cuda
+python experiments/temporal_order.py summarize --root outputs/temporal_v1
+```
+
+Run the other seeds in the protocol before requesting the paired summary.
+Native experiments assume perfect observed association and retain the original
+five-human neural input cap even when the simulator contains 10/20 humans.
+Missing observation masks preserve actor state; association errors and
+real-world re-identification are not solved by this interface.
+
+## Initial Matched Result
+
+Four paired seeds completed 50 IL epochs + 1,000 online MC-RL episodes per arm,
+followed by 96 fixed native evaluations each (768 total).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 9.90% | 14.58% | 302,337 |
+| Actor-first GRU | 78.39% | 8.33% | 13.28% | 302,337 |
+
+The +2.86 pp mean SR change has only 2/4 positive seed pairs and does not meet
+the frozen +3 pp / 3-of-4 direction gate: NO_STABLE_GAIN. Pooled square gains
+and smaller actor seed dispersion are exploratory, not a new-method claim.
+Same-device RTX 3060 scoring medians are 3.110 / 4.418 ms for scene / actor;
+actor-first is not a computation-saving result. No GDN/KDA/revision cell is
+installed on the strength of these mixed outcomes.
+
+```bash
+python -m experiments.temporal_latency --root outputs/temporal_v1 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v1 --seed 17
+```
+
+The shadow uses arrived motion evidence and native scene replay. A masked-prefix
+intervention is an offline diagnostic, not a trained or deployable revision
+policy. Full results/checkpoints stay local under outputs; weights and data are
+not committed. Seeds 103/137 are reserved for an unchanged exploratory follow-up.
 
 ## Baseline Boundary
 
