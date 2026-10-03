@@ -21,7 +21,7 @@ def update(model, replay, optimizer, batch_size, device, rng):
 
 
 def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
-          demonstrations=None, rl_case_start=None, report=None):
+          demonstrations=None, rl_case_start=None, report=None, pretrained_il=False):
     if il_episodes <= 0 or rl_episodes < 0:
         raise ValueError("IL episodes must be positive and RL episodes nonnegative")
     rng = np.random.default_rng(seed)
@@ -51,7 +51,13 @@ def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
     optimizer = torch.optim.AdamW(policy.model.parameters(), lr=cfg.getfloat("train", "il_learning_rate"), weight_decay=0.01)
     batches = max(1, (len(replay.samples) + batch - 1) // batch)
     total = cfg.getint("train", "il_epochs") * batches
-    schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total)
+    if pretrained_il:
+        # Replay sampling consumes its private RNG during IL. Preserve the same
+        # RL sample stream when restarting from a verified final-IL checkpoint.
+        for _ in range(total):
+            rng.integers(len(replay.samples), size=batch)
+        total = 0
+    schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, total))
     for step in range(total):
         loss = update(policy.model, replay, optimizer, batch, policy.device, rng)
         schedule.step()

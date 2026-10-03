@@ -130,6 +130,43 @@ class OcclusionTests(unittest.TestCase):
         b.load_state_dict(a.state_dict())
         torch.testing.assert_close(a(history), b(history), rtol=0, atol=0)
 
+    def test_final_il_reuse_preserves_rl_sampling_and_update(self):
+        import copy
+        from unittest.mock import patch
+        from shixu.training import train
+
+        class TinyValue(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.head = torch.nn.Linear(13, 1)
+
+            def forward(self, inputs):
+                return self.head(inputs[:, -1, 0]).squeeze(-1)
+
+        cfg = configparser.ConfigParser()
+        cfg.read(Path(__file__).resolve().parents[1] / "shixu/default.ini")
+        for key, value in (("il_epochs", 2), ("il_batch_size", 2), ("batch_size", 2), ("updates_per_ep", 2)):
+            cfg.set("train", key, str(value))
+        cfg.set("buffer", "capacity", "100")
+        episode = {"tokens": [np.ones((2, 13), dtype=np.float32), np.full((2, 13), 2., dtype=np.float32)],
+                   "rewards": [0., 1.], "terminal": "reach_goal"}
+        model = TinyValue()
+        policy = SimpleNamespace(model=model, device=torch.device("cpu"), length=2, gamma=.99)
+        final_il = {}
+        def snapshot(row):
+            if row["phase"] == "il" and row["epoch"] == 2:
+                final_il.update(copy.deepcopy(model.state_dict()))
+        with TemporaryDirectory() as directory, patch("shixu.training.run_episode", return_value=episode):
+            train(None, policy, cfg, Path(directory) / "full.pt", 7, 1, 1,
+                  demonstrations=[episode], report=snapshot)
+            reused = TinyValue()
+            reused.load_state_dict(final_il)
+            other = SimpleNamespace(model=reused, device=torch.device("cpu"), length=2, gamma=.99)
+            train(None, other, cfg, Path(directory) / "reused.pt", 7, 1, 1,
+                  demonstrations=[episode], pretrained_il=True)
+            for a, b in zip(model.parameters(), reused.parameters()):
+                torch.testing.assert_close(a, b, rtol=0, atol=0)
+
 
 if __name__ == "__main__":
     unittest.main()

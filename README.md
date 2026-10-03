@@ -96,7 +96,7 @@ as a failed research family. Raw weights, logs and episodes remain local.
 The second frozen version, `occlusion_observation_protocol.json`, changes only
 the read clock. Memory is read from the latest legal history frame once per
 actor, then shared by all candidate actions. Candidate geometry remains in the
-spatial value encoder, but it no longer changes the actor's remembered state.
+spatial value encoder, but it no longer changes the actor's temporal read vector.
 The weights and parameter count are unchanged by this switch. Both versions
 receive byte-identical episode observations and rewards. The current-track
 reference is reused because it has no learned temporal read; the temporal
@@ -115,12 +115,37 @@ python -m experiments.occlusion summarize \
   --root outputs/occlusion_v2
 ```
 
-The observation-clock design is a hypothesis under test, not a claim that
-action-dependent retrieval is generally invalid. In this inherited simulator,
-humans do not react to robot actions, which motivates separating actor memory
-inference from candidate-conditioned geometry evaluation. The change also
-avoids replicating each actor's matrix memory 80 times. Physical consistency,
-runtime reduction and navigation improvement are evaluated separately.
+The observation-clock design is a hypothesis under test, not a correctness
+repair. Both versions leave the stored matrix state unchanged during candidate
+evaluation. Action-conditioned reads can legitimately retrieve different
+information for different decisions even when humans do not react to the
+robot. The new bias separates a shared temporal read vector from
+candidate-conditioned geometry evaluation and avoids replicating each actor's
+matrix memory 80 times. Frozen-weight read ablations are diagnostic, not
+substitutes for retraining or proof of better navigation.
+
+The first full four-seed occlusion trial is complete (384 held-out development
+episodes per arm, not the earlier full-observation trial):
+
+| Model | Overall SR | CR | Timeout | 10/20-person SR |
+|---|---:|---:|---:|---:|
+| CV-track current-value | 81.77% | 4.95% | 13.28% | 79.30% |
+| Actor-GRU | 77.34% | 6.25% | 16.41% | 75.78% |
+| Actor-KDA, candidate read | 78.39% | 11.20% | 10.42% | 75.78% |
+
+KDA does not pass: primary SR is unchanged against GRU, while primary collision
+increases by 5.86 percentage points. A frozen-weight switch to observation-clock
+reads also worsens seed 443 overall SR from 70.83% to 56.25%; this is a
+distribution-shifting diagnostic, not a trained comparison. The second version
+must therefore earn its own result through matched IL and RL.
+
+Completed final-IL checkpoints may be moved to a faster host using `--il-root`.
+The experiment verifies seed/configuration and all IL log epochs, restores the
+replay sampling stream, then starts a fresh, full-budget RL run. Interrupted RL
+work is archived and charged separately; it is not used for checkpoint selection.
+An exact CPU pipeline test checks identical full-run versus final-IL-reuse RL
+updates. Different GPU/software environments can still introduce numerical
+differences and are recorded with each run.
 
 ## Installation
 

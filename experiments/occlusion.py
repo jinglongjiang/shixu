@@ -138,11 +138,14 @@ def retention_diagnostic(data_path, protocol, destination):
     print(json.dumps(result, indent=2), flush=True)
 
 
-def evaluate_weights(path, protocol, device, cases, seed):
+def evaluate_weights(path, protocol, device, cases, seed, read_clock=None):
     path = Path(path)
     checkpoint = torch.load(path, map_location="cpu", weights_only=False)
     cfg = configparser.ConfigParser()
     cfg.read_dict(checkpoint["config"])
+    training_clock = cfg.get("model", "read_clock", fallback="candidate")
+    if read_clock is not None:
+        cfg.set("model", "read_clock", read_clock)
     policy = ValuePolicy(build_model(cfg), cfg, device)
     load_weights(policy.model, path, device)
     np.random.seed(seed)
@@ -167,6 +170,9 @@ def evaluate_weights(path, protocol, device, cases, seed):
                 records.append(row)
             print("EVALUATED", path.parent.name, people, geometry, summarize(records[-len(cases):]), flush=True)
     return {"checkpoint_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "training_read_clock": training_clock,
+            "evaluation_read_clock": cfg.get("model", "read_clock", fallback="candidate"),
+            "intervention_scope": "Frozen-weight read-clock ablation, not a retrained algorithm" if read_clock else None,
             "checkpoint_phase": checkpoint.get("phase", "final"), "episodes": records,
             "summary": summarize(records),
             "score_median_ms": float(np.median(timings)), "score_p95_ms": float(np.quantile(timings, .95)),
@@ -175,7 +181,7 @@ def evaluate_weights(path, protocol, device, cases, seed):
                       for people in protocol["people"]]}
 
 
-def run(root, protocol, arm, seed, data_path, device):
+def run(root, protocol, arm, seed, data_path, device, il_weights=None):
     output = root / str(seed) / arm
     if (output / "result.json").exists():
         raise RuntimeError("A completed result already exists; do not overwrite evidence")
@@ -186,16 +192,33 @@ def run(root, protocol, arm, seed, data_path, device):
     np.random.seed(seed)
     cfg = configuration(protocol, arm)
     policy = ValuePolicy(build_model(cfg), cfg, device)
+    prior_il, prior_il_seconds, discarded_rl_seconds = [], 0.0, 0.0
+    if il_weights:
+        checkpoint = torch.load(il_weights, map_location="cpu", weights_only=False)
+        if (checkpoint.get("phase") != "il" or checkpoint["seed"] != seed
+                or checkpoint["config"] != {s: dict(cfg[s]) for s in cfg.sections()}):
+            raise ValueError("The resumed checkpoint is not the matched final-IL model")
+        old_log = [json.loads(line) for line in Path(il_weights).with_name("learning.jsonl").read_text().splitlines()]
+        prior_il = [row for row in old_log if row["phase"] == "il"]
+        if [row["epoch"] for row in prior_il] != list(range(1, protocol["il_epochs"] + 1)):
+            raise ValueError("Final-IL reuse requires the complete original IL log")
+        prior_il_seconds = prior_il[-1]["elapsed_seconds"]
+        discarded_rl_seconds = max(0, old_log[-1]["elapsed_seconds"] - prior_il_seconds)
+        load_weights(policy.model, il_weights, device)
     env = environment(cfg, policy, protocol["training_geometry"], protocol["training_people"])
     output.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     if policy.device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(policy.device)
     with (output / "learning.jsonl").open("w") as log:
+        for row in prior_il:
+            log.write(json.dumps(dict(row, reused_final_il=True)) + "\n")
+        if il_weights:
+            torch.save(checkpoint, output / "il.pt")
         def report(row):
             if not np.isfinite(row["loss"]):
                 raise RuntimeError("Nonfinite training loss")
-            row["elapsed_seconds"] = time.perf_counter() - started
+            row["elapsed_seconds"] = prior_il_seconds + time.perf_counter() - started
             log.write(json.dumps(row) + "\n")
             log.flush()
             if row["phase"] == "il" and row["epoch"] == protocol["il_epochs"]:
@@ -204,8 +227,9 @@ def run(root, protocol, arm, seed, data_path, device):
             if row["phase"] == "il" and row["epoch"] % 10 == 0 or row["phase"] == "rl" and row["episode"] % 100 == 0:
                 print(arm, seed, row, flush=True)
         train(env, policy, cfg, output / "model.pt", seed, protocol["il_episodes"], protocol["rl_episodes"],
-              demonstrations=demonstrations["episodes"], rl_case_start=protocol["rl_case_start"], report=report)
-    training_seconds = time.perf_counter() - started
+              demonstrations=demonstrations["episodes"], rl_case_start=protocol["rl_case_start"], report=report,
+              pretrained_il=bool(il_weights))
+    training_seconds = prior_il_seconds + time.perf_counter() - started
     peak_mib = torch.cuda.max_memory_allocated(policy.device) / 1024 ** 2 if policy.device.type == "cuda" else None
     parameters = sum(p.numel() for p in policy.model.parameters())
     del policy, env
@@ -216,6 +240,9 @@ def run(root, protocol, arm, seed, data_path, device):
     result.update(protocol=protocol, source_sha256=source_hash(), seed=seed, arm=arm,
                   demonstration_sha256=hashlib.sha256(Path(data_path).read_bytes()).hexdigest(),
                   parameters=parameters, training_seconds=training_seconds,
+                  reused_il_sha256=hashlib.sha256(Path(il_weights).read_bytes()).hexdigest() if il_weights else None,
+                  reused_il_seconds=prior_il_seconds, discarded_partial_rl_seconds=discarded_rl_seconds,
+                  total_consumed_training_seconds=training_seconds + discarded_rl_seconds,
                   evaluation_seconds=time.perf_counter() - start, peak_allocated_mib=peak_mib,
                   torch=torch.__version__, host=platform.node(), device=str(device),
                   hardware=torch.cuda.get_device_name() if str(device).startswith("cuda") else "CPU")
@@ -239,6 +266,8 @@ def queue(args, protocol):
             command = [sys.executable, "-m", "experiments.occlusion", "run", "--protocol", args.protocol,
                        "--root", args.root, "--data", args.data, "--device", args.device,
                        "--seed", str(seed), "--arm", arm]
+            if args.il_root:
+                command.extend(("--il-weights", str(Path(args.il_root) / str(seed) / arm / "il.pt")))
             child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
             active.append((child, log, seed, arm))
             print("STARTED", seed, arm, child.pid, flush=True)
@@ -316,7 +345,10 @@ def main():
     parser.add_argument("--seed", type=int, default=419)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--weights")
+    parser.add_argument("--il-weights")
+    parser.add_argument("--il-root")
     parser.add_argument("--confirmation", action="store_true")
+    parser.add_argument("--read-clock", choices=("candidate", "observation"))
     parser.add_argument("--arms", nargs="+", choices=("current", "gru", "kda"))
     parser.add_argument("--seeds", nargs="+", type=int)
     parser.add_argument("--workers", type=int, default=4)
@@ -326,7 +358,7 @@ def main():
     if args.mode == "collect":
         collect(Path(args.data), protocol)
     elif args.mode == "run":
-        run(Path(args.root), protocol, args.arm, args.seed, args.data, args.device)
+        run(Path(args.root), protocol, args.arm, args.seed, args.data, args.device, args.il_weights)
     elif args.mode == "queue":
         queue(args, protocol)
     elif args.mode == "summarize":
@@ -335,7 +367,8 @@ def main():
         retention_diagnostic(args.data, protocol, args.root)
     else:
         rows = evaluate_weights(args.weights, protocol, args.device,
-                                protocol["confirmation_cases"] if args.confirmation else protocol["development_cases"], args.seed)
+                                protocol["confirmation_cases"] if args.confirmation else protocol["development_cases"],
+                                args.seed, args.read_clock)
         destination = Path(args.root)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(rows, indent=2))
