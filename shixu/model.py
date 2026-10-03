@@ -292,17 +292,14 @@ class OcclusionValueModel(OrderedValueModel):
             recalled = self.temporal_encoder.read(states, latest.reshape(batch * people, width), seen.reshape(-1))
             features = features + recalled.reshape(batch, 1, people, width) * (active & seen[:, None])[..., None]
         elif states is not None:
-            expanded = []
+            shared = []
             for state in states:
                 if self.substrate == "gru":
-                    expanded.append(state.reshape(state.shape[0], batch, people, width)[:, :, None].expand(
-                        -1, -1, count, -1, -1).reshape(state.shape[0], batch * count * people, width))
+                    shared.append(state.reshape(state.shape[0], batch, 1, people, width))
                 else:
-                    expanded.append(state.reshape(batch, people, *state.shape[1:])[:, None].expand(
-                        -1, count, -1, -1, -1, -1).reshape(batch * count * people, *state.shape[1:]))
+                    shared.append(state.reshape(batch, 1, people, *state.shape[1:]))
             query = own if self.local_address else features
-            recalled = self.temporal_encoder.read(tuple(expanded), query.reshape(-1, width),
-                                                  active.reshape(-1)).reshape(batch, count, people, width)
+            recalled = self.temporal_encoder.read(tuple(shared), query, active)
             features = features + recalled * (active & seen[:, None])[..., None]
         pooled = self._max_pool(features, active) if self.interaction_order in ("write", "residual") else self._pool(features, active)
         return self.value_head(pooled).squeeze(-1)

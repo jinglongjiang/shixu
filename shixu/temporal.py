@@ -92,7 +92,7 @@ class DeltaCell(nn.Module):
 
     def read(self, state, query):
         q = F.normalize(self._heads(self.q(self.input_norm(query))), dim=-1)
-        values = (q[..., None] * state).sum(-2) * (self.head_width ** -0.5)
+        values = torch.einsum("...hk,...hkv->...hv", q, state) * (self.head_width ** -0.5)
         return self.output(self.output_norm(values.flatten(-2)))
 
 
@@ -123,10 +123,14 @@ class ActorMemory(nn.Module):
             if features.shape[1] and bool((visible.all(1) | ~visible.any(1)).all()):
                 _, hidden = self.gru(features)
                 hidden = hidden * visible.any(1)[None, :, None]
-            else:
-                for tick in range(features.shape[1]):
-                    _, proposed = self.gru(features[:, tick:tick + 1], hidden)
-                    hidden = torch.where(visible[:, tick][None, :, None], proposed, hidden)
+            elif features.shape[1]:
+                # A held state is exactly the recurrence over measured frames only.
+                order = torch.argsort(~visible, dim=1, stable=True)
+                measured = features.gather(1, order[..., None].expand_as(features))
+                lengths = visible.sum(1).cpu().clamp_min(1)
+                packed = nn.utils.rnn.pack_padded_sequence(measured, lengths, batch_first=True, enforce_sorted=False)
+                _, hidden = self.gru(packed)
+                hidden = hidden * visible.any(1)[None, :, None]
             return (hidden,)
         states = []
         supplied = evidence if self.evidence_update else torch.zeros_like(evidence)
