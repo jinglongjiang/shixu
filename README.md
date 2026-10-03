@@ -149,6 +149,48 @@ The common observation-only rescue is frozen separately in
 experiments/temporal_rescue_protocol.json; its results must not be pooled with
 the legacy-contract cohort.
 
+## Completed Observation-Only Rescue
+
+The one permitted rescue subtracts the inherited redundant/incorrect derived
+inputs for **both** arms, without changing data, reward, budget or network size.
+Four paired seeds again completed 50 IL epochs, 1,000 MC-RL episodes and 96
+fixed evaluations per arm (768 evaluations).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 11.20% | 13.28% | 300,417 |
+| Actor-first GRU | 75.00% | 6.25% | 18.75% | 300,417 |
+
+SR differences are +3.13, +5.21, -5.21 and -5.21 pp across seeds
+17/29/43/71. The mean is -0.52 pp with 2/4 positive pairs:
+**NO_STABLE_GAIN** under the unchanged gate. Collision decreases in all four
+pairs, but timeout increases; this is a safety-progress operating-point signal,
+not proof of better navigation. Pooled 20-human gains also remain only 2/4
+seed-positive. Same-device scoring medians are 3.012 / 4.163 ms (scene / actor),
+so actor-first is about 38% more expensive in this workload.
+
+The legal observed-change shadow finds four first events in 12 native
+episodes: targeted actor-history truncation changes no root rankings and gives
+no safe progress gain >=0.05 m. Selective-revision headroom remains unproven;
+the small masked-prefix intervention does not reject the research family.
+Attention and pooling both move relative to recurrence, so this comparison
+does not isolate identity continuity alone.
+
+Reserved fresh rescue seeds 191/223 were not run because the primary gate
+failed. No GDN/KDA, new reward, extra teacher or further rescue was added.
+Across the separate initial, fresh and rescue cohorts, 20 models and 1,920
+matched evaluation episodes are retained locally. None is relabeled as a new
+method. All 38 local tests pass with the original comparison assets configured;
+the laptop passes 35 tests with three explicit original-asset skips.
+
+```bash
+python experiments/temporal_order.py summarize --root outputs/temporal_v2
+python -m experiments.temporal_latency --root outputs/temporal_v2 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v2 --seed 17
+python -m shixu.cli evaluate --weights outputs/temporal_v2/17/actor/model.pt \
+  --device cuda --cases 0 1
+```
+
 ## Baseline Boundary
 
 The source baseline comes from the user's
