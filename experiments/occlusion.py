@@ -30,7 +30,7 @@ def configuration(protocol, arm):
     cfg.add_section("observation")
     for section, key, value in (
         ("model", "architecture", "occlusion"), ("model", "representation", "tracks"),
-        ("model", "backbone", arm), ("model", "width", protocol["width"]),
+        ("model", "backbone", "kda" if arm == "kda_local" else arm), ("model", "width", protocol["width"]),
         ("model", "read_clock", protocol.get("read_clock", "candidate")),
         ("model", "layers", protocol["layers"]), ("buffer", "seq_len", protocol["history"]),
         ("observation", "retention_seconds", protocol["retention_seconds"]),
@@ -42,6 +42,8 @@ def configuration(protocol, arm):
         cfg.set(section, key, str(value))
     if "interaction_order" in protocol:
         cfg.set("model", "interaction_order", protocol["interaction_order"])
+    if arm == "kda_local":
+        cfg.set("model", "local_address", "true")
     return cfg
 
 
@@ -358,9 +360,11 @@ def address_probe(weights, data_path, device, destination):
             prefix = tokens[:, :-1]
             own, _, valid = model._features(prefix)
             contextual = model._attend(own, valid)
-            encoded = contextual if model.interaction_order == "write" else own
+            encoded = (contextual if model.interaction_order == "write" else
+                       own + contextual if model.interaction_order == "residual" else own)
+            address = own if model.local_address else encoded
             cell = model.temporal_encoder.cells[0]
-            keys = cell.k(cell.input_norm(encoded[:, -1]))
+            keys = cell.k(cell.input_norm(address[:, -1]))
             states, seen, _ = model.encode_history(prefix)
             batch, _, people, _ = own.shape
             mask = valid[:, -1] & seen
@@ -374,6 +378,7 @@ def address_probe(weights, data_path, device, destination):
                 values[name].extend(cosine[pairs].cpu().tolist())
     result = {"checkpoint_sha256": hashlib.sha256(Path(weights).read_bytes()).hexdigest(),
               "phase": checkpoint.get("phase", "final"), "interaction_order": model.interaction_order,
+              "local_address": model.local_address,
               "states": len(windows),
               "pairwise_cosine": {name: {"pairs": len(rows), "mean": float(np.mean(rows)),
                                         "median": float(np.median(rows)), "above_099": float(np.mean(np.asarray(rows) > .99))}
@@ -561,8 +566,9 @@ def comparison(root, protocol):
                        "exposure": {key: sum(e["exposure"][key] for r in rows for e in r["episodes"])
                                     for key in rows[0]["episodes"][0]["exposure"]}}
     contrasts = []
-    for control in ("gru", "current"):
-        a, b = models["kda"]["primary_by_seed"], models[control]["primary_by_seed"]
+    candidate = protocol.get("candidate_arm", "kda")
+    for control in protocol.get("control_arms", ("gru", "current")):
+        a, b = models[candidate]["primary_by_seed"], models[control]["primary_by_seed"]
         changes = {key: [100 * (x[key] - y[key]) for x, y in zip(a, b)] for key in ("sr", "cr", "tr")}
         time_change = np.mean([x["success_time"] / y["success_time"] - 1 for x, y in zip(a, b)
                                if x["success_time"] and y["success_time"]])
@@ -571,7 +577,7 @@ def comparison(root, protocol):
                     and np.mean(changes["cr"]) <= protocol["maximum_collision_increase_pp"]
                     and np.mean(changes["tr"]) <= protocol["maximum_timeout_increase_pp"]
                     and np.isfinite(time_change) and time_change <= protocol["maximum_success_time_increase_fraction"])
-        contrasts.append({"control": control, "seed_changes_pp": changes,
+        contrasts.append({"candidate": candidate, "control": control, "seed_changes_pp": changes,
                           "mean_changes_pp": {k: float(np.mean(v)) for k, v in changes.items()},
                           "success_time_change_fraction": float(time_change),
                           "development_positive": bool(positive)})
@@ -588,7 +594,7 @@ def main():
     parser.add_argument("--protocol", default=str(PROTOCOL))
     parser.add_argument("--data")
     parser.add_argument("--root")
-    parser.add_argument("--arm", choices=("current", "gru", "kda"))
+    parser.add_argument("--arm", choices=("current", "gru", "kda", "kda_local"))
     parser.add_argument("--seed", type=int, default=419)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--weights")
@@ -596,7 +602,7 @@ def main():
     parser.add_argument("--il-root")
     parser.add_argument("--confirmation", action="store_true")
     parser.add_argument("--read-clock", choices=("candidate", "observation"))
-    parser.add_argument("--arms", nargs="+", choices=("current", "gru", "kda"))
+    parser.add_argument("--arms", nargs="+", choices=("current", "gru", "kda", "kda_local"))
     parser.add_argument("--seeds", nargs="+", type=int)
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()

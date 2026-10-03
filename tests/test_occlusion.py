@@ -216,6 +216,75 @@ class OcclusionTests(unittest.TestCase):
                 load_weights(other, path, "cpu")
                 torch.testing.assert_close(model(tokens), other(tokens))
 
+    def test_local_addresses_preserve_local_motion_with_contextual_content(self):
+        vanilla = OcclusionValueModel("kda", 32, 2, interaction_order="residual")
+        local = OcclusionValueModel("kda", 32, 2, interaction_order="residual", local_address=True)
+        local.load_state_dict(vanilla.state_dict())
+        self.assertEqual(sum(p.numel() for p in vanilla.parameters()), sum(p.numel() for p in local.parameters()))
+        tokens = torch.randn(2, 5, 21, 13)
+        tokens[:, :, 1:, 10] = 1
+        tokens[:, :, 1:, 12] = 1
+        mask = tokens[:, :-1, 1:, 12] > 0
+        features = local._features(tokens[:, :-1])[0]
+        content = features + local._attend(features, mask)
+        cell = local.temporal_encoder.cells[0]
+        shape = features.shape
+        flatten = lambda x: x.permute(0, 2, 1, 3).reshape(-1, shape[1], shape[3])
+        expected = cell.encode(flatten(content), mask.permute(0, 2, 1).reshape(-1, shape[1]),
+                               content.new_zeros(shape[0] * shape[2], shape[1], 4),
+                               addresses=flatten(features))[1]
+        torch.testing.assert_close(local.encode_history(tokens[:, :-1])[0][0], expected, rtol=0, atol=0)
+        local(tokens).sum().backward()
+        self.assertTrue(all(torch.isfinite(p.grad).all() for p in local.parameters() if p.grad is not None))
+        torch.testing.assert_close(local(tokens), local(tokens[:, :, [0, *range(20, 0, -1)]]), atol=1e-5, rtol=1e-5)
+        memory = local.encode_history(tokens[:, :-1])
+        saved = [s.clone() for s in memory[0]]
+        local.read_history(memory, tokens[:, -1:].expand(-1, 80, -1, -1))
+        for before, after in zip(saved, memory[0]):
+            torch.testing.assert_close(before, after, atol=0, rtol=0)
+
+    def test_residual_writes_obey_measurement_mask(self):
+        model = OcclusionValueModel("kda", 32, 1, interaction_order="residual", local_address=True)
+        tokens = torch.randn(1, 4, 3, 13)
+        tokens[:, :, 1:, 12] = 1
+        tokens[:, :, 1, 10] = 1
+        tokens[:, :, 2, 10] = 0
+        changed = tokens.clone()
+        changed[:, :, 2, :10] *= 10
+        for a, b in zip(model.encode_history(tokens)[0], model.encode_history(changed)[0]):
+            torch.testing.assert_close(a, b, rtol=0, atol=0)
+
+    def test_separate_address_source_equal_to_content_is_exact_default(self):
+        from shixu.temporal import ActorMemory
+        memory = ActorMemory("kda", 32, 2)
+        features = torch.randn(4, 6, 32)
+        valid = torch.rand(4, 6) > .3
+        evidence = torch.zeros(4, 6, 4)
+        regular = memory.encode(features, valid, evidence)
+        same_source = memory.encode(features, valid, evidence, addresses=features)
+        for a, b in zip(regular, same_source):
+            torch.testing.assert_close(a, b, atol=0, rtol=0)
+
+    def test_residual_arm_configuration_and_reload(self):
+        import json
+        from experiments.occlusion import configuration
+        from shixu.model import build_model
+        protocol = json.loads((Path(__file__).resolve().parents[1] / "experiments/occlusion_context_protocol.json").read_text())
+        protocol["interaction_order"] = "residual"
+        for arm in ("current", "gru", "kda", "kda_local"):
+            cfg = configuration(protocol, arm)
+            cfg.set("model", "width", "32")
+            cfg.set("model", "layers", "1")
+            model = build_model(cfg)
+            tokens = torch.zeros(2, 1, 2, 13)
+            self.assertTrue(torch.isfinite(model(tokens)).all())
+            with TemporaryDirectory() as directory:
+                path = Path(directory) / "model.pt"
+                torch.save({"model": model.state_dict()}, path)
+                other = build_model(cfg)
+                load_weights(other, path, "cpu")
+                torch.testing.assert_close(model(tokens), other(tokens), rtol=0, atol=0)
+
 
 if __name__ == "__main__":
     unittest.main()

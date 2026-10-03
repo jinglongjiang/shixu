@@ -70,9 +70,10 @@ class DeltaCell(nn.Module):
     def _heads(self, values):
         return values.reshape(*values.shape[:-1], self.heads, self.head_width)
 
-    def _parameters_for(self, features, evidence):
+    def _parameters_for(self, features, evidence, addresses=None):
         x = self.input_norm(features)
-        q, k = [F.normalize(self._heads(layer(x)), dim=-1) for layer in (self.q, self.k)]
+        address = x if addresses is None else self.input_norm(addresses)
+        q, k = [F.normalize(self._heads(layer(address)), dim=-1) for layer in (self.q, self.k)]
         v = self._heads(self.v(x))
         decay = -self.log_rate.exp()[:, None] * F.softplus(self._heads(self.decay(x)) + self.dt_bias)
         if self.kind == "kda":
@@ -84,8 +85,8 @@ class DeltaCell(nn.Module):
             b, w = [self._heads(layer(gate_input)).sigmoid() for layer in (self.erase, self.write)]
         return q, k, v, decay, b, w
 
-    def encode(self, features, visible, evidence, initial_state=None):
-        values, state = delta_scan(*self._parameters_for(features, evidence), visible,
+    def encode(self, features, visible, evidence, initial_state=None, addresses=None):
+        values, state = delta_scan(*self._parameters_for(features, evidence, addresses), visible,
                                    initial_state=initial_state)
         return self.output(self.output_norm(values.flatten(-2))), state
 
@@ -114,8 +115,10 @@ class ActorMemory(nn.Module):
         else:
             raise ValueError("Actor memory supports gru/kda/gdn2")
 
-    def encode(self, features, visible, evidence):
+    def encode(self, features, visible, evidence, addresses=None):
         if self.kind == "gru":
+            if addresses is not None:
+                raise ValueError("Separate addressing requires a delta memory")
             hidden = features.new_zeros(self.layers, len(features), self.width)
             if features.shape[1] and bool((visible.all(1) | ~visible.any(1)).all()):
                 _, hidden = self.gru(features)
@@ -128,8 +131,10 @@ class ActorMemory(nn.Module):
         states = []
         supplied = evidence if self.evidence_update else torch.zeros_like(evidence)
         for cell in self.cells:
-            output, state = cell.encode(features, visible, supplied)
+            output, state = cell.encode(features, visible, supplied, addresses=addresses)
             features = features + output
+            if addresses is not None:
+                addresses = addresses + output
             states.append(state)
         return tuple(states)
 

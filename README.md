@@ -183,6 +183,56 @@ earlier poor decisions. DS-RNN and [PaS](https://github.com/yejimun/PaS_CrowdNav
 already study temporal/social inference. Moving attention is an experimental
 representation choice, not a standalone new-method claim.
 
+The complete context-write trial is negative for KDA: overall SR/CR/timeout
+are 62.76/12.24/25.00%, versus 85.94/5.99/8.07% for GRU. Primary 10/20-person
+SR is 60.16% versus 85.55%, with KDA losses in all four paired seeds.
+On 836 uniformly sampled demonstration windows, seed-443 final KDA keys have
+mean inter-actor cosine 0.99926 in this version versus 0.77600 in V1.
+Separate per-actor matrices do not prevent homogenization when their inputs
+are almost identical. High cosine is a representation diagnostic, not a proof
+that it causes all observed navigation losses.
+
+The next test, `occlusion_address_protocol.json`, preserves local features:
+
+```text
+actor feature u_i -> u_i + attention(u, measured actors) -> memory content
+actor feature u_i -------------------------------------> KDA q/k (custom)
+candidate feature + same attention -> retained-memory read -> max -> value
+```
+
+All four arms share the residual spatial path. Current-value, contextual GRU,
+ordinary residual KDA and actor-addressed KDA are retrained; the old current
+reference is not reused because its query representation changes too. The
+two KDA arms have exactly the same parameters and initialization. Only q/k
+source differs; values, decay and write strength consume contextual content.
+At deeper layers both streams receive the same recurrent output. There is
+one attention, one shared actor memory and no additional loss or output head.
+Existing read/write versions remain available for their archived checkpoints.
+
+This is a mechanism test, not an established new method. Separate-source
+delta memory already appears in [DRAM](https://arxiv.org/abs/2609.32453), and
+retrieval design is studied in
+[Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610).
+The hypothesis here is narrower: retaining actor-local addresses while
+remembering observed social context helps legal hidden-track action evaluation.
+That claim still needs navigation gains and an occlusion-specific analysis.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4 --data outputs/occlusion_v4/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4
+```
+
+Demonstrations are the same saved observations/rewards as V1, with protocol
+metadata retargeted for the matched run; there is no extra training data.
+Final IL and RL weights, all failed versions, raw episode controls and consumed
+compute are retained. Fresh seeds and unseen confirmation cases are not used
+to develop this version.
+
 ## Installation
 
 Install a PyTorch build appropriate for your machine first. Then:
