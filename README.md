@@ -441,6 +441,76 @@ python -m experiments.temporal_memory summarize \
 Dynamic versus static is the primary contrast. A meaningful gain is at least
 3 pp SR with3/4 positive seed pairs and the unchanged safety/progress limits.
 Practical equivalence requires the paired90% t interval inside +/-3 pp for
-aggregate SR only; failure to find a gain is not equivalence. No result is
-available at protocol freeze, and ordinary dynamic gating is not automatically
-a new social-navigation mechanism.
+aggregate SR only; failure to find a gain is not equivalence. The protocol was
+frozen before any outcomes were inspected. Ordinary dynamic gating is not
+automatically a new social-navigation mechanism.
+
+### Four-seed Results (4 October 2026)
+
+All16 models completed the frozen budget and1,536 evaluations. Only final
+checkpoints are compared; neither intermediate snapshots nor the earlier
+two-seed pilot are pooled into these results.
+
+| Readout/reference | SR % | CR % | Timeout % | Successful time s | Successful path m |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Actor GRU | 79.17 | 10.16 | 10.68 | 16.62 | 11.69 |
+| KDA read, coefficient1 | 76.82 | 11.72 | 11.46 | 22.21 | 16.12 |
+| KDA static channel scale | 79.43 | 9.64 | 10.94 | 20.96 | 14.98 |
+| KDA dynamic gate | 79.69 | 10.94 | 9.38 | 19.43 | 14.56 |
+
+The primary dynamic-minus-static SR differences for307/331/359/383 are
+-1.04 /0.00 /-7.29 /+9.38 pp. Mean +0.26 pp; paired90% interval
+[-7.83,+8.35] pp. Only one positive pair, two negative and one tie:
+**NO_CONSISTENT_PILOT_GAIN**, and practical SR equivalence is **not** established.
+All five pre-fixed contrasts fail the pilot-gain rule. Dynamic-minus-GRU is
+only +0.52 pp with one positive pair and16.90% longer successful time;
+static-minus-GRU is +0.26 pp with26.09% longer successful time. Successful
+time/path averages concern different surviving episode sets, not paired
+progress equivalence. Six-cell supporting results remain in the raw summary.
+
+| Complete80-action score | Idle4090 median ms | Laptop CPU median ms |
+| --- | ---: | ---: |
+| Actor GRU, original batched implementation | 3.02 | 56.43 |
+| Actor GRU, mathematically equivalent prefix reuse | 3.37 | 5.38 |
+| KDA read | 9.65 | 11.00 |
+| KDA static | 9.65 | 11.07 |
+| KDA dynamic | 9.74 | 11.47 |
+
+These are100 repetitions after20 warmups, one pre-fixed five-human root,
+T24 and no simulator/smoothing time. Server timing starts after all training
+processes exit; CPU timing uses the laptop. KDA's apparent CPU advantage over
+the unreused GRU is absorbed by prefix reuse; no efficiency advantage is found
+over the stronger compute control. This compact recurrence is not the optimized
+FLA kernel. KDA actor state is160 KiB versus5 KiB for GRU at this configuration.
+
+Actual process training time is11.77-15.15 min for GRU,34.80-39.29 for KDA
+read,30.06-36.32 for static and28.30-41.77 for dynamic. Concurrent load varies
+from six to eight jobs; these are recorded costs, not isolated throughput
+benchmarks. Summed overlapping training/evaluation times are7.94/0.79 process
+hours, not GPU-hours. Peak allocated memory per training process is724 MiB
+for GRU and1,890 MiB for KDA.
+
+All48 checkpoints reload with exact configuration/parameter counts and finite
+weights. Each log contains50 IL epochs and1,000 RL episodes; every model has
+the same96 expected cases. The learned static coefficients finish near0.501,
+with the full four-seed range0.4982-0.5051, so this control is close to uniform
+attenuation rather than a strongly differentiated channel calibration.
+
+**Interpretation:** the old two-seed dynamic-gate advantage does not replicate
+as a stable gain here. This neither proves static/dynamic equivalence nor
+rejects temporal navigation, actor memory or KDA as a family. It does not
+support selective motion-evidence revision or a new method claim. Keep GRU
+as the health/reference baseline. The next justified diagnosis is to locate
+the divergence using retained IL50/RL500 snapshots under the same evaluator,
+then test one identified replay/readout-contract issue; do not search hundreds
+of outcome-selected gate variants or rescue a favorable seed.
+
+Scientific source is frozen at6dde31e. Local results are in
+/home/abc/workspace/shixu/outputs/scale_followup, including the protocol/source
+manifest, paired summary, full episode records, learning logs, three checkpoints
+per model and GPU/CPU latency arrays. Code is versioned; weights are not added
+to Git. All98 remote raw artifacts and nine scientific source files match
+local SHA256 checksums; laptop timing also matches its original checksum.
+The server-only temporary workspace is removed after verification, with the
+installed environment left intact. No additional training or architecture
+is started by this analysis.
