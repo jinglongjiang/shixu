@@ -44,6 +44,8 @@ def configuration(protocol, arm):
         cfg.set("model", "interaction_order", protocol["interaction_order"])
     if arm == "kda_local":
         cfg.set("model", "local_address", "true")
+    for key, value in protocol.get("arm_models", {}).get(arm, {}).items():
+        cfg.set("model", key, str(value))
     return cfg
 
 
@@ -544,16 +546,26 @@ def comparison(root, protocol):
     for arm in protocol["arms"]:
         reference = protocol.get("reference_roots", {}).get(arm)
         origin = Path(reference) if reference else root
-        rows = [json.loads((origin / str(seed) / arm / "result.json").read_text()) for seed in protocol["seeds"]]
+        source_arm = protocol.get("reference_arms", {}).get(arm, arm)
+        rows = [json.loads((origin / str(seed) / source_arm / "result.json").read_text()) for seed in protocol["seeds"]]
         if reference:
-            if arm != "current":
-                raise ValueError("Only the unchanged current-track arm may be reused")
             shared = ("width", "layers", "history", "retention_seconds", "sensor", "association", "il_episodes",
                       "il_epochs", "il_case_start", "rl_episodes", "rl_case_start", "batch_size",
                       "rl_updates_per_episode", "training_people", "training_geometry", "people", "geometries",
                       "development_cases", "seeds")
             if any(any(r["protocol"][key] != protocol[key] for key in shared) for r in rows):
                 raise ValueError("Reused baseline has different data, budget or evaluation")
+            def canonical(config):
+                config = {section: dict(values) for section, values in config.items() if section != "DEFAULT"}
+                for key, default in (("read_clock", "candidate"), ("interaction_order", "read"),
+                                     ("local_address", "false"), ("query_mode", "read"), ("write_mode", "observed")):
+                    config["model"].setdefault(key, default)
+                return config
+            expected = canonical(configuration(protocol, arm))
+            for seed in protocol["seeds"]:
+                checkpoint = torch.load(origin / str(seed) / source_arm / "model.pt", map_location="cpu", weights_only=False)
+                if canonical(checkpoint["config"]) != expected:
+                    raise ValueError("A reused reference must preserve its complete model and controller configuration")
         elif any(r["protocol"] != protocol for r in rows):
             raise ValueError("Result protocol mismatch")
         models[arm] = {"summary": summarize([e for r in rows for e in r["episodes"]]),
@@ -594,7 +606,7 @@ def main():
     parser.add_argument("--protocol", default=str(PROTOCOL))
     parser.add_argument("--data")
     parser.add_argument("--root")
-    parser.add_argument("--arm", choices=("current", "gru", "kda", "kda_local"))
+    parser.add_argument("--arm")
     parser.add_argument("--seed", type=int, default=419)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--weights")
@@ -602,7 +614,7 @@ def main():
     parser.add_argument("--il-root")
     parser.add_argument("--confirmation", action="store_true")
     parser.add_argument("--read-clock", choices=("candidate", "observation"))
-    parser.add_argument("--arms", nargs="+", choices=("current", "gru", "kda", "kda_local"))
+    parser.add_argument("--arms", nargs="+")
     parser.add_argument("--seeds", nargs="+", type=int)
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()

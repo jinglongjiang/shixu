@@ -228,7 +228,7 @@ class OcclusionValueModel(OrderedValueModel):
     """
 
     def __init__(self, substrate="kda", width=128, layers=2, read_clock="candidate", interaction_order="read",
-                 local_address=False):
+                 local_address=False, query_mode="read", write_mode="observed"):
         from .temporal import ActorMemory
         super().__init__("actor", width, layers, "observed")
         self.substrate = substrate
@@ -241,6 +241,11 @@ class OcclusionValueModel(OrderedValueModel):
             raise ValueError("Local addresses require candidate-read residual KDA")
         self.interaction_order = interaction_order
         self.local_address = local_address
+        if query_mode not in ("read", "branch") or write_mode not in ("observed", "retained"):
+            raise ValueError("Unknown successor-query or history-write contract")
+        if query_mode == "branch" and (substrate != "kda" or read_clock != "candidate" or local_address):
+            raise ValueError("Private successor branches require ordinary candidate-clock KDA")
+        self.query_mode, self.write_mode = query_mode, write_mode
         self.human_encoder = nn.Sequential(nn.Linear(11, width), nn.ReLU())
         self.temporal_encoder = (ActorMemory(substrate, width, layers)
                                  if substrate != "current" else None)
@@ -259,7 +264,7 @@ class OcclusionValueModel(OrderedValueModel):
         return features, active, measured
 
     def encode_history(self, prefix):
-        features, _, measured = self._features(prefix)
+        features, active, measured = self._features(prefix)
         batch, length, people, width = features.shape
         if self.temporal_encoder is None:
             return None, measured.any(1), None
@@ -269,7 +274,8 @@ class OcclusionValueModel(OrderedValueModel):
             context = self._attend(features, measured)
             features = features + context if self.interaction_order == "residual" else context
         sequence = features.permute(0, 2, 1, 3).reshape(batch * people, length, width)
-        masks = measured.permute(0, 2, 1).reshape(batch * people, length)
+        writes = active if self.write_mode == "retained" else measured
+        masks = writes.permute(0, 2, 1).reshape(batch * people, length)
         if addresses is not None:
             addresses = addresses.permute(0, 2, 1, 3).reshape(batch * people, length, width)
         states = self.temporal_encoder.encode(sequence, masks, sequence.new_zeros(batch * people, length, 4),
@@ -299,8 +305,10 @@ class OcclusionValueModel(OrderedValueModel):
                 else:
                     shared.append(state.reshape(batch, 1, people, *state.shape[1:]))
             query = own if self.local_address else features
-            recalled = self.temporal_encoder.read(tuple(shared), query, active)
-            features = features + recalled * (active & seen[:, None])[..., None]
+            branching = self.query_mode == "branch"
+            recalled = self.temporal_encoder.read(tuple(shared), query, active, advance=branching)
+            usable = active if branching else active & seen[:, None]
+            features = features + recalled * usable[..., None]
         pooled = self._max_pool(features, active) if self.interaction_order in ("write", "residual") else self._pool(features, active)
         return self.value_head(pooled).squeeze(-1)
 
@@ -317,7 +325,8 @@ def build_model(config):
     if section.get("architecture") == "occlusion":
         return OcclusionValueModel(section.get("backbone", "kda"), width, layers,
                                    section.get("read_clock", "candidate"), section.get("interaction_order", "read"),
-                                   section.getboolean("local_address", fallback=False))
+                                   section.getboolean("local_address", fallback=False),
+                                   section.get("query_mode", "read"), section.get("write_mode", "observed"))
     if section.get("architecture") == "memory":
         return MemoryValueModel(section.get("backbone", "kda"), section.get("readout", "evidence"), width, layers)
     if section.get("order"):

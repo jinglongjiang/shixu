@@ -90,6 +90,56 @@ class OcclusionTests(unittest.TestCase):
         permuted = tokens[:, :, [0, 2, 1]]
         torch.testing.assert_close(model(tokens), model(permuted), atol=1e-5, rtol=1e-5)
 
+    def test_private_successor_update_matches_exact_one_step_and_gradients(self):
+        from shixu.temporal import DeltaCell
+        cell = DeltaCell(32, "kda").double()
+        state = torch.randn(6, 4, 8, 8, dtype=torch.float64, requires_grad=True)
+        query = torch.randn(6, 32, dtype=torch.float64, requires_grad=True)
+        saved = state.detach().clone()
+        direct = cell.imagine(state, query)
+        explicit, _ = cell.encode(query[:, None], torch.ones(6, 1, dtype=torch.bool),
+                                  query.new_zeros(6, 1, 4), initial_state=state)
+        torch.testing.assert_close(direct, explicit[:, 0], rtol=1e-10, atol=1e-10)
+        first = torch.autograd.grad(direct.square().sum(), (state, query), retain_graph=True)
+        second = torch.autograd.grad(explicit.square().sum(), (state, query))
+        for a, b in zip(first, second):
+            torch.testing.assert_close(a, b, rtol=1e-9, atol=1e-9)
+        torch.testing.assert_close(state, saved, rtol=0, atol=0)
+
+    def test_candidate_branches_broadcast_without_real_memory_writes(self):
+        model = OcclusionValueModel("kda", 32, 2, query_mode="branch")
+        tokens = torch.randn(2, 5, 21, 13)
+        tokens[:, :, 1:, 12] = 1
+        tokens[:, :3, 1:, 10] = 1
+        tokens[:, 3:, 1:, 10] = 0
+        memory = model.encode_history(tokens[:, :-1])
+        saved = [s.clone() for s in memory[0]]
+        queries = tokens[:, -1:].expand(-1, 80, -1, -1).clone()
+        queries[:, :, 0, :4] += torch.randn(2, 80, 4)
+        values = model.read_history(memory, queries)
+        sequential = torch.cat([model.read_history(memory, queries[:, tick:tick+1]) for tick in range(80)], 1)
+        torch.testing.assert_close(values, sequential, rtol=1e-5, atol=1e-5)
+        for before, after in zip(saved, memory[0]):
+            torch.testing.assert_close(before, after, rtol=0, atol=0)
+        values.mean().backward()
+        self.assertTrue(all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None))
+        torch.testing.assert_close(model(tokens), model(tokens[:, :, [0, *range(20, 0, -1)]]), rtol=1e-5, atol=1e-5)
+
+    def test_retained_writes_are_a_distinct_legal_pseudomeasurement_control(self):
+        observed = OcclusionValueModel("kda", 32, 1, query_mode="branch")
+        retained = OcclusionValueModel("kda", 32, 1, query_mode="branch", write_mode="retained")
+        retained.load_state_dict(observed.state_dict())
+        tokens = torch.randn(1, 5, 3, 13)
+        tokens[:, :, 1:, 12] = 1
+        tokens[:, :, 1:, 10] = 0
+        tokens[:, 0, 1:, 10] = 1
+        changed = tokens.clone()
+        changed[:, 1:4, 1:, :9] *= -2
+        torch.testing.assert_close(observed.encode_history(tokens[:, :-1])[0][0],
+                                   observed.encode_history(changed[:, :-1])[0][0], rtol=0, atol=0)
+        self.assertGreater(float((retained.encode_history(tokens[:, :-1])[0][0]
+                                 - retained.encode_history(changed[:, :-1])[0][0]).abs().max()), 1e-5)
+
     def test_empty_scene_and_checkpoint_reload(self):
         cfg = configparser.ConfigParser()
         cfg.read(Path(__file__).resolve().parents[1] / "shixu/default.ini")
