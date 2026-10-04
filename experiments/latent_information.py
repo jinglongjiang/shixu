@@ -147,10 +147,10 @@ def radial_features(x, centers, scale):
     return np.concatenate((x, np.exp(-distances / (2 * scale ** 2))), axis=1)
 
 
-def fit_probe(train, validation, mode, protocol, landmark_indices):
+def fit_probe(train, validation, mode, protocol, landmark_indices, design_fn=design):
     from sklearn.linear_model import Ridge
 
-    x, xv = design(train, mode), design(validation, mode)
+    x, xv = design_fn(train, mode), design_fn(validation, mode)
     mean, std = x.mean(0), x.std(0)
     std[std < 1e-6] = 1
     x, xv = (x - mean) / std, (xv - mean) / std
@@ -172,8 +172,8 @@ def fit_probe(train, validation, mode, protocol, landmark_indices):
     return best
 
 
-def predict(model, rows):
-    x = (design(rows, model["mode"]) - model["mean"]) / model["std"]
+def predict(model, rows, design_fn=design):
+    x = (design_fn(rows, model["mode"]) - model["mean"]) / model["std"]
     features = radial_features(x, model["centers"], model["scale"])
     return (features @ model["coef"].T + model["intercept"]) * model["ystd"] + model["ymean"]
 

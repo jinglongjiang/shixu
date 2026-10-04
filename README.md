@@ -1060,3 +1060,37 @@ retains the easy primary cohort, explicitly labels the added interaction and
 component diagnostics as exploratory, and reports both continuations rather
 than selecting the favorable one. Tests now total100, with97 passes and three
 optional legacy-asset skips; the frozen scientific source hash is unchanged.
+
+### Controlled Circle-Coupling Audit
+
+CIRCLE_HISTORY_CAUSAL_AUDIT.md separates first-sighting goal information from
+residual history and explicit sequence order. It uses432 fresh trajectories:
+native circle, paired circle with goal ownership permuted (identical starts and
+goal set), and native square. Each regime has separate64-case fits,16-case
+validation and64-case held-out evaluation. No navigation model is trained.
+
+The native generator exactly sets each goal to minus its spawn position.
+The legal first-sighting rule recovers goals exactly for the290/320 circle test
+tracks visible at reset, and attains true-world maximum return at all16 selected
+circle roots under both native continuations. History still improves prediction
+after breaking this coupling and when fitted within square, but not navigation
+over the strong simple controls. The earlier square OOD failure is therefore a
+transfer failure of that fit, not proof that square has no useful history.
+
+The action audit enumerates69,120 branches across48 distinct frozen roots;
+branches are not independent episodes. It executes one0.25s root action followed
+by the same legal continuation and measures native-return regret, completion,
+clearance and remaining time. This is Q^pi, not optimal Q or learned-policy SR.
+The report preserves unfavorable CV/order comparisons and states which local
+equivalence criteria hold. Production sources and old checkpoints are frozen.
+
+```bash
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.circle_coupling collect --workers 4
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.circle_coupling probe
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.circle_coupling cross
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.circle_coupling decisions --workers 4
+```
+
+Raw artifacts remain local in ignored outputs/circle_coupling. Tests total109,
+with106 passes and three existing optional legacy-asset skips. No KDA V9 or
+new IL/RL run is started on the basis of this audit.

@@ -1,0 +1,31 @@
+{
+  "version": "circle-coupling-controlled-audit-v1",
+  "question": "Separate legal first-sighting goal coupling from residual ordered-history value. Generator-specific memory is real information, not fabrication.",
+  "regimes": ["circle", "circle_permuted", "square"],
+  "intervention": "For circle_permuted, retain native circle starts and the entire native goal set. Rotate goal ownership by 1 + case modulo 4 before any motion. No dynamics/reward/observation changes.",
+  "splits": [
+    {"name": "train", "start": 72000, "count": 64},
+    {"name": "validation", "start": 72064, "count": 16},
+    {"name": "test", "start": 72080, "count": 64}
+  ],
+  "people": 5,
+  "sample_stride": 4,
+  "future_seconds": [1.0, 2.0],
+  "modes": ["current", "birth", "history24", "birth_history3", "birth_history24", "birth_bag24", "birth_statistics"],
+  "probe_family": "Same padded 235-dimensional legal input, 256 shared training-row landmarks and ridge family. Fit and validate separately within each generator, never by test performance.",
+  "landmarks": 256,
+  "length_scales": [0.5, 1.0, 2.0, 4.0],
+  "ridge_alphas": [0.01, 0.1, 1.0, 10.0],
+  "bootstrap_repetitions": 5000,
+  "contrasts": [["current", "birth"], ["current", "history24"], ["birth", "birth_history24"], ["birth_bag24", "birth_history24"], ["birth_statistics", "birth_history24"], ["birth_history3", "birth_history24"]],
+  "material_margins": {"goal_angle_degrees": 2.0, "goal_position_error_m": 0.1, "preferred_velocity_error_mps": 0.02, "future_2s_error_m": 0.02, "decision_regret": 0.01, "remaining_seconds": 0.25},
+  "inference": "Case-paired bootstrap. Each primary interval uses 98.3333% confidence (Bonferroni across three regimes for that contrast/endpoint). Equivalence requires the interval inside the prespecified practical margin; nonsignificance is not equivalence. Outcomes remain endpoint-specific.",
+  "decision_selection": {"split": "test", "per_regime": 16, "minimum_seconds": 2.0, "maximum_surface_clearance_m": 0.8, "all_five_visible": true, "robot_goal_distance_min_m": 1.0, "selection": "One first eligible root per case, first 16 eligible test cases in case-ID order. No future or method-result selection."},
+  "decision_modes": ["cv", "current", "birth", "history24", "birth_history24", "birth_bag24", "birth_statistics", "circle_birth_prior", "truth"],
+  "continuations": ["inherited_orca", "unbraked_orca"],
+  "root_seconds": 0.25,
+  "gamma": 0.99,
+  "reward": "Frozen native rewards to terminal; Q^pi not Q*. Progress reward remains zero.",
+  "interpretation": "Removing goal coupling also changes routes via that intervention. Within-regime fits control for the previous OOD-training confound, but empirical failure cannot prove absence of every possible temporal mechanism.",
+  "no_training": "Only offline predictive probes. No new navigation policy, KDA architecture, IL or RL training."
+}
