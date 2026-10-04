@@ -48,7 +48,7 @@ def aggregate(root, protocol_path):
     if data["protocol"] != protocol or data["source_sha256"] != source_hash():
         raise ValueError("Source or shared demonstration protocol changed")
     data_sha = sha(data_path)
-    model_records, audits = {}, []
+    model_records, audits, initialization_audits = {}, [], []
     for arm in protocol["arms"] + (["cv_fresh"] if native_bridge else ["parent_gru"]):
         results = []
         for seed in protocol["seeds"]:
@@ -122,6 +122,22 @@ def aggregate(root, protocol_path):
         if (parent_host
                 != (reference["training_host"], reference["torch"], reference["device"])):
             raise ValueError("Parent and new arm numerical evaluation conditions differ")
+        if native_bridge:
+            fresh_il = root.parent / "forecast_control_b_fresh_cv" / str(seed) / "cv/il.pt"
+            initial = torch.load(fresh_il, map_location="cpu", weights_only=False)["model"]
+            initial = {k: v for k, v in initial.items() if k.startswith("critic.")}
+            if not initial:
+                raise ValueError("Missing IL critic tensors in fresh CV")
+            checksums = {"cv_fresh": sha(fresh_il)}
+            for arm in ("current", "gru", "kda"):
+                il_path = root / str(seed) / arm / "il.pt"
+                state = torch.load(il_path, map_location="cpu", weights_only=False)["model"]
+                state = {k: v for k, v in state.items() if k.startswith("critic.")}
+                if set(state) != set(initial) or any(not torch.equal(v, state[k]) for k, v in initial.items()):
+                    raise ValueError("Fresh CV and learned arms have different IL critic weights")
+                checksums[arm] = sha(il_path)
+            initialization_audits.append(dict(seed=seed, exact_critic_tensor_parity=True,
+                                               il_checkpoint_sha256=checksums))
     models = {}
     for arm, results in model_records.items():
         episodes = [e for r in results for e in r["episodes"]]
@@ -159,7 +175,8 @@ def aggregate(root, protocol_path):
     status = ("DEVELOPMENT_POSITIVE_REQUIRES_FRESH_CONFIRMATION" if all(c["development_positive"] for c in kda)
               else "NO_VALIDATED_KDA_ADVANTAGE_THIS_VERSION")
     result = dict(protocol=protocol, protocol_sha256=sha(protocol_path), source_sha256=source_hash(),
-                  demonstration_sha256=data_sha, audits=audits, models=models, contrasts=contrasts, status=status,
+                  demonstration_sha256=data_sha, audits=audits, initialization_audits=initialization_audits,
+                  models=models, contrasts=contrasts, status=status,
                   reference_scope="Original full-budget critic reused after exact native-CV parity" if native_bridge else "Frozen Parent re-evaluation",
                   scope="Four paired training seeds are the replication units. Nominal intervals are exploratory, "
                         "not multiplicity-adjusted. Conditional successful-time averages do not replace timeout "

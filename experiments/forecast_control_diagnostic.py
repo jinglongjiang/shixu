@@ -244,7 +244,7 @@ def compare(weights, cohort, destination, device):
             subsets = {"all": mask, "near": mask & near[:, None], "currently_retained_hidden": mask & hidden[:, None]}
             accuracy = {name: dict(targets=int(m.sum()), error_sum=float(errors[i][m].sum()),
                                    cv_error_sum=float(cv_errors[i][m].sum())) for name, m in subsets.items()}
-            for step in (4, 8):
+            for step in (1, 4, 8):
                 m = mask[:, step - 1]
                 accuracy[str(step * .25) + "s"] = dict(targets=int(m.sum()), error_sum=float(errors[i, :, step - 1][m].sum()),
                                                        cv_error_sum=float(cv_errors[i, :, step - 1][m].sum()))

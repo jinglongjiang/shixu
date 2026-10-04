@@ -1,6 +1,29 @@
 # Forecast-to-Control Navigation Experiment
 
-Date: 2026-10-04. Status: PROTOTYPE_A_COMPLETE; SOLE_INTERFACE_RESCUE_B_RUNNING.
+Date: 2026-10-04. Status: COMPLETE; NO_VALIDATED_KDA_ADVANTAGE_THIS_VERSION.
+
+## Final Decision
+
+The bounded navigation attempt is complete, including its one permitted common
+interface repair. Both A and B underwent actual IL and online MC training,
+saved-weight reload and native closed-loop evaluation; these are not forward
+fixtures or surrogate action tests. B has16 newly trained runs, four reused
+strong-reference evaluations and768 test episodes per arm. Training is exclusively
+five-person circle; evaluation includes5/10/20 people in circle and square.
+
+B's primary10/20-person SR is86.52% for KDA,83.40% for GRU,87.11% for Current,
+86.13% for fresh CV and84.96% for the reused original Parent. KDA does not beat
+Current, and its+0.39pp over fresh CV accompanies+1.56pp collision. It fails the
+fixed gain, seed-consistency and safety criteria. No fresh confirmation, third
+interface rescue, KDA V9/V10 or parameter sweep is started.
+
+This rejects the tested forecast-to-native-query method as a demonstrated KDA
+advantage, not temporal modeling or the entire KDA family. All B arms retain the
+original contextual-GRU critic: their names distinguish the motion estimators,
+not pure GRU-versus-KDA navigation backbones. The connection consumes only the
+native .25s forecast; it does not test a planner consuming longer-horizon history
+information. Prediction-error and CV-swap diagnostics explain the tested contract
+but cannot replace its navigation outcomes or establish a unique failure cause.
 
 ## Fixed Question
 
@@ -11,7 +34,7 @@ This is a complete bounded method attempt, not KDA V9, another goal-recovery
 audit, or a claim that only KDA can solve the task. Circle coupling, the previous
 predictive audit and V1-V8 negative results remain closed and unchanged.
 
-## Minimal Architecture
+## Prototype-A Architecture (Completed)
 
 ```text
 legal actor observations (24 control frames)
@@ -107,7 +130,7 @@ what is changed. Any revised consumer applies to all common-interface arms and
 is retrained under a new frozen protocol. No KDA-only gate sweep, outcome-driven
 hyperparameter search or automatic V9/V10 series.
 
-## Evidence State
+## Prototype-A Evidence
 
 Prototype-A is complete: all16 runs have50 IL epochs,3000 RL episodes and192
 reloaded-weight evaluations. The completed contract passes124 tests,
@@ -117,16 +140,17 @@ training/save/reload/native-episode smoke. All four smoke evaluations timed out;
 these intentionally tiny pipeline checks are not method-performance evidence.
 Full16-run training used419/443/491 on the4090 and467 on the3060.
 
-The control connection is committed and uploaded to shixu as f3aaae9. Scientific
-source and the training protocol remain frozen while the full runs are active.
-The additional diagnostic operates offline and does not alter training.
+The A control connection was committed and uploaded to shixu as f3aaae9. Its
+completed results, scientific source and protocol are archived; the live source
+now implements the one permitted B repair. Offline diagnostics do not alter
+either training run.
 
 The diagnostic cohort is fixed independently of method outcomes: the first four
 development cases per geometry/population cell, replaying the archived commands
 of parent seed419. All24 replays reproduce terminal event, time, path and minimum
 clearance. There are591 uniformly sampled control states and34,990 available
-later-visible actor/time labels. All learned arms and both IL/final phases will
-use these identical legal histories. It measures prediction accuracy and the
+later-visible actor/time labels. All learned arms and both IL/final phases use
+these identical legal histories. It measures prediction accuracy and the
 effect of substituting CV forecasts while holding each model's value weights
 fixed. A substitution changes the model's input distribution; action differences
 are not an improvement estimate or a replacement for trained closed-loop results.
@@ -167,7 +191,7 @@ weighted prediction norms. Current has six of eight negative cosines and norm
 ratios30-65. These are local gradient measurements, not reconstruction of the
 past AdamW trajectory or proof that this caused the navigation loss. KDA has
 eight of eight negative cosines on the same batches (-0.733 to-0.480).
-No rescue has been trained at this point.
+These measurements preceded the B repair and did not establish its outcome.
 
 ## Completed Prototype-A Result
 
@@ -253,11 +277,12 @@ and executed commands exactly. Full192-case GPU parity is required for each of
 the four reused CV reference checkpoints. Three2-episode smoke runs all time
 out; these only validate train/save/reload/evaluation plumbing, not performance.
 
-B trains Current/GRU/KDA from scratch for the unchanged50 IL +3000 RL budget,
-four paired seeds. CV reuses verified original full-budget trained weights; its
-new training time is zero and original training time is recorded separately.
-No reference learning log is invented. All final B weights are reloaded for the
-same192 cases per seed. The4090 hosts419/443/491 in an owned RAM directory and
+B trains Current/GRU/KDA and a fresh CV control from scratch for the unchanged
+50 IL +3000 RL budget, four paired seeds. A separate strong CV reference reuses
+verified original full-budget trained weights; its new training time is zero
+and original training time is recorded separately. No reference learning log
+is invented. All final B weights are reloaded for the same192 cases per seed.
+The4090 hosts419/443/491 in an owned RAM directory and
 the3060 hosts467. A premature remote launch occurred before data transfer ended;
 it failed before any worker/training and was relaunched after transfer completion.
 
@@ -273,9 +298,9 @@ B shared demonstration archive SHA256 (same original episode contents):
 
 2b8b7adfa38e34a4d53dbdcf8931c5270716a047b7bb2785d27449899bcd00ff
 
-The scientific source and protocol are now frozen until every B run finishes.
+The scientific source and protocol remained frozen throughout every B run.
 Only evidence collection, report updates and non-training diagnostic utilities
-may change. This consumes the sole rescue; no additional version is authorized.
+changed. This consumed the sole rescue; no additional version is authorized.
 
 Fairness addendum before any B navigation result: within seed467 the completed
 Current and GRU IL critic weights are exactly equal, but differ from the reused
@@ -290,15 +315,135 @@ outputs/forecast_control_b_fresh_cv; their50 IL and3000 RL episodes are audited
 like the learned arms. B must beat both fresh CV and the original strong Parent.
 This is control completion, not another rescue or changed scientific source.
 
-Frozen scientific source SHA256:
+The four reused CV references completed all192 cases with exact archived GPU
+command/outcome parity, not merely matched success percentages. New Current,
+GRU and KDA IL critics also have exactly equal tensors within each seed. For
+all four fresh-CV IL runs, their critic tensors are exactly equal to the
+corresponding new learned-arm critics; the final artifact audit checks this
+again and records the IL checkpoint hashes.
+This checks initialization/update fairness; it does not imply final trained
+policies or online replay remain equal.
+
+## Completed Prototype-B Result
+
+All16 new runs completed50 IL epochs and3000 RL episodes with finite logged
+losses. The final audit verifies the frozen scientific source, protocol, shared
+demonstrations, checkpoint hashes, exact192-case sets, common seed-specific
+host/software, IL critic tensor equality and original-reference command parity.
+Primary results below cover512 episodes per arm; overall results cover768.
+
+| B arm | Primary SR (%) | Collision (%) | Timeout (%) | Overall SR (%) | Primary SR by seed419/443/467/491 (%) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Reused original Parent / native CV | 84.96 | 3.52 | 11.52 | 86.72 | 86.72 /81.25 /95.31 /76.56 |
+| Fresh matched CV | 86.13 | 1.95 | 11.91 | 87.50 | 85.94 /80.47 /93.75 /84.38 |
+| Current motion estimator | 87.11 | 2.54 | 10.35 | 88.93 | 85.16 /87.50 /92.19 /83.59 |
+| GRU motion estimator | 83.40 | 2.15 | 14.45 | 85.81 | 82.81 /78.91 /91.41 /80.47 |
+| KDA motion estimator | 86.52 | 3.52 | 9.96 | 87.50 | 92.97 /80.47 /93.75 /78.91 |
+
+Population-specific SR pools the two geometries equally,256 episodes per entry.
+No result is selected by density or geometry.
+
+| B arm | 5-person SR (%) | 10-person SR (%) | 20-person SR (%) |
+| --- | ---: | ---: | ---: |
+| Reused original Parent / native CV | 90.23 | 88.67 | 81.25 |
+| Fresh matched CV | 90.23 | 89.45 | 82.81 |
+| Current motion estimator | 92.58 | 91.41 | 82.81 |
+| GRU motion estimator | 90.63 | 87.89 | 78.91 |
+| KDA motion estimator | 89.45 | 90.63 | 82.42 |
+
+KDA-minus-control primary SR differences, paired by training seed:
+
+| Control | Mean SR difference (pp) | Nominal95% seed-paired interval (pp) | Positive seeds | Collision difference (pp) | Development pass |
+| --- | ---: | --- | ---: | ---: | --- |
+| Original Parent | +1.56 | [-4.09,7.21] | 2/4 | 0.00 | No |
+| Fresh CV | +0.39 | [-7.76,8.54] | 1/4, two ties | +1.56 | No |
+| Current | -0.59 | [-11.20,10.03] | 2/4 | +0.98 | No |
+| GRU motion estimator | +3.13 | [-4.80,11.05] | 3/4 | +1.37 | No |
+
+Against GRU, KDA reduces timeout by4.49pp but exceeds the allowed collision
+increase of1pp. Against fresh CV, timeout falls1.95pp while collision rises1.56pp.
+Neither is an acceptable safety-progress improvement under the frozen criteria.
+Current is+0.98pp versus fresh CV with only1/4 positive seeds, and+2.15pp versus
+the original Parent with2/4 positive seeds. No learned forecast arm establishes
+the required advantage over both CV controls. These nominal intervals use four
+training seeds as units, are exploratory and are not multiplicity-adjusted;
+failure to pass is not statistical equivalence or proof of zero true effect.
+
+### Prediction and Actual Consumption
+
+The same preselected24-episode,591-root cohort is used for every final checkpoint.
+Labels remain later-visible positions only; unavailable hidden/terminal futures
+are not silently filled with simulator truth. The four-seed pooled ADE below
+does not claim accuracy on all occluded trajectories.
+
+| Motion estimator | Consumed .25s ADE (m) | 1s ADE (m) | 2s ADE (m) | All future offsets ADE (m) | CV-swap filtered selections by seed, out of591 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| CV | 0.0161 | 0.1037 | 0.2899 | 0.1537 | 0 /0 /0 /0 |
+| Current | 0.0216 | 0.1346 | 0.3514 | 0.1908 | 7 /15 /12 /10 |
+| GRU | 0.0221 | 0.1321 | 0.3427 | 0.1862 | 26 /10 /16 /23 |
+| KDA | 0.0224 | 0.1217 | 0.3100 | 0.1701 | 23 /11 /25 /11 |
+
+KDA predicts longer futures more accurately than the learned Current/GRU
+estimators on this cohort, but not more accurately than CV. At the .25s horizon
+actually consumed by B, all three learned estimators have greater ADE than CV.
+CV substitution changes some filtered candidate selections, proving the forecast
+is consumed, not that those changes are beneficial. This does not establish
+that forecast error alone caused the navigation result: the four policies also
+collect different online trajectories and train their critics on those returns.
+
+### Cost and Reproducibility
+
+Standardized timing uses the same local RTX3060/PyTorch2.1.0,60 fixed legal roots,
+20 warmups and three repetitions. It measures complete80-action scoring/filtering
+and transfers, not simulator time or smoothing. No navigation training or other
+timing worker runs concurrently. Desktop graphics remain present; absolute
+numbers are descriptive. One overlapping timing launch was preserved as
+standardized_timing_overlap.json and excluded in favor of serial remeasurement.
+
+| B arm | Parameters | Range of seed median scoring time (ms) | Sum of worker training wall hours |
+| --- | ---: | --- | ---: |
+| Reused original Parent / native CV | 333,313 | 3.05-3.10 | 0 new;3.02 historical |
+| Fresh matched CV | 333,313 | 3.02-3.17 | 4.49 |
+| Current motion estimator | 340,023 | 3.84-4.08 | 5.47 |
+| GRU motion estimator | 538,423 | 4.80-4.93 | 6.59 |
+| KDA motion estimator | 505,983 | 10.57-10.84 | 8.53 |
+
+The16 new B runs total25.08 worker wall hours, not25.08 elapsed hours or measured
+GPU hours. Concurrent training loads differ, so these training times cannot
+isolate architecture compute. The standardized inference replay shows no KDA
+efficiency advantage. KDA additionally holds8192 state floats per actor versus
+GRU's256; neither parameter count nor memory capacity is claimed matched.
+The full suite finishes129 tests:126 passes and three existing optional-asset
+skips. Raw final weights, IL weights, complete learning logs, episode records,
+prediction diagnostics and timing arrays remain local in the ignored output
+directories. Scientific source remains unchanged from the B freeze above.
+
+### Stop Decision
+
+The one permitted repair has been spent and none of the learned estimators
+passes against both strong CV controls. Stop this bounded version. Reserved
+fresh seeds521/547/569/593 and cases81000-81031 remain unused. No KDA-only rescue,
+new gate, additional scene or retrospectively relaxed threshold follows.
+
+Established: a common lawful forecast interface can be trained and connected to
+the unchanged navigation critic; it changes some candidate decisions; this full
+matched experiment does not validate an acceptable KDA navigation advantage.
+Not established: KDA is generally incapable, history is valueless, MC training
+is the unique bottleneck, or a planner consuming longer-horizon forecasts would
+have the same result. A future proposal would require a distinct, justified
+mechanism and new authorization, not renaming this failed attempt.
+
+## Prototype-A Archive and Preflight History
+
+A frozen scientific source SHA256:
 
 ae93ca700d995231df0935ec554bdf834c1312c316c5382f83b17b7273212ae3
 
-Frozen protocol SHA256:
+A frozen protocol SHA256:
 
 7c12cf45a721b0796223b9b503c489c37306c446645bbe90c0b2b615f0a3971c
 
-Shared demonstration archive SHA256:
+A shared demonstration archive SHA256:
 
 7c314d387b972037a6ff9971505c70153f19b54f81b35af1837a0f961832c84c
 
@@ -307,7 +452,8 @@ neighbour geometry from the forecast head. That could make the Current control
 artificially weak. Its incomplete training was interrupted, archived and charged
 separately; no final result was used to choose the correction. All common arms
 restart after adding identical legal current-crowd conditioning. This is contract
-completion, not the allowed result-based rescue, which remains unspent.
+completion; the result-based rescue was subsequently spent on B, not on these
+preflight runs.
 The12 interrupted runs had about234 wall seconds each, some at IL36 and others
 at RL71-204; none reached3000 episodes or produced a final result. Their source
 archive, partial IL weights and logs remain in outputs/forecast_control_initial_contract
@@ -318,7 +464,19 @@ Artifacts are saved locally under:
 
 /home/abc/workspace/shixu/outputs/forecast_control_a/
 
-The4090 uses an owned RAM workspace, without downloads to its system disk. Raw
-artifacts must be retrieved and checked locally before deleting that workspace.
-The laptop handles reference evaluation/verification; the local3060 handles one
-complete paired seed. No existing remote environment is modified.
+B artifacts and the complete remote backup are saved locally under:
+
+/home/abc/workspace/shixu/outputs/forecast_control_b/
+
+/home/abc/workspace/shixu/outputs/forecast_control_b_fresh_cv/
+
+/home/abc/workspace/shixu/outputs/forecast_control_remote_backup_20261004/
+
+The4090 used an owned RAM workspace, without downloads to its system disk. After
+all workers exited successfully, all289 files in that workspace were backed up
+and individually SHA256-verified against the remote originals. The manifest is
+stored as server_backup_manifest.json in the B artifact directory. Only then was
+the owned RAM directory removed; no existing remote environment was modified.
+The laptop handled diagnostic/reference evaluation and the local3060 handled
+one complete paired seed. Frozen-source archives and raw negatives remain local;
+large checkpoints are not committed to Git.

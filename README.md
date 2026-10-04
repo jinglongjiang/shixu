@@ -1099,8 +1099,9 @@ new IL/RL run is started on the basis of this audit.
 
 FORECAST_CONTROL_EXPERIMENT.md records the next authorized navigation-method
 experiment, not another hidden-goal audit. It compares CV, learned current-frame,
-GRU and KDA forecasters through one shared future-geometry value consumer. No
-memory feature bypasses the predicted positions into the value head. All learned
+GRU and KDA forecasters through a common control interface. No motion-estimator
+latent feature bypasses its predicted positions into the value head; B separately
+preserves the original critic's legal temporal input. All learned
 forecasters see the same legal current crowd; later visible measurements supervise
 the actual deployed prediction decoder, without goal/hidden-state input.
 
@@ -1109,7 +1110,7 @@ across four paired seeds. Training is circle/5-person only; final saved weights
 are reloaded for held-out circle/square and5/10/20-person navigation. The strong
 old GRU is re-evaluated on the identical new cases. A short pipeline check is not
 a positive result, and prediction accuracy or action sensitivity cannot pass the
-experiment. At most one evidence-based rescue is reserved after all arms finish.
+experiment. The single permitted interface rescue has now been completed.
 
 ```bash
 PYTHONPATH=vendor:. python -m experiments.forecast_control prepare
@@ -1129,14 +1130,24 @@ from lawful motion labels, and corrects native hypothetical successor positions.
 CV is exactly the original trained Parent, verified by score/action parity.
 Current/GRU/KDA add motion estimation, not a replacement of the critic. B consumes
 only the native .25s forecast for action evaluation; no multi-step planning claim.
+Four fresh CV controls also train with exactly the same B code/data/budget and
+IL critic tensors, alongside the reused original strong-reference checkpoints.
 
 ```bash
 PYTHONPATH=vendor:. python -m experiments.forecast_control prepare --protocol experiments/forecast_control_b_protocol.json --data outputs/forecast_control_b/demonstrations.pt
 PYTHONPATH=vendor:. python -m experiments.forecast_control parity --protocol experiments/forecast_control_b_protocol.json --device cuda
 PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.forecast_control queue --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b --data outputs/forecast_control_b/demonstrations.pt --arms current gru kda --device cuda
 PYTHONPATH=vendor:. python -m experiments.forecast_control reference --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b --data outputs/forecast_control_b/demonstrations.pt --device cuda
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.forecast_control queue --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b_fresh_cv --data outputs/forecast_control_b/demonstrations.pt --arms cv --device cuda
 PYTHONPATH=vendor:. python -m experiments.forecast_control_results --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b
 ```
 
-B is running; no trained advantage or method-novelty claim is made. A's frozen
-source and complete raw artifacts are retained. No further rescue is authorized.
+B is complete: primary10/20-person SR is86.13% fresh CV,87.11% Current,83.40% GRU
+and86.52% KDA, versus84.96% for the reused original Parent. KDA is only+0.39pp
+versus fresh CV with+1.56pp collision and does not beat Current. It fails the
+fixed development criteria; no fresh confirmation or further rescue is started.
+The16 new runs completed50 IL epochs and3000 RL episodes each, with final-weight
+reload and192 held-out evaluations per run. Source/data/checkpoint/case audits
+and exact four-seed IL critic parity pass. Both A and B negatives and raw
+artifacts are retained. This is a version-scoped negative, not rejection of all
+temporal navigation methods. No method-novelty claim is made.
