@@ -735,7 +735,8 @@ The occlusion experiments use legal measured/retained tracks, five-person
 ORCA IL and online MC refinement, followed by reloaded-final-weight tests on
 5/10/20 people in circle and square. The frozen primary endpoint is equally
 weighted 10/20-person success, with collision, timeout and progress checks.
-The teacher may use simulator truth; the student receives only legal input.
+Both the ORCA teacher and the student receive legal measured/CV-retained
+tracks from the same observation interface; never-seen pedestrians are excluded.
 Temporary server outputs are copied locally before deletion. Development
 results are not final evidence: a promising mechanism needs unseen seeds and
 cases, with all controls retrained on the same host.
@@ -820,6 +821,17 @@ observed here; this statistic does not certify useful retrieval. Removing all
 committed memory changes scalar values substantially, including hidden-track
 windows, but value sensitivity does not establish better action ranking.
 
+A separate frozen action diagnostic replays12 pre-fixed current-reference
+episodes per seed and samples every eighth control step. Across626 states,
+338 contain retained hidden actors. Zeroing only those actors' committed memory
+changes79/338 actions (23.37%); zeroing all committed memory changes344/626
+(54.95%). The value shift is mostly common across candidates, but the smaller
+action-dependent component often changes the winner. This rules out a purely
+common-offset explanation; it does not show that the changed actions are better.
+The query geometry, age inputs, reward, action support and trained weights stay
+fixed. All replayed terminal outcomes match the archived current-reference
+episodes. Raw records are in outputs/occlusion_v6/action_content_*.json.
+
 A separate four-seed CPU shadow checks the fixed2-second retention deadline.
 Only previously seen expired actors still inside the legal history horizon
 are eligible: current truth adds0.39 pp primary SR, while extending ordinary
@@ -855,3 +867,11 @@ V7 is frozen at36d1702 with the same128 demonstrations, four paired seeds,
 experiments/occlusion_query_protocol.json; results are in outputs/occlusion_v7.
 All controls must remain in the comparison. Fresh seeds/cases remain untouched
 until an eligible development winner is chosen.
+
+These budgets complete the IL-to-online-MC pipeline, not the original camrl
+training schedule:50 IL epochs use128 successful demonstrations, followed by
+1,000 online episodes. At the final episode epsilon is still approximately
+0.1335 on its1,500-episode decay schedule. They do not establish convergence.
+If readout placement fails, a justified next test is one pre-fixed longer RL
+budget for all competing arms, with the same demonstrations and architecture;
+changing data volume and training budget together would not isolate the cause.

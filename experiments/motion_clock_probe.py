@@ -68,6 +68,82 @@ def content_probe(model, windows, device):
     return {key: distribution(rows) for key, rows in values.items()}
 
 
+def action_probe(weights, visits_path, device):
+    from crowd_sim.envs.utils.action import ActionXY
+    from shixu.observations import OccludedTracks
+    from shixu.policy import ValuePolicy
+    from shixu.runner import environment
+    checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(checkpoint["config"])
+    model = build_model(cfg).to(device).eval()
+    load_weights(model, weights, device)
+    if cfg.get("model", "architecture") != "motion" or cfg.get("model", "backbone") != "kda":
+        raise ValueError("Action probes require a physical actor KDA")
+    policy = ValuePolicy(model, cfg, device)
+    policy.set_phase("test")
+    visits = json.loads(Path(visits_path).read_text())
+    cases = visits["protocol"]["development_cases"][:2]
+    episodes = [row for row in visits["episodes"] if row["case"] in cases]
+    records = []
+    original = model.read_history
+    for episode in episodes:
+        env = environment(cfg, policy, episode["geometry"], episode["people"])
+        env.reset(options={"test_case": episode["case"]})
+        observer = OccludedTracks(cfg.getfloat("observation", "retention_seconds"))
+        policy.reset()
+        for tick, command in enumerate(episode["actions"]):
+            state = observer.observe(env)
+            if tick % 8 == 0:
+                scores = {}
+                for scope in ("all", "visible", "none"):
+                    def read(memory, queries):
+                        states, gaps = memory
+                        allowed = torch.ones_like(gaps) if scope == "all" else torch.zeros_like(gaps)
+                        if scope == "visible":
+                            for key, measured in zip(state.track_ids, state.observed):
+                                allowed[:, key] = measured
+                        changed = tuple(value * allowed.reshape(-1, 1, 1, 1) for value in states)
+                        return original((changed, gaps), queries)
+                    model.read_history = read
+                    try:
+                        scores[scope] = policy.score(state)
+                    finally:
+                        model.read_history = original
+                eligible = scores["all"] > -1e8
+                changes = {key: scores["all"][eligible] - scores[key][eligible] for key in ("visible", "none")}
+                records.append({"case": episode["case"], "people": episode["people"],
+                                "geometry": episode["geometry"], "tick": tick,
+                                "hidden": observer.counts["retained_hidden"],
+                                "eligible_actions": int(eligible.sum()),
+                                "selected": {key: int(np.argmax(value)) for key, value in scores.items()},
+                                "changes": {key: {"common_shift": float(value.mean()),
+                                                   "ranking_std": float(value.std()),
+                                                   "mean_absolute_change": float(np.abs(value).mean())}
+                                            for key, value in changes.items()}})
+            policy.history.append(policy.encode(state))
+            _, _, done, truncated, info = env.step(ActionXY(*command))
+            if done or truncated:
+                if info["event"] != episode["terminal"]:
+                    raise RuntimeError("Parent visit terminal could not be replayed")
+                break
+    hidden = [row for row in records if row["hidden"]]
+    summaries = {}
+    for scope, rows in (("visible", hidden), ("none", records)):
+        summaries[scope] = {"states": len(rows),
+                            "action_changes": sum(row["selected"]["all"] != row["selected"][scope] for row in rows),
+                            **{key: distribution([row["changes"][scope][key] for row in rows])
+                               for key in ("common_shift", "ranking_std", "mean_absolute_change")}}
+    return {"checkpoint_sha256": hashlib.sha256(Path(weights).read_bytes()).hexdigest(),
+            "visits_sha256": hashlib.sha256(Path(visits_path).read_bytes()).hexdigest(),
+            "episodes": len(episodes), "states": len(records), "summaries": summaries, "records": records,
+            "scope": "First two fixed development cases per geometry/population, uniform every-eighth-step "
+                     "sampling of archived current-reference visits. Shared legal inputs/weights/support; only "
+                     "committed matrices are masked, never age or current geometry. Unsafe masked actions are "
+                     "excluded from score-change moments. Action changes and score sensitivity are not better "
+                     "action selection or closed-loop gain; zero-memory interventions may be out of distribution."}
+
+
 def probe(data_path, weights=None, device="cpu"):
     data = torch.load(data_path, map_location="cpu", weights_only=False)
     intervals, returning, missing = [], [], []
@@ -130,15 +206,23 @@ def probe(data_path, weights=None, device="cpu"):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", required=True)
+    parser.add_argument("--data")
     parser.add_argument("--weights")
+    parser.add_argument("--visits")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     torch.set_num_threads(1)
-    result = probe(args.data, args.weights, args.device)
+    if args.visits:
+        if not args.weights:
+            parser.error("Visit diagnostics require weights")
+        result = action_probe(args.weights, args.visits, args.device)
+    else:
+        if not args.data:
+            parser.error("Clock/content diagnostics require demonstration data")
+        result = probe(args.data, args.weights, args.device)
     Path(args.output).write_text(json.dumps(result, indent=2))
-    print(json.dumps(result, indent=2), flush=True)
+    print(json.dumps({key: value for key, value in result.items() if key != "records"}, indent=2), flush=True)
 
 
 if __name__ == "__main__":
