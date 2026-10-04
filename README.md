@@ -1119,4 +1119,24 @@ PYTHONPATH=vendor:. python -m experiments.forecast_control summarize
 ```
 
 Raw data, interrupted preflight logs and checkpoints remain under ignored outputs.
-The formal prototype is running; no improvement or method-novelty claim is made.
+Prototype A is complete and negative: primary10/20-person SR is75.20% for CV,
+75.59% Current,80.86% GRU and75.20% KDA, versus84.96% for the original Parent.
+A replaced the original temporal critic with forecast coordinates, so it does
+not settle the more faithful forecast-to-native-critic connection.
+
+The sole interface rescue B restores the original critic, trains forecasts only
+from lawful motion labels, and corrects native hypothetical successor positions.
+CV is exactly the original trained Parent, verified by score/action parity.
+Current/GRU/KDA add motion estimation, not a replacement of the critic. B consumes
+only the native .25s forecast for action evaluation; no multi-step planning claim.
+
+```bash
+PYTHONPATH=vendor:. python -m experiments.forecast_control prepare --protocol experiments/forecast_control_b_protocol.json --data outputs/forecast_control_b/demonstrations.pt
+PYTHONPATH=vendor:. python -m experiments.forecast_control parity --protocol experiments/forecast_control_b_protocol.json --device cuda
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.forecast_control queue --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b --data outputs/forecast_control_b/demonstrations.pt --arms current gru kda --device cuda
+PYTHONPATH=vendor:. python -m experiments.forecast_control reference --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b --data outputs/forecast_control_b/demonstrations.pt --device cuda
+PYTHONPATH=vendor:. python -m experiments.forecast_control_results --protocol experiments/forecast_control_b_protocol.json --root outputs/forecast_control_b
+```
+
+B is running; no trained advantage or method-novelty claim is made. A's frozen
+source and complete raw artifacts are retained. No further rescue is authorized.

@@ -39,6 +39,8 @@ def parent_gpu(root, prior_root, protocol_path, seeds, device):
 
 def aggregate(root, protocol_path):
     protocol = json.loads(protocol_path.read_text())
+    reference_arm = protocol.get("reference_arm", "parent_gru")
+    native_bridge = reference_arm == "cv"
     expected = {(n, g, c) for n in protocol["people"] for g in protocol["geometries"]
                 for c in protocol["development_cases"]}
     data_path = root / "demonstrations.pt"
@@ -47,7 +49,7 @@ def aggregate(root, protocol_path):
         raise ValueError("Source or shared demonstration protocol changed")
     data_sha = sha(data_path)
     model_records, audits = {}, []
-    for arm in protocol["arms"] + ["parent_gru"]:
+    for arm in protocol["arms"] + ([] if native_bridge else ["parent_gru"]):
         results = []
         for seed in protocol["seeds"]:
             folder = root / str(seed) / arm
@@ -62,7 +64,7 @@ def aggregate(root, protocol_path):
             keys = [(e["people"], e["geometry"], e["case"]) for e in result["episodes"]]
             if len(keys) != len(expected) or set(keys) != expected:
                 raise ValueError("Missing, repeated or mismatched evaluation cases")
-            if arm != "parent_gru":
+            if arm != reference_arm:
                 weights = folder / "model.pt"
                 checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
                 logs = [json.loads(line) for line in (folder / "learning.jsonl").read_text().splitlines()]
@@ -89,8 +91,21 @@ def aggregate(root, protocol_path):
                 if (archived["demonstration_sha256"] != data["original_sha256"]
                         or checkpoint["seed"] != seed or checkpoint["il_episodes"] != protocol["il_episodes"]
                         or checkpoint["rl_episodes"] != protocol["rl_episodes"]
-                        or result["checkpoint_sha256"] != sha(prior / "model.pt")):
+                        or (not native_bridge and result["checkpoint_sha256"] != sha(prior / "model.pt"))):
                     raise ValueError("The frozen parent has different demonstrations/budget/weights")
+                if native_bridge:
+                    wrapped = torch.load(folder / "model.pt", map_location="cpu", weights_only=False)
+                    critic = {k[len("critic."):]: v for k, v in wrapped["model"].items() if k.startswith("critic.")}
+                    if (result["source_sha256"] != source_hash() or result["demonstration_sha256"] != data_sha
+                            or result["reference_sha256"] != sha(prior / "model.pt")
+                            or wrapped["reference_sha256"] != sha(prior / "model.pt")
+                            or result["checkpoint_sha256"] != sha(folder / "model.pt")
+                            or set(critic) != set(checkpoint["model"])
+                            or any(not torch.equal(critic[k], v) for k, v in checkpoint["model"].items())):
+                        raise ValueError("Native-CV wrapper is not the unchanged trained reference")
+                    baseline = json.loads((root.parent / "forecast_control_a" / str(seed) / "parent_gru/result_gpu.json").read_text())
+                    if result["episodes"] != baseline["episodes"]:
+                        raise ValueError("Native-CV reference command/outcome parity failed")
                 result.update(parameters=archived["parameters"], training_seconds=archived["training_seconds"])
             results.append(result)
         model_records[arm] = results
@@ -98,9 +113,11 @@ def aggregate(root, protocol_path):
         runs = [r for r in audits if r["seed"] == seed]
         if len({(r["training_host"], r["torch"], r["device"]) for r in runs}) != 1:
             raise ValueError("Paired arms used different training hosts/software")
-        parent = model_records["parent_gru"][protocol["seeds"].index(seed)]
+        parent = model_records[reference_arm][protocol["seeds"].index(seed)]
         reference = runs[0]
-        if ((parent["evaluation_host"], parent["evaluation_torch"], parent["evaluation_device"])
+        parent_host = ((parent["host"], parent["torch"], parent["device"]) if native_bridge else
+                       (parent["evaluation_host"], parent["evaluation_torch"], parent["evaluation_device"]))
+        if (parent_host
                 != (reference["training_host"], reference["torch"], reference["device"])):
             raise ValueError("Parent and new arm numerical evaluation conditions differ")
     models = {}
@@ -117,7 +134,7 @@ def aggregate(root, protocol_path):
                            score_median_ms=[r["score_median_ms"] for r in results])
     contrasts = []
     for candidate in ("current", "gru", "kda"):
-        for control in ("cv", "current", "gru", "parent_gru"):
+        for control in (("cv", "current", "gru") if native_bridge else ("cv", "current", "gru", "parent_gru")):
             if control == candidate:
                 continue
             a, b = models[candidate]["primary_by_seed"], models[control]["primary_by_seed"]
@@ -141,6 +158,7 @@ def aggregate(root, protocol_path):
               else "NO_VALIDATED_KDA_ADVANTAGE_THIS_VERSION")
     result = dict(protocol=protocol, protocol_sha256=sha(protocol_path), source_sha256=source_hash(),
                   demonstration_sha256=data_sha, audits=audits, models=models, contrasts=contrasts, status=status,
+                  reference_scope="Original full-budget critic reused after exact native-CV parity" if native_bridge else "Frozen Parent re-evaluation",
                   scope="Four paired training seeds are the replication units. Nominal intervals are exploratory, "
                         "not multiplicity-adjusted. Conditional successful-time averages do not replace timeout "
                         "rates. Failure to pass is not equivalence or a family-level rejection. Concurrent cross-host "

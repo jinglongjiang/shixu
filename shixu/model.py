@@ -322,6 +322,11 @@ class OcclusionValueModel(OrderedValueModel):
 def build_model(config):
     section = config["model"]
     width, layers = int(section["width"]), int(section["layers"])
+    if section.get("architecture") == "forecast_native":
+        from .forecast import ForecastSuccessorValueModel
+        return ForecastSuccessorValueModel(section.get("backbone", "kda"), width, layers,
+                                           config.getfloat("env", "time_step", fallback=.25),
+                                           section.getfloat("prediction_weight", fallback=.1))
     if section.get("architecture") == "forecast":
         from .forecast import ForecastValueModel
         return ForecastValueModel(section.get("backbone", "kda"), width, layers,

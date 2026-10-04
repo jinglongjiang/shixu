@@ -6,35 +6,23 @@ from torch import nn
 from torch.nn import functional as F
 
 from .features import stack_histories, window
-from .model import OrderedValueModel
+from .model import OcclusionValueModel, OrderedValueModel
 from .motion import MotionMemory, observation_intervals
 from .replay import Replay
 
 
-class ForecastValueModel(nn.Module):
-    """One motion estimator and a shared forecast-geometry value consumer.
+class ActorMotionEstimator(nn.Module):
+    """Physical positions from lawful actor history and current neighbours."""
 
-    Current-value training uses offsets 0/.25/.5/1/2 seconds. Successor-value
-    evaluation shifts those offsets by one control step, without writing any
-    hypothetical observation. No hidden temporal feature bypasses the forecast.
-    """
-
-    full_observed_window = True
-
-    def __init__(self, kind="kda", width=128, layers=2, time_step=.25, prediction_weight=.1):
+    def __init__(self, kind="kda", width=128, layers=2, time_step=.25):
         super().__init__()
+        self._init_estimator(kind, width, layers, time_step)
+
+    def _init_estimator(self, kind, width, layers, time_step):
         if kind not in ("cv", "current", "gru", "kda") or width % 4 or time_step <= 0:
             raise ValueError("Invalid forecast substrate, width or control step")
         self.kind, self.width, self.time_step = kind, width, time_step
-        self.prediction_weight = prediction_weight
-        self.prediction_steps = tuple(range(1, 10))
         self.register_buffer("times", torch.arange(10).float() * time_step)
-        # Initialize the common consumer before substrate-specific parameters.
-        self.robot_encoder = nn.Sequential(nn.Linear(9, width), nn.ReLU())
-        self.human_encoder = nn.Sequential(nn.Linear(19, width), nn.ReLU())
-        self.fusion = nn.Sequential(nn.Linear(2 * width, width), nn.LayerNorm(width), nn.ReLU())
-        self.attention = nn.MultiheadAttention(width, 4, batch_first=True)
-        self.value_head = nn.Linear(width, 1)
         self.motion_encoder = None
         self.neighbor_encoder = None
         self.decoder = None
@@ -96,6 +84,35 @@ class ForecastValueModel(nn.Module):
             displacement = displacement + torch.cat((torch.zeros_like(residual[:, :, :1]), residual), 2)
         return anchor[:, :, None] + displacement
 
+    def motion_loss(self, history, predicted, future, valid):
+        anchor = self._physical(history)[1][:, -1]
+        displacement = predicted[:, :, 1:] - anchor[:, :, None]
+        error = ((displacement - future) / self.times[None, None, 1:, None]).square().sum(-1)
+        return (error * valid).sum() / (2 * valid.sum().clamp_min(1))
+
+
+class ForecastValueModel(ActorMotionEstimator):
+    """Prototype A: explicit forecast geometry replaces temporal value features.
+
+    Observed/successor value uses offsets0/.25/.5/1/2s, shifted one native step
+    for successors. Retained for exact loading of the completed A checkpoints.
+    """
+
+    full_observed_window = True
+
+    def __init__(self, kind="kda", width=128, layers=2, time_step=.25, prediction_weight=.1):
+        # Preserve A's initialization order and flat checkpoint parameter names.
+        nn.Module.__init__(self)
+        self.prediction_weight = prediction_weight
+        self.prediction_steps = tuple(range(1, 10))
+        self.robot_encoder = nn.Sequential(nn.Linear(9, width), nn.ReLU())
+        self.human_encoder = nn.Sequential(nn.Linear(19, width), nn.ReLU())
+        self.fusion = nn.Sequential(nn.Linear(2 * width, width), nn.LayerNorm(width), nn.ReLU())
+        self.attention = nn.MultiheadAttention(width, 4, batch_first=True)
+        self.value_head = nn.Linear(width, 1)
+        self._init_estimator(kind, width, layers, time_step)
+        self.last_losses = {}
+
     def _value(self, history, queries, positions, query_offset):
         if query_offset not in (0, 1):
             raise ValueError("Only the observed frame or one native successor is supported")
@@ -138,10 +155,80 @@ class ForecastValueModel(nn.Module):
         if self.kind == "cv":
             motion_loss = value_loss.new_zeros(())
         else:
-            anchor = self._physical(histories)[1][:, -1]
-            displacement = predicted[:, :, 1:] - anchor[:, :, None]
-            error = ((displacement - future) / self.times[None, None, 1:, None]).square().sum(-1)
-            motion_loss = (error * valid).sum() / (2 * valid.sum().clamp_min(1))
+            motion_loss = self.motion_loss(histories, predicted, future, valid)
+        self.last_losses = {"value_loss": float(value_loss.detach()), "forecast_loss": float(motion_loss.detach()),
+                            "forecast_targets": int(valid.sum())}
+        return value_loss + self.prediction_weight * motion_loss
+
+
+class ForecastSuccessorValueModel(nn.Module):
+    """Prototype B: physical estimates change native successor queries only.
+
+    The inherited critic still learns scalar MC returns on real observations.
+    No value gradient enters the independently supervised physical estimator.
+    """
+
+    full_observed_window = True
+
+    def __init__(self, kind="kda", width=128, layers=2, time_step=.25, prediction_weight=.1):
+        super().__init__()
+        self.kind = kind
+        self.prediction_weight = prediction_weight
+        self.prediction_steps = tuple(range(1, 10))
+        self.critic = OcclusionValueModel("gru", width, layers, interaction_order="write")
+        self.predictor = ActorMotionEstimator(kind, width, layers, time_step)
+        self.last_losses = {}
+
+    @property
+    def times(self):
+        return self.predictor.times
+
+    _physical = staticmethod(ActorMotionEstimator._physical)
+
+    def forecast_positions(self, history):
+        return self.predictor.forecast_positions(history)
+
+    def corrected_queries(self, history, queries, positions):
+        humans, world = self._physical(history)
+        cv = world[:, -1] + humans[:, -1, :, 3:5] * self.times[1]
+        residual = positions[:, :, 1] - cv
+        active = queries[:, :, 1:, 12] > 0
+        result = queries.clone()
+        actor = result[:, :, 1:]
+        actor[..., :2] += residual[:, None] * active[..., None]
+        changed = active & residual[:, None].ne(0).any(-1)
+        relative = actor[..., :2]
+        distance = (relative.square().sum(-1) + 1e-6).sqrt()
+        velocity = actor[..., 3:5] - result[:, :, 0, None, 2:4]
+        inverse = (-(relative * velocity).sum(-1) / distance.square()).clamp(0, 10)
+        actor[..., 2] = torch.where(changed, distance, actor[..., 2])
+        actor[..., 7] = torch.where(changed, inverse, actor[..., 7])
+        actor[..., 8] = torch.where(changed, (distance < 2).to(actor.dtype), actor[..., 8])
+        return result
+
+    def _value(self, history, queries, positions, query_offset):
+        if query_offset != 1:
+            raise ValueError("Forecast bridge changes only native successor queries")
+        if self.kind != "cv":
+            queries = self.corrected_queries(history, queries, positions)
+        return self.critic.score_candidates(history[:, 1:], queries)
+
+    def score_candidates(self, history, queries):
+        if self.kind == "cv":
+            return self.critic.score_candidates(history[:, 1:], queries)
+        return self._value(history, queries, self.forecast_positions(history), 1)
+
+    def forward(self, history):
+        return self.critic(history)
+
+    def gradient_groups(self):
+        # Auxiliary gradients must not rescale the inherited critic's updates.
+        return (self.critic.parameters(), self.predictor.parameters())
+
+    def supervised_loss(self, histories, returns, future, valid):
+        value_loss = F.mse_loss(self(histories), returns)
+        motion_loss = (value_loss.new_zeros(()) if self.kind == "cv" else
+                       self.predictor.motion_loss(histories, self.forecast_positions(histories), future, valid))
         self.last_losses = {"value_loss": float(value_loss.detach()), "forecast_loss": float(motion_loss.detach()),
                             "forecast_targets": int(valid.sum())}
         return value_loss + self.prediction_weight * motion_loss

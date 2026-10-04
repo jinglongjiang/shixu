@@ -19,7 +19,9 @@ def update(model, replay, optimizer, batch_size, device, rng):
         loss = F.mse_loss(model(histories), labels)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    groups = model.gradient_groups() if hasattr(model, "gradient_groups") else (model.parameters(),)
+    for parameters in groups:
+        torch.nn.utils.clip_grad_norm_(parameters, 1.0)
     optimizer.step()
     return float(loss.detach())
 

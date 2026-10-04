@@ -1,6 +1,6 @@
 # Forecast-to-Control Navigation Experiment
 
-Date: 2026-10-04. Status: PROTOTYPE_A_COMPLETE; ONE_INTERFACE_RESCUE_AUTHORIZED.
+Date: 2026-10-04. Status: PROTOTYPE_A_COMPLETE; SOLE_INTERFACE_RESCUE_B_RUNNING.
 
 ## Fixed Question
 
@@ -212,6 +212,70 @@ verified original Parent checkpoints only after exact interface-parity checks;
 that reuse must not be mislabeled as new training. No second rescue is allowed.
 If B retains no practically useful advantage over strong controls, this bounded
 attempt stops; further architecture versions are not automatically authorized.
+
+## Prototype-B Frozen Contract
+
+```text
+lawful actor observations -> CV / Current / GRU / KDA physical forecast
+                                       -> .25s human-position residual
+native candidate successor ------------> corrected hypothetical geometry
+real23-frame prefix -------------------> unchanged contextual-GRU critic
+                                       -> original scalar value/lookahead
+                                       -> original filter/smoothing/action
+```
+
+The physical head still predicts and receives supervision through2.25s, but
+**the inherited one-step decision consumes only its .25s estimate**. This is not
+a new multi-step planner. A negative result must be scoped to this connection,
+not all possible uses of improved longer-horizon forecasts. All arms retain the
+same original value memory; GRU/KDA names now refer to the added motion estimator,
+not replacement of that critic. No pure-backbone or parameter-matching claim.
+
+| B model | Total parameters | Newly trained predictor parameters |
+| --- | ---: | ---: |
+| Native CV/original Parent | 333,313 | 0 |
+| Current | 340,023 | 6,710 |
+| GRU | 538,423 | 205,110 |
+| KDA | 505,983 | 172,670 |
+
+The original forecast-input contract is unchanged. KDA explicitly decays over
+elapsed observation gaps, whereas GRU compacts measured frames without an
+explicit gap feature. A future positive KDA mechanism claim would need a strong
+gap-aware GRU comparison; this bounded attempt does not silently treat their
+clock handling as equivalent. Neither unit gets hidden future measurements.
+
+Preflight:129 tests,126 passed and three existing optional-asset skips. Unit
+checks include exact CV/zero-residual candidate-score parity, unchanged critic
+AdamW updates on shared replay despite auxiliary prediction gradients, no
+value-to-predictor gradient, no mutation of real history and save/load parity.
+With the original trained seed419 critic,30 native steps reproduce all80 scores
+and executed commands exactly. Full192-case GPU parity is required for each of
+the four reused CV reference checkpoints. Three2-episode smoke runs all time
+out; these only validate train/save/reload/evaluation plumbing, not performance.
+
+B trains Current/GRU/KDA from scratch for the unchanged50 IL +3000 RL budget,
+four paired seeds. CV reuses verified original full-budget trained weights; its
+new training time is zero and original training time is recorded separately.
+No reference learning log is invented. All final B weights are reloaded for the
+same192 cases per seed. The4090 hosts419/443/491 in an owned RAM directory and
+the3060 hosts467. A premature remote launch occurred before data transfer ended;
+it failed before any worker/training and was relaunched after transfer completion.
+
+B scientific source SHA256:
+
+ca46069a6d8f70e5881b8ac227be7fbd6a54f710620d000825ee7fd2a62b1671
+
+B protocol SHA256:
+
+cbbf9f397ea8effcfa1f868619d6c367a10754eab7b0b04c3f5267dd8b7f636a
+
+B shared demonstration archive SHA256 (same original episode contents):
+
+2b8b7adfa38e34a4d53dbdcf8931c5270716a047b7bb2785d27449899bcd00ff
+
+The scientific source and protocol are now frozen until every B run finishes.
+Only evidence collection, report updates and non-training diagnostic utilities
+may change. This consumes the sole rescue; no additional version is authorized.
 
 Frozen scientific source SHA256:
 
