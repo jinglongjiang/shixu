@@ -1,6 +1,7 @@
 """The diagnostic changes only the query, with a correctly shifted target."""
 
 import configparser
+import json
 import unittest
 
 import numpy as np
@@ -8,6 +9,7 @@ import numpy as np
 from crowd_sim.envs.utils.action import ActionXY
 from crowd_sim.envs.utils.state import FullState, ObservableState
 from experiments.query_contract_probe import transitions
+from experiments.failure_probe import action_availability
 from shixu.features import encode_tracks, window
 from shixu.observations import ObservedTracks
 from shixu.policy import ValuePolicy, successor
@@ -73,6 +75,24 @@ class QueryContractTests(unittest.TestCase):
         records, modes, targets, skipped = transitions({"episodes": [episode]}, 4, .25)
         self.assertEqual((len(records), len(targets), skipped), (0, 0, 1))
         self.assertTrue(all(not samples for samples in modes))
+
+    def test_timeout_probe_uses_legal_endpoint_and_goal_progress(self):
+        cfg = configparser.ConfigParser()
+        cfg.read("shixu/default.ini")
+        cfg.set("model", "representation", "tracks")
+        cfg.set("eval_protocol", "safety_margin", ".2")
+        policy = ValuePolicy.__new__(ValuePolicy)
+        policy.config, policy.time_step = cfg, .25
+        policy.encode = encode_tracks
+        policy.action_space = [ActionXY(0, .4), ActionXY(0, -.4)]
+        state = self.state()
+        result = action_availability(policy, state)
+        self.assertEqual(result["distance"], 4)
+        self.assertEqual(result["safe_actions"], 2)
+        self.assertEqual(result["safe_progress_actions"], 1)
+        self.assertEqual(result["hidden"], 1)
+        self.assertEqual(result["near_hidden"], 1)
+        self.assertEqual(json.loads(json.dumps(result)), result)
 
 
 if __name__ == "__main__":
