@@ -164,6 +164,18 @@ class ForecastTests(unittest.TestCase):
             np.testing.assert_allclose(restored[index, [6, 9, 10, 12]], frame[index, [6, 9, 10, 12]])
         self.assertEqual(float(restored[2, 12]), 0)
 
+    def test_never_seen_padding_is_not_prediction_or_value_information(self):
+        history = self.history()
+        padded = torch.nn.functional.pad(history, (0, 0, 0, 4))
+        for kind in ("cv", "current", "gru", "kda"):
+            model = ForecastValueModel(kind, 16).eval()
+            if model.decoder is not None:
+                with torch.no_grad():
+                    model.decoder.weight.normal_(0, .01)
+            torch.testing.assert_close(model.forecast_positions(history),
+                                       model.forecast_positions(padded)[:, :3], atol=1e-5, rtol=1e-5)
+            torch.testing.assert_close(model(history), model(padded), atol=1e-5, rtol=1e-5)
+
 
 if __name__ == "__main__":
     unittest.main()

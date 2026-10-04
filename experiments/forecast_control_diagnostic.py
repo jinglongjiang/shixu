@@ -265,7 +265,7 @@ def compare(weights, cohort, destination, device):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("collect", "compare", "batch-compare", "latency", "gradients"))
+    parser.add_argument("mode", choices=("collect", "compare", "batch-compare", "latency", "batch-latency", "gradients"))
     parser.add_argument("--root", default="outputs/forecast_control_a")
     parser.add_argument("--cohort", default="outputs/forecast_control_a/shared_diagnostic.pt")
     parser.add_argument("--weights")
@@ -285,6 +285,15 @@ def main():
             destination = path.with_name("forecast_diagnostic_" + args.phase + ".json")
             if not destination.exists():
                 compare(path, Path(args.cohort), destination, args.device)
+    elif args.mode == "batch-latency":
+        root = Path(args.root)
+        weights = [(path, path.with_name("standardized_timing.json")) for path in sorted(root.glob("*/*/model.pt"))]
+        for seed in (419, 443, 467, 491):
+            weights.append((root.parent / "occlusion_v8" / str(seed) / "gru_context/model.pt",
+                            root / str(seed) / "parent_gru/standardized_timing.json"))
+        for path, destination in weights:
+            if not destination.exists():
+                latency(path, Path(args.cohort), destination, args.device)
     else:
         if not args.weights or not args.destination:
             parser.error("Checkpoint and destination required")

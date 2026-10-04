@@ -1,6 +1,6 @@
 # Forecast-to-Control Navigation Experiment
 
-Date: 2026-10-04. Status: FIXED_BUDGET_IL_RL_RUNNING.
+Date: 2026-10-04. Status: PROTOTYPE_A_COMPLETE; ONE_INTERFACE_RESCUE_AUTHORIZED.
 
 ## Fixed Question
 
@@ -109,13 +109,13 @@ hyperparameter search or automatic V9/V10 series.
 
 ## Evidence State
 
-Prototype-A remains in progress; completed-arm results are provisional until the
-complete four-seed matrix is available. The completed contract passes123 tests,
-120 passed and three existing optional legacy-asset
+Prototype-A is complete: all16 runs have50 IL epochs,3000 RL episodes and192
+reloaded-weight evaluations. The completed contract passes124 tests,
+121 passed and three existing optional legacy-asset
 skips. Each arm completed a short two-demonstration, one-IL-epoch, two-RL-episode
 training/save/reload/native-episode smoke. All four smoke evaluations timed out;
 these intentionally tiny pipeline checks are not method-performance evidence.
-Full16-run training is now active, with419/443/491 on the4090 and467 on the3060.
+Full16-run training used419/443/491 on the4090 and467 on the3060.
 
 The control connection is committed and uploaded to shixu as f3aaae9. Scientific
 source and the training protocol remain frozen while the full runs are active.
@@ -165,13 +165,53 @@ completed seed467 GRU forecast decoder has value-versus-weighted-prediction
 gradient cosines from-0.829 to-0.467; value-gradient norms are81-137 times the
 weighted prediction norms. Current has six of eight negative cosines and norm
 ratios30-65. These are local gradient measurements, not reconstruction of the
-past AdamW trajectory or proof that this caused the navigation loss. They support
-one falsifiable common-interface repair if final Prototype-A forecasts remain
-poor: train physical prediction from its legal-motion supervision, without
-allowing scalar-value gradients to turn forecast positions into arbitrary value
-features. It must apply to Current/GRU/KDA alike, leave architecture/reward/actions/
-data/budgets/cases unchanged, and run only after every Prototype-A arm finishes.
-Fixed CV is already gradient-free. No rescue has been trained at this point.
+past AdamW trajectory or proof that this caused the navigation loss. KDA has
+eight of eight negative cosines on the same batches (-0.733 to-0.480).
+No rescue has been trained at this point.
+
+## Completed Prototype-A Result
+
+Primary endpoint:512 episodes per arm,10/20 people, both native geometries,
+four paired training seeds. All768 episodes per arm are preserved separately.
+
+| Model | Primary SR (%) | Collision (%) | Timeout (%) | SR by seed419/443/467/491 (%) |
+| --- | ---: | ---: | ---: | --- |
+| Original contextual-GRU Parent | 84.96 | 3.52 | 11.52 | 86.72 /81.25 /95.31 /76.56 |
+| A: CV | 75.20 | 14.45 | 10.35 | 79.69 /73.44 /78.12 /69.53 |
+| A: Current | 75.59 | 13.48 | 10.94 | 80.47 /75.00 /71.09 /75.78 |
+| A: GRU | 80.86 | 7.42 | 11.72 | 82.03 /78.12 /78.12 /85.16 |
+| A: KDA | 75.20 | 6.05 | 18.75 | 76.56 /82.03 /62.50 /79.69 |
+
+Verdict: NO_VALIDATED_KDA_ADVANTAGE_THIS_VERSION. Not equivalence, not a rejection
+of temporal modeling. The source, protocol, demonstrations, checkpoint hashes,
+complete epoch/episode logs and exact evaluation-case sets passed the artifact
+audit. Raw results and frozen_source.tar.gz are retained under forecast_control_a.
+
+### Correction to Our Experimental Interpretation
+
+A kept the environment and training/action pipeline but **did not retain the
+original temporal value representation**. It replaced that representation with
+a forecast-coordinate bottleneck and a new19-feature consumer. Its CV arm also
+underperformed the strong Parent. Consequently A cannot settle whether improved
+forecasts help when connected to the inherited value network.
+
+The sole permitted rescue restores the original contextual-GRU critic unchanged.
+CV must reproduce its candidate scores and executed actions. Learned motion
+estimates only correct pedestrian positions in the native one-step hypothetical
+successor queries; the original immediate reward, CV safety/risk filter, smoothing
+and action support stay frozen. Real observed histories still train the original
+critic with scalar MC returns. Physical forecasts train only on later legal
+motion labels, so value gradients cannot repurpose coordinates as latent codes.
+Critic and predictor gradient clipping is separate to preserve the critic's IL
+updates. There is no new gate, hidden-goal input or latent-feature bypass.
+
+This is **one interface repair**, applied to Current/GRU/KDA under the same data
+and budgets. It changes both the consumer and gradient routing, so an A-to-B
+improvement cannot isolate gradient conflict as the cause. CV may reuse the
+verified original Parent checkpoints only after exact interface-parity checks;
+that reuse must not be mislabeled as new training. No second rescue is allowed.
+If B retains no practically useful advantage over strong controls, this bounded
+attempt stops; further architecture versions are not automatically authorized.
 
 Frozen scientific source SHA256:
 
