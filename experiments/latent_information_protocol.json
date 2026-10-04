@@ -1,0 +1,29 @@
+{
+  "version": "latent-information-audit-v1",
+  "scope": "Offline labels and small frozen-state decisions, not navigation training or KDA V9.",
+  "people": 5,
+  "splits": [
+    {"name": "train", "geometry": "circle", "start": 60000, "count": 64},
+    {"name": "validation", "geometry": "circle", "start": 60064, "count": 16},
+    {"name": "test", "geometry": "circle", "start": 60080, "count": 32},
+    {"name": "ood", "geometry": "square", "start": 61000, "count": 32}
+  ],
+  "collector": "Inherited legal-observation ORCA teacher; include every terminal outcome.",
+  "sample_stride": 4,
+  "history_lengths": [1, 3, 6, 12, 24],
+  "future_seconds": [1.0, 2.0],
+  "probe": "Train-only standardization, identical 256 radial-basis landmarks and ridge family. Hyperparameters selected on validation only.",
+  "landmarks": 256,
+  "length_scales": [0.5, 1.0, 2.0, 4.0],
+  "ridge_alphas": [0.01, 0.1, 1.0, 10.0],
+  "bootstrap_repetitions": 2000,
+  "decision_cases": {"circle": [60080, 60081, 60082, 60083], "square": [61000, 61001, 61002, 61003]},
+  "decision_root": "First frame at or after 6 seconds with all five humans visible and robot more than 1 metre from goal. No replacement when absent.",
+  "decision_modes": ["cv", "current", "history24", "statistics", "truth"],
+  "continuations": ["inherited_orca", "unbraked_orca"],
+  "root_seconds": 0.25,
+  "gamma": 0.99,
+  "decision_reference": "Native reward to terminal under each fixed legal ORCA continuation; Q^pi, not Q*. No added progress reward.",
+  "prediction_world": "Keep current visible geometry/dynamics fixed; replace only hidden goals and prior preferred velocities with probe estimates. CV is a separate constant-velocity baseline.",
+  "confirmation": "No navigation model training in this audit; results do not constitute a method admission."
+}
