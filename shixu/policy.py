@@ -117,7 +117,9 @@ class ValuePolicy:
         if self.encode in (encode_aligned, encode_tracks):
             tokens, rewards, clearances = self.aligned_candidates(state)
             prefix = window(list(self.history) + [current], self.length,
-                            "zero" if self.encode is encode_tracks else "repeat")[1:]
+                            "zero" if self.encode is encode_tracks else "repeat")
+            if not getattr(self.model, "full_observed_window", False):
+                prefix = prefix[1:]
             if hasattr(self.model, "score_candidates"):
                 values = self.model.score_candidates(torch.as_tensor(prefix[None], device=self.device),
                                                        torch.as_tensor(tokens[None], device=self.device)).squeeze(0)

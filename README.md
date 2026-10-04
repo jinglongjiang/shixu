@@ -1094,3 +1094,29 @@ PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experimen
 Raw artifacts remain local in ignored outputs/circle_coupling. Tests total109,
 with106 passes and three existing optional legacy-asset skips. No KDA V9 or
 new IL/RL run is started on the basis of this audit.
+
+### Bounded Forecast-to-Control Experiment
+
+FORECAST_CONTROL_EXPERIMENT.md records the next authorized navigation-method
+experiment, not another hidden-goal audit. It compares CV, learned current-frame,
+GRU and KDA forecasters through one shared future-geometry value consumer. No
+memory feature bypasses the predicted positions into the value head. All learned
+forecasters see the same legal current crowd; later visible measurements supervise
+the actual deployed prediction decoder, without goal/hidden-state input.
+
+The same128 ORCA trajectories,50 IL epochs and3000 online MC episodes are fixed
+across four paired seeds. Training is circle/5-person only; final saved weights
+are reloaded for held-out circle/square and5/10/20-person navigation. The strong
+old GRU is re-evaluated on the identical new cases. A short pipeline check is not
+a positive result, and prediction accuracy or action sensitivity cannot pass the
+experiment. At most one evidence-based rescue is reserved after all arms finish.
+
+```bash
+PYTHONPATH=vendor:. python -m experiments.forecast_control prepare
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.forecast_control queue --workers 4 --device cuda
+PYTHONPATH=vendor:. python -m experiments.forecast_control parent --device cpu
+PYTHONPATH=vendor:. python -m experiments.forecast_control summarize
+```
+
+Raw data, interrupted preflight logs and checkpoints remain under ignored outputs.
+The formal prototype is running; no improvement or method-novelty claim is made.

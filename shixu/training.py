@@ -10,9 +10,13 @@ from .runner import orca_teacher, run_episode
 
 
 def update(model, replay, optimizer, batch_size, device, rng):
-    histories, labels = replay.sample(batch_size, device, rng)
     model.train()
-    loss = F.mse_loss(model(histories), labels)
+    if hasattr(replay, "sample_with_forecasts"):
+        batch = replay.sample_with_forecasts(batch_size, device, rng)
+        loss = model.supervised_loss(*batch)
+    else:
+        histories, labels = replay.sample(batch_size, device, rng)
+        loss = F.mse_loss(model(histories), labels)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -26,8 +30,12 @@ def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
         raise ValueError("IL episodes must be positive and RL episodes nonnegative")
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
-    replay = Replay(cfg.getint("buffer", "capacity"), policy.length, policy.gamma,
-                    "zero" if cfg.get("model", "representation", fallback="legacy") == "tracks" else "repeat")
+    replay_type = Replay
+    if hasattr(policy.model, "prediction_steps"):
+        from .forecast import ForecastReplay
+        replay_type = ForecastReplay
+    replay = replay_type(cfg.getint("buffer", "capacity"), policy.length, policy.gamma,
+                         "zero" if cfg.get("model", "representation", fallback="legacy") == "tracks" else "repeat")
     accepted = 0
     limit = cfg.getint("imitation_learning", "max_il_prefill")
     if demonstrations is not None:
@@ -62,7 +70,8 @@ def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
         loss = update(policy.model, replay, optimizer, batch, policy.device, rng)
         schedule.step()
         if report is not None and (step + 1) % batches == 0:
-            report({"phase": "il", "epoch": (step + 1) // batches, "loss": loss})
+            report({"phase": "il", "epoch": (step + 1) // batches, "loss": loss,
+                    **getattr(policy.model, "last_losses", {})})
     optimizer = torch.optim.AdamW(policy.model.parameters(), lr=cfg.getfloat("train", "learning_rate"), weight_decay=0.01)
     for episode_number in range(rl_episodes):
         fraction = min(1.0, episode_number / cfg.getint("sarl", "epsilon_decay_episodes"))
@@ -74,7 +83,8 @@ def train(env, policy, cfg, output, seed, il_episodes, rl_episodes,
             loss = update(policy.model, replay, optimizer, cfg.getint("train", "batch_size"), policy.device, rng)
         if report is not None:
             report({"phase": "rl", "episode": episode_number + 1, "terminal": episode["terminal"],
-                    "return": float(sum(episode["rewards"])), "loss": loss, "epsilon": epsilon})
+                    "return": float(sum(episode["rewards"])), "loss": loss, "epsilon": epsilon,
+                    **getattr(policy.model, "last_losses", {})})
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model": policy.model.state_dict(), "seed": seed, "il_episodes": il_episodes,

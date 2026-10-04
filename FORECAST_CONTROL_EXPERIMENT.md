@@ -1,0 +1,165 @@
+# Forecast-to-Control Navigation Experiment
+
+Date: 2026-10-04. Status: FIXED_BUDGET_IL_RL_RUNNING.
+
+## Fixed Question
+
+Can lawful history-derived motion forecasts improve a trained navigation policy
+when those forecasts explicitly enter its 80-action value evaluation?
+
+This is a complete bounded method attempt, not KDA V9, another goal-recovery
+audit, or a claim that only KDA can solve the task. Circle coupling, the previous
+predictive audit and V1-V8 negative results remain closed and unchanged.
+
+## Minimal Architecture
+
+```text
+legal actor observations (24 control frames)
+       -> CV / current-frame / GRU / KDA motion estimator
+       -> predicted positions over the next 2.25 seconds
+       -> relative geometry for each native candidate action
+       -> shared spatial attention and scalar value
+       -> inherited reward + gamma * successor value
+       -> inherited filtering / smoothing / execution
+
+shared ORCA data -> IL value initialization -> online MC refinement
+```
+
+There is one motion estimator and one value consumer. No gate variants, hidden
+goal head, second memory, world-model search, latent-feature bypass or new risk
+penalty. Actor motion is predicted once per real observed window and shared by
+all candidates. Candidate robot motion does not write into actor memory.
+
+Observed-state value training consumes geometry at 0/.25/.5/1/2 seconds. Native
+one-step successor evaluation shifts those points by .25 seconds. The predictor
+supplies offsets through 2.25 seconds, avoiding untrained horizon extrapolation.
+Extrapolating candidate robot velocity constructs features; it does not force
+that command to execute for two seconds or define optimal action labels.
+
+Motion inputs use actor displacement relative to its latest legally represented
+position, velocity, radius, observation age/validity and presence. No pedestrian
+goal, simulator spawn, numeric ID or hidden ORCA state is available to the model.
+All learned forecasters also receive the same legal current absolute actor
+position and pooled current relative-neighbour geometry/velocity/radius. This
+does not require initial spawn/goal access and prevents a deliberately weak
+current-frame prediction baseline. No translation-invariance claim is made for
+this complete current-conditioned estimator.
+The current robot/spatial consumer retains the parent's legal state convention.
+
+## Training and Fair Comparison
+
+- Four common-interface arms: fixed CV, learned current-frame, GRU and KDA.
+- Same value-consumer architecture and initialization within each paired seed.
+  Learned predictors initially reproduce CV exactly; they must learn a useful
+  difference. Temporal parameter counts differ and will be reported, not hidden.
+- Same original 128 successful five-person circle ORCA episodes, no new data
+  collection or privileged demonstration labels.
+- 50 IL epochs, 3,000 online MC episodes, batch256 and four updates per episode.
+- Prediction supervision uses only subsequently visible positions of previously
+  known actors in the same completed episode. Hidden or not-yet-born actors,
+  episode boundaries and unavailable terminal tails are masked out.
+- Loss: original MC-return MSE plus0.1 times mean squared velocity-normalized
+  forecast-displacement error. CV has no learned forecast loss. The decoder is
+  part of the actual deployed control path, not an unused auxiliary head.
+- Fixed seeds419/443/467/491. All arms within a seed use the same host/software.
+- Only circle/5-person training. Held-out native circle/square and5/10/20 people,
+  cases80000-80031, with no outcome-based selection. Cases81000-81031 and fresh
+  seeds are reserved for confirmation, not used to tune this version.
+- Final fixed-budget checkpoints are reloaded before evaluation. Existing V8
+  contextual-GRU final weights are separately re-evaluated on the same new cases;
+  old-case SR is never compared with new-case SR.
+
+No simulator, action support, reward, control/observation clock, inherited CV
+immediate-risk filter or smoothing setting is altered. Legal future measurements
+are labels only and never supplied during action selection.
+
+## Prior Boundary
+
+Prediction/value coupling already exists in
+[Relational Graph Learning](https://arxiv.org/abs/1909.13165) and its
+[official code](https://github.com/ChanganVR/RelationalGraphLearning).
+Future features and policy learning also appear in
+[NavThinker](https://arxiv.org/abs/2603.15359).
+Therefore this shared interface is an experimental baseline, not a novelty claim.
+The experiment asks whether a specific temporal estimator has an empirical
+navigation advantage here. Any eventual paper must identify a further supported
+mechanism difference; replacing GRU with KDA alone is not that contribution.
+
+## Decisions and One Allowed Rescue
+
+Primary endpoint: equal-weight10/20-person SR across both geometries. A candidate
+requires >=3pp mean gain, positive paired differences in at least3/4 seeds, <=1pp
+collision increase, <=2pp timeout increase and <=10% successful-time increase.
+All safety/progress endpoints and individual cells are reported even when the
+primary endpoint improves. These are development criteria, not final proof.
+
+1. GRU and KDA improve against shared simple controls and the original parent:
+   the forecast-to-control route earns further study; assess KDA's extra value.
+2. Only prediction improves: diagnose forecast consumption/value training, not
+   automatically the memory unit. An action change alone is not success.
+3. Simple controls match navigation: stop this complex mechanism version.
+4. KDA retains a paired advantage over every control: perform fresh confirmation
+   before organizing a method claim or expanding the benchmark.
+
+At most one rescue is permitted, only after all Prototype-A arms finish and a
+specific failed contract/mechanism is identified. It must name what failed and
+what is changed. Any revised consumer applies to all common-interface arms and
+is retrained under a new frozen protocol. No KDA-only gate sweep, outcome-driven
+hyperparameter search or automatic V9/V10 series.
+
+## Evidence State
+
+No completed fixed-budget result exists for the four new arms yet. The completed
+contract passes120 tests,117 passed and three existing optional legacy-asset
+skips. Each arm completed a short two-demonstration, one-IL-epoch, two-RL-episode
+training/save/reload/native-episode smoke. All four smoke evaluations timed out;
+these intentionally tiny pipeline checks are not method-performance evidence.
+Full16-run training is now active, with419/443/491 on the4090 and467 on the3060.
+
+| Common-interface arm | Parameters |
+| --- | ---: |
+| CV | 103,169 |
+| Current-frame | 109,879 |
+| GRU | 308,279 |
+| KDA | 275,839 |
+
+The laptop completed the frozen parent re-evaluation:768 episodes across the
+same new cases, all four seeds and all six geometry/population cells. Pooled
+SR/CR/timeout are86.85/2.34/10.81%; primary10/20-person SR is85.16%. Primary SR
+by seed is86.72/81.25/95.31/77.34%. This is a reference result, not a forecast
+method result. It used CPU/PyTorch2.4.1; new arms use the original per-seed GPU
+hosts, so absolute timing must not be compared across these hosts. Numerical
+CPU/GPU evaluation sensitivity must be checked before a close method claim.
+
+Frozen scientific source SHA256:
+
+ae93ca700d995231df0935ec554bdf834c1312c316c5382f83b17b7273212ae3
+
+Frozen protocol SHA256:
+
+7c12cf45a721b0796223b9b503c489c37306c446645bbe90c0b2b615f0a3971c
+
+Shared demonstration archive SHA256:
+
+7c314d387b972037a6ff9971505c70153f19b54f81b35af1837a0f961832c84c
+
+Pre-results interface correction: the first implementation withheld current
+neighbour geometry from the forecast head. That could make the Current control
+artificially weak. Its incomplete training was interrupted, archived and charged
+separately; no final result was used to choose the correction. All common arms
+restart after adding identical legal current-crowd conditioning. This is contract
+completion, not the allowed result-based rescue, which remains unspent.
+The12 interrupted runs had about234 wall seconds each, some at IL36 and others
+at RL71-204; none reached3000 episodes or produced a final result. Their source
+archive, partial IL weights and logs remain in outputs/forecast_control_initial_contract
+and outputs/forecast_control_initial_local. They are not reused as final-IL
+initialization or counted as completed formal runs.
+
+Artifacts are saved locally under:
+
+/home/abc/workspace/shixu/outputs/forecast_control_a/
+
+The4090 uses an owned RAM workspace, without downloads to its system disk. Raw
+artifacts must be retrieved and checked locally before deleting that workspace.
+The laptop handles reference evaluation/verification; the local3060 handles one
+complete paired seed. No existing remote environment is modified.
