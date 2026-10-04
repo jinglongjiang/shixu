@@ -890,5 +890,32 @@ The pre-outcome budget protocol is experiments/occlusion_budget_protocol.json.
 It fixes3,000 MC episodes for physical KDA, contextual GRU, same-placement GRU
 and the original zero-committed-history KDA capacity control, keeping128 IL
 demonstrations and50 IL epochs. No architecture changes are bundled with this
-test. It will run after V7 finishes; neither this budget nor the old1,000-episode
-budget is described as converged. Fresh confirmation remains reserved.
+test. Matched final-IL checkpoints and all50 original IL log entries are reused
+only after complete seed/configuration/hash checks; online replay is rebuilt
+from the same demonstrations and all3,000 MC episodes are run, not resumed from
+an incomplete RL buffer. The4090 handles419/443/491 and the3060 handles467.
+Neither this budget nor the old1,000-episode budget is described as converged.
+Fresh confirmation remains reserved.
+
+### Candidate-query Results
+
+All16 V7 models completed their fixed budgets and96 held-out episodes each.
+All62 remote artifacts match local SHA256 checksums; final weights, complete
+50-epoch/1,000-episode logs, shared data and episode keys are verified.
+
+| Query interface | Overall SR % | CR % | Timeout % | Primary10/20 SR % |
+| --- | ---: | ---: | ---: | ---: |
+| Same-placement candidate-query GRU | 87.24 | 5.47 | 7.29 | 82.81 |
+| KDA private candidate update | 71.61 | 8.07 | 20.31 | 70.31 |
+| KDA read-only candidate query | 75.78 | 9.90 | 14.32 | 74.61 |
+| Read-only query, zero committed history | 81.25 | 5.99 | 12.76 | 77.34 |
+
+Read-only-minus-same-placement-GRU primary differences are
+-26.56/-4.69/0.00/-1.56 pp: three losses and one tie. Against contextual GRU,
+the mean is-10.94 pp, with4.69 pp more collisions and6.25 pp more timeouts.
+Read-only access beats the private KDA update on aggregate SR, but not the
+pre-fixed safety/seed-consistency rules or the stronger controls. This version
+does not establish better retrieval, navigation or a new method. Its result is
+VERSION_REQUIRES_DIAGNOSIS_NOT_DIRECTION_REJECTED; results and checks remain in
+outputs/occlusion_v7. V8 isolates the learning-budget question rather than
+adding another query gate or selecting a favorable V7 seed.
