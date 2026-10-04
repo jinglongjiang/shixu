@@ -49,10 +49,12 @@ def aggregate(root, protocol_path):
         raise ValueError("Source or shared demonstration protocol changed")
     data_sha = sha(data_path)
     model_records, audits = {}, []
-    for arm in protocol["arms"] + ([] if native_bridge else ["parent_gru"]):
+    for arm in protocol["arms"] + (["cv_fresh"] if native_bridge else ["parent_gru"]):
         results = []
         for seed in protocol["seeds"]:
             folder = root / str(seed) / arm
+            if arm == "cv_fresh":
+                folder = root.parent / "forecast_control_b_fresh_cv" / str(seed) / "cv"
             result_path = folder / "result.json"
             if arm == "parent_gru":
                 result_path = folder / "result_gpu.json"
@@ -70,7 +72,7 @@ def aggregate(root, protocol_path):
                 logs = [json.loads(line) for line in (folder / "learning.jsonl").read_text().splitlines()]
                 il = [r["epoch"] for r in logs if r["phase"] == "il"]
                 rl = [r["episode"] for r in logs if r["phase"] == "rl"]
-                cfg = configuration(protocol, arm)
+                cfg = configuration(protocol, "cv" if arm == "cv_fresh" else arm)
                 if (il != list(range(1, protocol["il_epochs"] + 1))
                         or rl != list(range(1, protocol["rl_episodes"] + 1))
                         or checkpoint["config"] != {s: dict(cfg[s]) for s in cfg.sections()}
@@ -134,7 +136,7 @@ def aggregate(root, protocol_path):
                            score_median_ms=[r["score_median_ms"] for r in results])
     contrasts = []
     for candidate in ("current", "gru", "kda"):
-        for control in (("cv", "current", "gru") if native_bridge else ("cv", "current", "gru", "parent_gru")):
+        for control in (("cv", "cv_fresh", "current", "gru") if native_bridge else ("cv", "current", "gru", "parent_gru")):
             if control == candidate:
                 continue
             a, b = models[candidate]["primary_by_seed"], models[control]["primary_by_seed"]

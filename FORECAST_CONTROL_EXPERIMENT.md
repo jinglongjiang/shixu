@@ -277,6 +277,19 @@ The scientific source and protocol are now frozen until every B run finishes.
 Only evidence collection, report updates and non-training diagnostic utilities
 may change. This consumes the sole rescue; no additional version is authorized.
 
+Fairness addendum before any B navigation result: within seed467 the completed
+Current and GRU IL critic weights are exactly equal, but differ from the reused
+original Parent IL weights (largest parameter difference0.00449). The old Parent
+used a reused prior-IL checkpoint. That difference cannot be assumed harmless or
+attributed to prediction. It also does not show auxiliary gradients altered the
+new critic: the new-arm equality and controlled optimizer test show otherwise.
+Therefore an additional **fresh CV control**, initialized and fully trained with
+the same B code/data/seed/budget, is required. It uses no new mechanism and cannot
+overwrite the reused strong Parent. Four fresh CV runs are saved separately under
+outputs/forecast_control_b_fresh_cv; their50 IL and3000 RL episodes are audited
+like the learned arms. B must beat both fresh CV and the original strong Parent.
+This is control completion, not another rescue or changed scientific source.
+
 Frozen scientific source SHA256:
 
 ae93ca700d995231df0935ec554bdf834c1312c316c5382f83b17b7273212ae3
