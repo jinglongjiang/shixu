@@ -684,3 +684,59 @@ universal absence of prediction-to-control value. Continuing to optimize only
 this predictor has no demonstrated navigation payoff in this frozen bridge.
 No KDA V9/V10, new consumer or new navigation training follows this diagnostic.
 All133 tests finish successfully with three existing optional-asset skips.
+
+## Frozen Multihorizon Failure-Repair Experiment (5 October 2026)
+
+The prespecified two-second forecast / CV-tail scorer is complete. One native
+root command lasts0.25s; the unchanged fresh-CV419 policy then continues in the
+restored real environment to the original deadline. In shadow scoring, the
+same policy responds to the forecast for eight steps, followed by a fixed CV
+tail. Scores are full original discounted task returns, not two-second
+progress or an untrained multihorizon value query. All80 native root actions,
+filtering, smoothing, masks and reward remain fixed. Shadow worlds contain
+only currently active known actors; even truth supplies only their two-second
+positions, not unseen people, hidden goals or perfect long-term dynamics.
+
+Selection was frozen before outcome evaluation: two terminal-relative anchors
+in each of ten existing failed cases, plus six separate successful-case guards.
+Four predictor training seeds share one frozen navigation policy. Correlated
+anchors are not independent episodes; repair counts are not a deployed SR.
+
+| Prediction | Failure roots: success / collision / timeout | Mean return change from native continuation |
+| --- | --- | ---: |
+| CV | 6 /4 /10 | +0.366347 |
+| Two-second position truth | 6 /4 /10 | +0.366949 |
+| Current,419/443/467/491 | 1/4/15;5/2/13;5/2/13;3/3/14 | +0.050728;+0.250618;+0.258529;+0.140861 |
+| GRU,419/443/467/491 | 2/4/14;4/2/14;1/4/15;4/2/14 | +0.102594;+0.184501;+0.045288;+0.197591 |
+| KDA,419/443/467/491 | 3/3/14;2/4/14;3/2/15;4/3/13 | +0.152533;+0.101212;+0.139539;+0.213673 |
+
+CV repairs six anchors in four distinct cases. Truth repairs the same six.
+KDA-minus-CV return differences are-0.213815/-0.265135/-0.226808/-0.152674;
+all four are negative. KDA-minus-matched-Current success counts are+2/-3/-2/+1.
+This is not a stable advantage over the strong simple controls. Every arm
+preserves all six guard successes, which is a limited guard, not a broad
+non-degradation guarantee.
+
+No known execution/parity defect remains: all26 archived native continuations
+match full command traces, return, termination and elapsed simulated time.
+Maximum root batch/scalar score discrepancy is2.224e-5; near ties use native
+scalar scoring, and every selected shadow is replayed with native predict().
+All selected traces agree; no complete native-rescoring fallback is needed.
+The initial float32-restoration and numerical-precheck attempts remain separate
+and are not pooled into this cohort.
+
+The scorer has demonstrable approximation limits: shadow/actual terminal
+disagreements occur in4/20 CV and4/20 truth repairs, and5-6/20 KDA repairs.
+Consequently two-second truth is not a full-world upper bound. There is actual
+action-improvement space (CV repairs), but no qualified KDA increment in this
+specified consumer. Neither result proves history is useless or identifies a
+unique KDA failure cause. This forecast-bridge attempt is closed without a new
+predictor, reward, scorer rescue or navigation training.
+
+Per-arm failure-root scoring medians are5.28-7.11s on the4090, well beyond the
+native0.25s control interval. The sum of recorded root workloads is3598.61s;
+the last two independent roots ran concurrently, so this sum is not wall time
+and timings are descriptive, not an isolated hardware benchmark. Raw80-action
+scores, forecasts, real traces, manifests, checkpoint hashes and logs are in
+outputs/multihorizon_control. The scoped suite finishes with136 passes and
+three existing optional-asset skips.
