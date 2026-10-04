@@ -2,14 +2,17 @@
 
 import configparser
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
 from crowd_sim.envs.utils.action import ActionXY
 from crowd_sim.envs.utils.state import FullState, ObservableState
 from experiments.query_contract_probe import transitions
-from experiments.failure_probe import action_availability
+from experiments.failure_probe import action_availability, behavior_probe
 from shixu.features import encode_tracks, window
 from shixu.observations import ObservedTracks
 from shixu.policy import ValuePolicy, successor
@@ -93,6 +96,31 @@ class QueryContractTests(unittest.TestCase):
         self.assertEqual(result["hidden"], 1)
         self.assertEqual(result["near_hidden"], 1)
         self.assertEqual(json.loads(json.dumps(result)), result)
+
+    def test_behavior_shadow_uses_fixed_epsilon_and_restores_predict(self):
+        protocol = json.loads(Path("experiments/occlusion_motion_protocol.json").read_text())
+        calls = []
+
+        def original(policy, state, epsilon=0.):
+            calls.append(epsilon)
+
+        def evaluate(weights, supplied, device, cases, seed):
+            self.assertEqual(supplied, protocol)
+            self.assertEqual(cases, protocol["development_cases"][:2])
+            ValuePolicy.predict(None, None, epsilon=.9)
+            return {"summary": {"sr": 0}}
+
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            path = root / "419" / "motion_kda"
+            path.mkdir(parents=True)
+            (path / "result.json").write_text(json.dumps({"protocol": protocol}))
+            with patch.object(ValuePolicy, "predict", original):
+                with patch("experiments.failure_probe.evaluate_weights", side_effect=evaluate):
+                    result = behavior_probe(root, ["motion_kda"], [419])
+                self.assertIs(ValuePolicy.predict, original)
+        self.assertEqual(calls, [.05])
+        self.assertEqual(result["records"][0]["epsilon"], .05)
 
 
 if __name__ == "__main__":

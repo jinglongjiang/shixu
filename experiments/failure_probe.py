@@ -4,12 +4,13 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import torch
 
 from crowd_sim.envs.utils.action import ActionXY
-from experiments.occlusion import configuration
+from experiments.occlusion import configuration, evaluate_weights
 from shixu.model import build_model
 from shixu.observations import OccludedTracks
 from shixu.policy import ValuePolicy
@@ -91,18 +92,52 @@ def probe(root, arms, seeds):
                      "timeout-only summaries cannot establish causal effects of occlusion or memory."}
 
 
+def behavior_probe(root, arms, seeds):
+    """Fixed training-final epsilon; no tuning or formal-evaluator replacement."""
+    original = ValuePolicy.predict
+    records = []
+    for arm in arms:
+        for seed in seeds:
+            directory = root / str(seed) / arm
+            archived = json.loads((directory / "result.json").read_text())
+            protocol = archived["protocol"]
+            cfg = configuration(protocol, arm)
+            fixed_epsilon = cfg.getfloat("sarl", "epsilon_end")
+
+            def predict(policy, state, epsilon=0.):
+                return original(policy, state, fixed_epsilon)
+
+            with patch.object(ValuePolicy, "predict", predict):
+                result = evaluate_weights(directory / "model.pt", protocol, "cpu",
+                                          protocol["development_cases"][:2], seed)
+            result.update(arm=arm, seed=seed, epsilon=fixed_epsilon)
+            records.append(result)
+    return {"records": records,
+            "scope": "Frozen final weights, first two pre-fixed development cases per cell. Only evaluation "
+                     "epsilon changes to the already fixed training-final value; reward, smoothing, inputs and "
+                     "action support remain unchanged. Random choices can bypass the inherited greedy safety "
+                     "mask, so both collision and timeout must be reported. This checks exploration-assisted "
+                     "escape, not equivalence with all training semantics or a deployable new method. "
+                     "Formal greedy results and the active training protocol are unchanged."}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", required=True)
     parser.add_argument("--arms", nargs="+", required=True)
     parser.add_argument("--seeds", nargs="+", type=int, default=[419, 443, 467, 491])
     parser.add_argument("--output", required=True)
+    parser.add_argument("--behavior-shadow", action="store_true")
     args = parser.parse_args()
     torch.set_num_threads(1)
-    result = probe(Path(args.root), args.arms, args.seeds)
+    result = (behavior_probe(Path(args.root), args.arms, args.seeds) if args.behavior_shadow
+              else probe(Path(args.root), args.arms, args.seeds))
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(json.dumps(result, indent=2))
-    print(json.dumps(result["summaries"], indent=2))
+    summary = (result["summaries"] if "summaries" in result else
+               [{"arm": row["arm"], "seed": row["seed"], "summary": row["summary"]}
+                for row in result["records"]])
+    print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

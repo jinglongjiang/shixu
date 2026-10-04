@@ -345,3 +345,5 @@ KDA 的 59 次 timeout 中，47 次最后 10 秒净前进绝对值不到 0.02 m�
 不会通过偷偷加进度奖励、目标吸引力 fallback 或改动作空间来挽救 KDA 数字。那样可能解决通用导航问题，却不能证明我们的时序机制解决了遮挡问题。
 
 原始结果：outputs/query_contract/collision_classes.json 和 timeout_replay.json；只读工具：experiments/failure_probe.py。该工具发生过 JSON 导出类型错误，修复后重新完整回放；错误运行没有产生新的训练或方法结论。
+
+另一项小诊断只将测试 epsilon 从 0 改为已有训练末值 0.05，仍固定权重、输入、奖励和 smoothing。每臂四种子共 48 episodes：GRU 的 SR/CR/timeout 仍为 91.67/2.08/6.25%，KDA 仍为 83.33/6.25/10.42%。KDA 的配对 SR 改变为 -8.33/+8.33/0/0 pp。**少量探索没有解决总体差距，不能据此把训练探索与贪心测试差异认定为根因。** 随机动作可能绕过原贪心安全筛选，这也不是部署改法或正式性能比较。原始结果为 outputs/query_contract/behavior_shadow.json。
