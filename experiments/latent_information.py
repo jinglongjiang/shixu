@@ -1,23 +1,16 @@
 """Legal-history probes for hidden human dynamics; no navigation training."""
 
 import argparse
-import copy
 import hashlib
 import json
-import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import torch
-from sklearn.linear_model import Ridge
-from sklearn.metrics import pairwise_distances
 
-from crowd_sim.envs.utils.action import ActionXY
 from experiments.occlusion import configuration, source_hash
-from shixu.model import build_model
 from shixu.observations import OccludedTracks
-from shixu.policy import ValuePolicy
 from shixu.runner import environment, orca_teacher
 
 
@@ -50,11 +43,10 @@ def snapshot(env, observer):
 def collect_case(task):
     name, geometry, case = task
     cfg = configuration_for_audit()
-    policy = ValuePolicy(build_model(cfg), cfg)
-    env = environment(cfg, policy, geometry, 5)
+    teacher = orca_teacher(cfg)
+    env = environment(cfg, teacher, geometry, 5)
     env.reset(options={"test_case": case})
     observer = OccludedTracks(cfg.getfloat("observation", "retention_seconds"))
-    teacher = orca_teacher(cfg)
     frames, commands, rewards = [], [], []
     while True:
         state = observer.observe(env)
@@ -149,11 +141,15 @@ def design(rows, mode):
 
 
 def radial_features(x, centers, scale):
+    from sklearn.metrics import pairwise_distances
+
     distances = pairwise_distances(x, centers, metric="sqeuclidean") / max(1, x.shape[1])
     return np.concatenate((x, np.exp(-distances / (2 * scale ** 2))), axis=1)
 
 
 def fit_probe(train, validation, mode, protocol, landmark_indices):
+    from sklearn.linear_model import Ridge
+
     x, xv = design(train, mode), design(validation, mode)
     mean, std = x.mean(0), x.std(0)
     std[std < 1e-6] = 1

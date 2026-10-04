@@ -1020,3 +1020,43 @@ The current V8 query uses common physical human successors; candidate robot
 actions enter post-read fusion, not KDA q. Learned retrieval semantics and
 associative-memory necessity remain unproved. Current tests:91,88 pass and
 three optional legacy-asset skips. Main frozen scientific sources are unchanged.
+
+### Latent Information Audit After V8
+
+The separate LATENT_TEMPORAL_INFORMATION_AUDIT.md records actual offline
+hidden-goal/preferred-state probes and one-step-root native-reward continuations.
+It is not KDA V9 or a new navigation-policy training run. All144 natural
+five-person ORCA trajectories, including unsuccessful ones, are case-disjoint
+across64 fitting,16 validation,32 circle test and32 square OOD episodes.
+
+In circle,24-frame history reduces two-second motion error from0.3156m to0.2615m;
+simple history statistics achieve0.2655m. In square, the same long-history probe
+degrades from0.3964m current-only error to0.4694m, while CV achieves0.2493m.
+Single-hidden-variable oracle controls identify local goal-estimation value,
+not a stable benefit from restoring the ORCA preferred-velocity state. A legal
+first-sighting position rule attains the reference maximum return at all four
+close-interaction circle roots under both continuations, exposing a strong
+generator-specific alternative to complex memory. This is not evidence for
+a deployed-policy SR advantage, information-theoretic insufficiency of current
+state, or KDA-family rejection. No new navigation training is started.
+
+The predictive fits need the optional audit dependency (`python -m pip install
+-e '.[audit]'`); it is not part of the navigation runtime. This local run used
+NumPy1.23.5, SciPy1.3.3, scikit-learn1.0.2 and PyTorch2.1.0. Use the frozen
+vendored simulator and an environment with these dependencies:
+
+```bash
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m experiments.latent_information collect --workers 4
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 python -m experiments.latent_information probe
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 python -m experiments.latent_decisions --workers 4
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 python -m experiments.latent_decisions --cohort interaction --workers 4
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 python -m experiments.latent_decisions --cohort interaction --components --workers 4
+PYTHONPATH=vendor:. OPENBLAS_NUM_THREADS=1 python -m experiments.latent_decisions --cohort interaction --birth-prior --workers 4
+```
+
+Artifacts remain in ignored outputs/latent_information. Candidate branches
+share frozen roots and are not independent benchmark episodes. The report
+retains the easy primary cohort, explicitly labels the added interaction and
+component diagnostics as exploratory, and reports both continuations rather
+than selecting the favorable one. Tests now total100, with97 passes and three
+optional legacy-asset skips; the frozen scientific source hash is unchanged.

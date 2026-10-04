@@ -11,6 +11,7 @@ dependencies = ["numpy<2", "torch>=2.1", "gymnasium>=0.28,<1", "matplotlib", "ei
 
 [project.optional-dependencies]
 mamba = ["mamba-ssm==1.2.0", "transformers>=4.30,<4.34"]
+audit = ["scikit-learn>=1.0,<2"]
 
 [project.scripts]
 shixu = "shixu.cli:main"
