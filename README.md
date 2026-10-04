@@ -832,6 +832,16 @@ The query geometry, age inputs, reward, action support and trained weights stay
 fixed. All replayed terminal outcomes match the archived current-reference
 episodes. Raw records are in outputs/occlusion_v6/action_content_*.json.
 
+The corresponding frozen closed-loop shadow uses those first two cases per
+cell (12 episodes per seed,48 total), without selecting strong interactions.
+Original SR/CR/timeout are83.33/6.25/10.42%; masking only hidden-actor memory
+gives79.17/2.08/18.75%, and masking all memory gives54.17/6.25/39.58%.
+Hidden-memory removal reduces SR in two seeds, improves it in one and ties in
+one. Memory matters to this trained model, with a safety/progress trade-off;
+this intervention can be out of distribution and does not establish superiority
+over a separately trained no-history model. Raw continuations and matched parent
+records remain in outputs/occlusion_v6/closed_content_*_kda.json.
+
 A separate four-seed CPU shadow checks the fixed2-second retention deadline.
 Only previously seen expired actors still inside the legal history horizon
 are eligible: current truth adds0.39 pp primary SR, while extending ordinary
@@ -875,3 +885,10 @@ training schedule:50 IL epochs use128 successful demonstrations, followed by
 If readout placement fails, a justified next test is one pre-fixed longer RL
 budget for all competing arms, with the same demonstrations and architecture;
 changing data volume and training budget together would not isolate the cause.
+
+The pre-outcome budget protocol is experiments/occlusion_budget_protocol.json.
+It fixes3,000 MC episodes for physical KDA, contextual GRU, same-placement GRU
+and the original zero-committed-history KDA capacity control, keeping128 IL
+demonstrations and50 IL epochs. No architecture changes are bundled with this
+test. It will run after V7 finishes; neither this budget nor the old1,000-episode
+budget is described as converged. Fresh confirmation remains reserved.

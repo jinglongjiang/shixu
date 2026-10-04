@@ -144,6 +144,64 @@ def action_probe(weights, visits_path, device):
                      "action selection or closed-loop gain; zero-memory interventions may be out of distribution."}
 
 
+def closed_loop_probe(weights, visits_path, device):
+    from experiments.temporal_order import summarize
+    from shixu.policy import ValuePolicy
+    from shixu.runner import environment, run_episode
+    checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(checkpoint["config"])
+    model = build_model(cfg).to(device).eval()
+    load_weights(model, weights, device)
+    if cfg.get("model", "architecture") != "motion" or cfg.get("model", "backbone") != "kda":
+        raise ValueError("Closed-loop probes require a physical actor KDA")
+    visits = json.loads(Path(visits_path).read_text())
+    if visits["checkpoint_sha256"] != hashlib.sha256(Path(weights).read_bytes()).hexdigest():
+        raise ValueError("The archived parent and frozen checkpoint must match")
+    cases = visits["protocol"]["development_cases"][:2]
+    parent = [row for row in visits["episodes"] if row["case"] in cases]
+    policy = ValuePolicy(model, cfg, device)
+    np.random.seed(checkpoint["seed"])
+    original_read, original_score = model.read_history, policy.score
+    records = [dict(row, scope="all") for row in parent]
+    for scope in ("visible", "none"):
+        for archived in parent:
+            def score(state):
+                def read(memory, queries):
+                    states, gaps = memory
+                    allowed = torch.zeros_like(gaps)
+                    if scope == "visible":
+                        for key, measured in zip(state.track_ids, state.observed):
+                            allowed[:, key] = measured
+                    changed = tuple(value * allowed.reshape(-1, 1, 1, 1) for value in states)
+                    return original_read((changed, gaps), queries)
+                model.read_history = read
+                try:
+                    return original_score(state)
+                finally:
+                    model.read_history = original_read
+            policy.score = score
+            try:
+                env = environment(cfg, policy, archived["geometry"], archived["people"])
+                episode = run_episode(env, policy, archived["case"])
+            finally:
+                policy.score = original_score
+            row = {key: episode[key] for key in ("case", "terminal", "navigation_time", "path", "minimum_clearance")}
+            row.update(scope=scope, people=archived["people"], geometry=archived["geometry"],
+                       actions=episode["actions"], return_=float(sum(episode["rewards"])))
+            records.append(row)
+        print("MEMORY_SCOPE", scope, summarize([row for row in records if row["scope"] == scope]), flush=True)
+    return {"checkpoint_sha256": visits["checkpoint_sha256"],
+            "visits_sha256": hashlib.sha256(Path(visits_path).read_bytes()).hexdigest(),
+            "summaries": {scope: summarize([row for row in records if row["scope"] == scope])
+                          for scope in ("all", "visible", "none")},
+            "records": records,
+            "scope": "First two fixed development cases per geometry/population; original parent records "
+                     "and matched frozen-weight continuations. Only committed memory is masked, not current "
+                     "geometry, legal age, observation or reward. This out-of-distribution intervention diagnoses "
+                     "memory dependence and is not a retrained control or a new method."}
+
+
 def probe(data_path, weights=None, device="cpu"):
     data = torch.load(data_path, map_location="cpu", weights_only=False)
     intervals, returning, missing = [], [], []
@@ -209,14 +267,17 @@ def main():
     parser.add_argument("--data")
     parser.add_argument("--weights")
     parser.add_argument("--visits")
+    parser.add_argument("--closed-loop", action="store_true")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     torch.set_num_threads(1)
+    if args.closed_loop and not args.visits:
+        parser.error("Closed-loop diagnostics require archived visits")
     if args.visits:
         if not args.weights:
             parser.error("Visit diagnostics require weights")
-        result = action_probe(args.weights, args.visits, args.device)
+        result = (closed_loop_probe if args.closed_loop else action_probe)(args.weights, args.visits, args.device)
     else:
         if not args.data:
             parser.error("Clock/content diagnostics require demonstration data")
