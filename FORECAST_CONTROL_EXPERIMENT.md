@@ -109,8 +109,9 @@ hyperparameter search or automatic V9/V10 series.
 
 ## Evidence State
 
-No completed fixed-budget result exists for the four new arms yet. The completed
-contract passes120 tests,117 passed and three existing optional legacy-asset
+Prototype-A remains in progress; completed-arm results are provisional until the
+complete four-seed matrix is available. The completed contract passes123 tests,
+120 passed and three existing optional legacy-asset
 skips. Each arm completed a short two-demonstration, one-IL-epoch, two-RL-episode
 training/save/reload/native-episode smoke. All four smoke evaluations timed out;
 these intentionally tiny pipeline checks are not method-performance evidence.
@@ -151,6 +152,26 @@ by seed is86.72/81.25/95.31/77.34%. This is a reference result, not a forecast
 method result. It used CPU/PyTorch2.4.1; new arms use the original per-seed GPU
 hosts, so absolute timing must not be compared across these hosts. Numerical
 CPU/GPU evaluation sensitivity must be checked before a close method claim.
+
+Matched-GPU parent re-evaluation is now complete. Seeds419/443/467 retain all
+CPU terminal outcomes; seed491 changes one20-person square case from success to
+timeout. The final reference primary SR is84.96%, not the preliminary CPU85.16%.
+Both raw evaluations are retained. No threshold, test case or training budget is
+changed. Each parent and new arm is evaluated using the same seed-specific GPU,
+PyTorch version and native evaluator.
+
+Bounded failure diagnosis: on eight identical64-sample shared-IL batches, the
+completed seed467 GRU forecast decoder has value-versus-weighted-prediction
+gradient cosines from-0.829 to-0.467; value-gradient norms are81-137 times the
+weighted prediction norms. Current has six of eight negative cosines and norm
+ratios30-65. These are local gradient measurements, not reconstruction of the
+past AdamW trajectory or proof that this caused the navigation loss. They support
+one falsifiable common-interface repair if final Prototype-A forecasts remain
+poor: train physical prediction from its legal-motion supervision, without
+allowing scalar-value gradients to turn forecast positions into arbitrary value
+features. It must apply to Current/GRU/KDA alike, leave architecture/reward/actions/
+data/budgets/cases unchanged, and run only after every Prototype-A arm finishes.
+Fixed CV is already gradient-free. No rescue has been trained at this point.
 
 Frozen scientific source SHA256:
 

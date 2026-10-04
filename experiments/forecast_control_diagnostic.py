@@ -9,15 +9,19 @@ import configparser
 import hashlib
 import json
 from pathlib import Path
+import platform
+import time
 
 import numpy as np
 import torch
 
 from crowd_sim.envs.utils.action import ActionXY
+from crowd_sim.envs.utils.state import FullState, ObservableState
 from experiments.occlusion import source_hash
 from shixu.features import stack_histories, window
+from shixu.forecast import ForecastReplay
 from shixu.model import build_model, load_weights
-from shixu.observations import OccludedTracks
+from shixu.observations import ObservedTracks, OccludedTracks
 from shixu.policy import ValuePolicy
 from shixu.runner import environment
 
@@ -108,6 +112,96 @@ def filter_scores(scores, clearances, cfg):
     return result
 
 
+def state_from_tokens(frame):
+    keys = np.flatnonzero(frame[1:, 12] > 0)
+    robot = FullState(*frame[0, :9])
+    humans = [ObservableState(*(frame[1 + key, :2] + frame[0, :2]),
+                               *frame[1 + key, 3:5], frame[1 + key, 6]) for key in keys]
+    return ObservedTracks(robot, humans, tuple(int(k) for k in keys),
+                          tuple(bool(frame[1 + k, 10]) for k in keys),
+                          tuple(float(frame[1 + k, 9]) for k in keys), len(frame) - 1)
+
+
+def latency(weights, cohort, destination, device):
+    if destination.exists():
+        raise RuntimeError("Do not overwrite a standardized timing replay")
+    data = torch.load(cohort, map_location="cpu", weights_only=False)
+    checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(checkpoint["config"])
+    policy = ValuePolicy(build_model(cfg), cfg, device)
+    load_weights(policy.model, weights, device)
+    rows = examples(data)[::10]
+    prepared = [(state_from_tokens(row["history"][-1]), row["history"][:-1]) for row in rows]
+    for i in range(20):
+        state, history = prepared[i * len(prepared) // 20]
+        policy.history.clear()
+        policy.history.extend(history)
+        policy.score(state)
+    timings = []
+    for _ in range(3):
+        for state, history in prepared:
+            policy.history.clear()
+            policy.history.extend(history)
+            if policy.device.type == "cuda":
+                torch.cuda.synchronize(policy.device)
+            started = time.perf_counter()
+            policy.score(state)
+            if policy.device.type == "cuda":
+                torch.cuda.synchronize(policy.device)
+            timings.append(1000 * (time.perf_counter() - started))
+    result = dict(seed=checkpoint["seed"], checkpoint_sha256=digest(weights), cohort_sha256=digest(cohort),
+                  device=device, torch=torch.__version__, host=platform.node(),
+                  hardware=torch.cuda.get_device_name(policy.device) if policy.device.type == "cuda" else "CPU",
+                  states=len(prepared), repetitions=3, median_ms=float(np.median(timings)),
+                  p95_ms=float(np.quantile(timings, .95)), timings_ms=timings,
+                  scope="Complete native 80-action score/filter/transfers, same legal workload, every tenth root, "
+                        "20 warmups, three repetitions. Run only when navigation training is idle. "
+                        "This timing replay is not a navigation outcome experiment.")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(result, indent=2))
+    print("TIMED", checkpoint["seed"], cfg.get("model", "backbone"), result["median_ms"], flush=True)
+
+
+def gradients(weights, demonstrations, destination, device):
+    if destination.exists():
+        raise RuntimeError("Do not overwrite an objective-gradient diagnostic")
+    checkpoint = torch.load(weights, map_location="cpu", weights_only=False)
+    data = torch.load(demonstrations, map_location="cpu", weights_only=False)
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(checkpoint["config"])
+    model = build_model(cfg).to(device).eval()
+    load_weights(model, weights, device)
+    if model.kind == "cv":
+        raise ValueError("Fixed CV has no forecast parameters")
+    replay = ForecastReplay(cfg.getint("buffer", "capacity"), cfg.getint("buffer", "seq_len"),
+                            cfg.getfloat("train", "gamma"), "zero")
+    for episode in data["episodes"]:
+        replay.add(episode)
+    rng, records = np.random.default_rng(20261004), []
+    for _ in range(8):
+        history, returns, future, valid = replay.sample_with_forecasts(64, device, rng)
+        values, predicted = model.value_and_forecast(history)
+        value_loss = (values - returns).square().mean()
+        anchor = model._physical(history)[1][:, -1]
+        error = ((predicted[:, :, 1:] - anchor[:, :, None] - future) / model.times[None, None, 1:, None]).square().sum(-1)
+        forecast_loss = (error * valid).sum() / (2 * valid.sum().clamp_min(1))
+        parameters = tuple(model.decoder.parameters())
+        a = torch.cat([g.flatten() for g in torch.autograd.grad(value_loss, parameters, retain_graph=True)])
+        b = torch.cat([g.flatten() for g in torch.autograd.grad(model.prediction_weight * forecast_loss, parameters)])
+        records.append(dict(value_loss=float(value_loss.detach()), forecast_loss=float(forecast_loss.detach()),
+                            value_gradient_norm=float(a.norm()), weighted_forecast_gradient_norm=float(b.norm()),
+                            cosine=float(torch.nn.functional.cosine_similarity(a, b, dim=0))))
+    result = dict(seed=checkpoint["seed"], kind=model.kind, phase=checkpoint.get("phase", "final"),
+                  checkpoint_sha256=digest(weights), demonstrations_sha256=digest(demonstrations), batches=records,
+                  scope="Eight identical64-sample batches from shared successful IL data. Local decoder-gradient "
+                        "conflict, not reconstruction of past AdamW updates, not proof of online-RL causation, "
+                        "and not a navigation improvement experiment. No parameters are updated.")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(result, indent=2))
+    print("GRADIENTS", checkpoint["seed"], model.kind, result["phase"], flush=True)
+
+
 @torch.inference_mode()
 def compare(weights, cohort, destination, device):
     if destination.exists():
@@ -171,13 +265,14 @@ def compare(weights, cohort, destination, device):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("collect", "compare", "batch-compare"))
+    parser.add_argument("mode", choices=("collect", "compare", "batch-compare", "latency", "gradients"))
     parser.add_argument("--root", default="outputs/forecast_control_a")
     parser.add_argument("--cohort", default="outputs/forecast_control_a/shared_diagnostic.pt")
     parser.add_argument("--weights")
     parser.add_argument("--destination")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--phase", choices=("il", "model"), default="model")
+    parser.add_argument("--data", default="outputs/forecast_control_a/demonstrations.pt")
     args = parser.parse_args()
     torch.set_num_threads(1)
     if args.mode == "collect":
@@ -193,7 +288,9 @@ def main():
     else:
         if not args.weights or not args.destination:
             parser.error("Checkpoint and destination required")
-        compare(Path(args.weights), Path(args.cohort), Path(args.destination), args.device)
+        function = {"latency": latency, "gradients": gradients}.get(args.mode, compare)
+        data = args.data if args.mode == "gradients" else args.cohort
+        function(Path(args.weights), Path(data), Path(args.destination), args.device)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,8 @@ import torch
 
 from shixu.forecast import ForecastReplay, ForecastValueModel
 from shixu.replay import Replay
-from experiments.forecast_control_diagnostic import examples, filter_scores
+from experiments.forecast_control_diagnostic import examples, filter_scores, state_from_tokens
+from shixu.features import encode_tracks
 
 
 class ForecastTests(unittest.TestCase):
@@ -151,6 +152,17 @@ class ForecastTests(unittest.TestCase):
         self.assertFalse(bool(row["valid"][0, 0]))
         self.assertTrue(bool(row["valid"][0, 1]))
         self.assertFalse(bool(row["valid"][1].any()))
+
+    def test_timing_state_preserves_legal_fields_and_slot_keys(self):
+        frame = self.history().numpy()[0, -1]
+        frame[2, 12] = 0
+        restored = encode_tracks(state_from_tokens(frame))
+        np.testing.assert_allclose(restored[0, :9], frame[0, :9])
+        for index in (1, 3):
+            np.testing.assert_allclose(restored[index, :2], frame[index, :2], atol=1e-6)
+            np.testing.assert_allclose(restored[index, 3:5], frame[index, 3:5])
+            np.testing.assert_allclose(restored[index, [6, 9, 10, 12]], frame[index, [6, 9, 10, 12]])
+        self.assertEqual(float(restored[2, 12]), 0)
 
 
 if __name__ == "__main__":
