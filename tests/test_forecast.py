@@ -1,6 +1,7 @@
 """The new mechanism has an explicit causal prediction/control boundary."""
 
 import copy
+import configparser
 import unittest
 
 import numpy as np
@@ -8,6 +9,7 @@ import torch
 
 from shixu.forecast import ForecastReplay, ForecastValueModel
 from shixu.replay import Replay
+from experiments.forecast_control_diagnostic import examples, filter_scores
 
 
 class ForecastTests(unittest.TestCase):
@@ -126,6 +128,29 @@ class ForecastTests(unittest.TestCase):
         restored = ForecastValueModel("kda", 16).eval()
         restored.load_state_dict(copy.deepcopy(model.state_dict()))
         torch.testing.assert_close(model(history), restored(history))
+
+    def test_diagnostic_filter_uses_native_safe_set_rule(self):
+        cfg = configparser.ConfigParser()
+        cfg.read_dict({"eval_protocol": {"safety_margin": ".2", "risk_lambda": ".5"},
+                       "reward": {"discomfort_dist": ".2"}})
+        scores = torch.tensor([[1., 2., 3.], [1., 2., 3.]])
+        clearance = torch.tensor([[0., .3, .1], [0., .1, .1]])
+        result = filter_scores(scores, clearance, cfg)
+        self.assertEqual(int(result[0].argmax()), 1)
+        self.assertEqual(int(result[1].argmax()), 2)
+        self.assertLess(float(result[0, 2]), -1e8)
+        self.assertGreater(float(result[1, 2]), 0)
+
+    def test_diagnostic_labels_only_later_visible_same_track(self):
+        frames = self.history().numpy()[0]
+        frames[1, 1, 10] = 0
+        frames[0, 2, 12] = 0
+        root = dict(tick=0, queries=frames[:1], rewards=np.zeros(1), clearance=np.ones(1))
+        data = dict(protocol={"history": 24}, episodes=[dict(tokens=list(frames), roots=[root])])
+        row = examples(data)[0]
+        self.assertFalse(bool(row["valid"][0, 0]))
+        self.assertTrue(bool(row["valid"][0, 1]))
+        self.assertFalse(bool(row["valid"][1].any()))
 
 
 if __name__ == "__main__":

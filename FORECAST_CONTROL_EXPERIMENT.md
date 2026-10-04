@@ -116,6 +116,27 @@ training/save/reload/native-episode smoke. All four smoke evaluations timed out;
 these intentionally tiny pipeline checks are not method-performance evidence.
 Full16-run training is now active, with419/443/491 on the4090 and467 on the3060.
 
+The control connection is committed and uploaded to shixu as f3aaae9. Scientific
+source and the training protocol remain frozen while the full runs are active.
+The additional diagnostic operates offline and does not alter training.
+
+The diagnostic cohort is fixed independently of method outcomes: the first four
+development cases per geometry/population cell, replaying the archived commands
+of parent seed419. All24 replays reproduce terminal event, time, path and minimum
+clearance. There are591 uniformly sampled control states and34,990 available
+later-visible actor/time labels. All learned arms and both IL/final phases will
+use these identical legal histories. It measures prediction accuracy and the
+effect of substituting CV forecasts while holding each model's value weights
+fixed. A substitution changes the model's input distribution; action differences
+are not an improvement estimate or a replacement for trained closed-loop results.
+
+Initial IL-only diagnostics for seeds419/443/467 show pooled forecast ADE of
+0.2737/0.2729/0.2758m for Current,0.3378/0.3402/0.3427m for GRU and
+0.3278/0.3370/0.3353m for KDA, versus the common CV0.1537m. This does not establish
+the final RL result or its cause. Predictions do enter action selection: replacing
+them with CV changes119-269 of591 filtered candidate selections in these models.
+The fixed source/protocol is not revised in response to these intermediate data.
+
 | Common-interface arm | Parameters |
 | --- | ---: |
 | CV | 103,169 |
