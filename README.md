@@ -944,10 +944,79 @@ does not cover on-policy RL errors,20-person observations or action quality.
 The helper is experiments/query_contract_probe.py; raw predictions, data hashes
 and checkpoint hashes remain in outputs/query_contract.
 
-V8 still uses one frozen source for every arm. The resumed seed467 physical-GRU
+V8 used one frozen source for every arm. The resumed seed467 physical-GRU
 prefix exactly matches its earlier terminal outcomes and losses over706 checked
 episodes. The older context-GRU run used a different but semantically equivalent
 packed-GRU implementation, so its resumed prefix is not an exact replay. Any
 old-versus-new context-GRU difference cannot be attributed exclusively to budget;
 the current V8 within-run comparison remains matched. Fresh confirmation, if
 earned, must train all arms from scratch on one frozen implementation and host.
+
+### Budget Results and Round Closure
+
+All16 V8 models completed50 IL epochs and3,000 online MC episodes, then96
+final-weight tests each. All95 remote artifacts match local SHA256 checksums;
+the server RAM workspace is removed. Complete records are in outputs/occlusion_v8.
+
+| Model | Overall SR % | CR % | Timeout % | 5-person SR % | 10-person SR % | 20-person SR % | Primary10/20 SR % |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Context GRU | 85.42 | 6.51 | 8.07 | 93.75 | 84.38 | 78.12 | 81.25 |
+| Same-placement physical GRU | 86.98 | 6.25 | 6.77 | 98.44 | 86.72 | 75.78 | 81.25 |
+| Physical KDA | 86.98 | 5.99 | 7.03 | 98.44 | 87.50 | 75.00 | 81.25 |
+| Zero-committed-history KDA | 87.76 | 7.55 | 4.69 | 94.53 | 92.19 | 76.56 | 84.38 |
+
+KDA-minus-context primary differences are-9.38/-7.81/-6.25/+23.44 pp;
+KDA-minus-physical-GRU differences are-4.69/-6.25/+6.25/+4.69 pp. Equal
+pooled rates are not an equivalence result. Against zero committed history,
+KDA loses3.125 pp primary SR and incurs5.08 pp more timeouts while reducing
+collisions1.95 pp. No contrast meets the pre-fixed admission rules.
+
+The KDA1,000-episode prefix exactly reproduces V6 for all four seeds. Its
+primary SR rises4.69 pp with the larger budget, but only2/4 paired seeds rise;
+overall successes increase311 to334, collisions14 to23, timeouts59 to27.
+This supports a partial budget effect, not convergence or a stable advantage.
+
+No fresh confirmation or V9/V10 is started. The current version is stopped,
+not the entire temporal-model family rejected. The Chinese interim report
+OCCLUSION_KDA_INTERIM_REPORT_20261004.md records the final results, evidence
+boundaries and diagnostic gaps. No associative-memory necessity, learned
+selective revision, or MC-objective bottleneck is established by these results.
+
+### Read-only Closure Audit
+
+The user's five diagnostic questions are answered in section14 of the Chinese
+report. No new training, controller or reward change is part of this audit.
+
+```bash
+PYTHONPATH=vendor:. python -m experiments.ranking_audit \
+  --root outputs/occlusion_v8 --old-root outputs/occlusion_v6 \
+  --expert-data outputs/query_contract/demonstrations64.pt \
+  --output outputs/query_contract/closure_ranking_audit.json
+```
+
+Sixteen failure trajectories were selected by a fixed first-key rule; eight
+timeouts and six sufficiently long collisions supply55 shared frozen states.
+Both physical models and their IL50/RL1000/RL3000 snapshots receive identical
+legal histories and80 candidates. Every source final-weight executed command
+matches its archive. The independent true-human two-second geometry reference
+holds each candidate velocity constant; it is not an optimal Q or a closed-loop
+navigation improvement. Different-time outcomes are not pooled as one benchmark.
+
+Of40 timeout anchors,32 admit a one-step CV-safe-progress action. Ranking by
+scalar V selects one in15 GRU versus3 KDA states; native reward-plus-value
+selects20 versus8, filtering27 versus15, smoothing20 versus13. This locates
+part of the difference before filtering, not specifically inside memory read.
+Under a stricter true two-second clearance/progress criterion, native ranking
+selects5/20 for GRU versus8/20 for KDA: the contrary evidence rules out calling
+KDA's short-term ranking uniformly worse. Pre-collision5–10-second coverage is
+insufficient to establish a gradually forming bias.
+
+Final-IL held-out expert-return MSE is0.00219292 for GRU and0.00240531 for KDA.
+Post-RL discrepancies against those expert returns are not on-policy value
+errors; no archived common online replay or true80-action value reference
+supports declaring the MC objective the cause. Earlier RL500 snapshots exist
+only for a different full-observation cohort and cannot fill this curve.
+The current V8 query uses common physical human successors; candidate robot
+actions enter post-read fusion, not KDA q. Learned retrieval semantics and
+associative-memory necessity remain unproved. Current tests:91,88 pass and
+three optional legacy-asset skips. Main frozen scientific sources are unchanged.
