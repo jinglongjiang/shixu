@@ -1,6 +1,7 @@
 """Frozen-consumer retained-track truth intervention; not a deployable oracle."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from unittest.mock import patch
@@ -26,7 +27,7 @@ def extend_expired(observer, env, state, maximum_age):
     return state._replace(human_states=humans, track_ids=tuple(keys), observed=tuple(flags), ages=tuple(ages))
 
 
-def evaluate(weights, protocol, seed, device, mode):
+def evaluate(weights, protocol, seed, device, mode, cases=None):
     original = OccludedTracks.observe
     # Prefix has T-1 real frames including the root: its oldest measurement is T-2 ticks old.
     maximum_age = (protocol["history"] - 2) * .25
@@ -51,8 +52,10 @@ def evaluate(weights, protocol, seed, device, mode):
         return state
 
     with patch.object(OccludedTracks, "observe", observe):
-        result = evaluate_weights(weights, protocol, device, protocol["development_cases"], seed)
+        result = evaluate_weights(weights, protocol, device,
+                                  protocol["development_cases"] if cases is None else cases, seed)
     result.update(mode=mode, seed=seed, maximum_expired_age_seconds=maximum_age,
+                  checkpoint_sha256=hashlib.sha256(Path(weights).read_bytes()).hexdigest(),
                   scope="Same frozen consumer, cases and controller. truth_retained changes only currently retained "
                         "hidden states. truth_expired adds current truth only for previously measured expired actors "
                         "whose last observation is still inside the policy's legal root prefix; retained states remain CV. "
@@ -71,9 +74,15 @@ def main():
     parser.add_argument("--mode", choices=("truth_retained", "truth_expired", "cv_extended", "visible_only", "parent"),
                         default="truth_retained")
     parser.add_argument("--output", required=True)
+    parser.add_argument("--cases", nargs="+", type=int,
+                        help="Pre-fixed development-case subset; never choose cases from intervention outcomes")
     args = parser.parse_args()
     torch.set_num_threads(1)
-    result = evaluate(args.weights, json.loads(Path(args.protocol).read_text()), args.seed, args.device, args.mode)
+    protocol = json.loads(Path(args.protocol).read_text())
+    if args.cases and (len(set(args.cases)) != len(args.cases)
+                       or any(case not in protocol["development_cases"] for case in args.cases)):
+        raise ValueError("Diagnostic cases must be unique members of the development cohort")
+    result = evaluate(args.weights, protocol, args.seed, args.device, args.mode, args.cases)
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(json.dumps(result, indent=2))
     print(json.dumps({key: value for key, value in result.items() if key != "episodes"}, indent=2))

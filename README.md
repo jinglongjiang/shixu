@@ -919,3 +919,35 @@ does not establish better retrieval, navigation or a new method. Its result is
 VERSION_REQUIRES_DIAGNOSIS_NOT_DIRECTION_REJECTED; results and checks remain in
 outputs/occlusion_v7. V8 isolates the learning-budget question rather than
 adding another query gate or selecting a favorable V7 seed.
+
+### Query-contract Check During the Budget Run
+
+An independent held-out collection contains64 successful legal-observation
+ORCA episodes from cases13000 onward. Final-IL snapshots, not final-RL weights,
+are compared against expert continuation returns on762 uniformly sampled
+transitions;48 active-support changes are excluded before model evaluation.
+Each transition has the same legal prefix and target. Only the final query
+changes from the actual next observation to the planner's CV successor.
+
+| Four-seed mean MSE | Observed next | CV next | CV with fresh-age shadow |
+| --- | ---: | ---: | ---: |
+| Context GRU | 0.00230110 | 0.00231515 | 0.00232848 |
+| Physical GRU | 0.00219292 | 0.00219781 | 0.00220714 |
+| Physical KDA | 0.00240531 | 0.00241053 | 0.00241885 |
+
+The age shadow resets only the candidate age of actors measured at the root;
+it is fictitious and is not a proposed deployment fix. These results do not
+show a substantial aggregate query-mismatch penalty in this expert cohort.
+They therefore do not justify treating that mismatch as the demonstrated cause
+of poor navigation, or changing the training target on that basis. This check
+does not cover on-policy RL errors,20-person observations or action quality.
+The helper is experiments/query_contract_probe.py; raw predictions, data hashes
+and checkpoint hashes remain in outputs/query_contract.
+
+V8 still uses one frozen source for every arm. The resumed seed467 physical-GRU
+prefix exactly matches its earlier terminal outcomes and losses over706 checked
+episodes. The older context-GRU run used a different but semantically equivalent
+packed-GRU implementation, so its resumed prefix is not an exact replay. Any
+old-versus-new context-GRU difference cannot be attributed exclusively to budget;
+the current V8 within-run comparison remains matched. Fresh confirmation, if
+earned, must train all arms from scratch on one frozen implementation and host.
