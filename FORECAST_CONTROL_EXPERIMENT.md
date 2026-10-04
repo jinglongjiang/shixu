@@ -480,3 +480,207 @@ the owned RAM directory removed; no existing remote environment was modified.
 The laptop handled diagnostic/reference evaluation and the local3060 handled
 one complete paired seed. Frozen-source archives and raw negatives remain local;
 large checkpoints are not committed to Git.
+
+## Evidence Follow-Up: Fit, Consumption and Realized Action Value
+
+Completed offline on the existing four IL/final checkpoint pairs. No navigation
+training, architecture change, new scenario generator or third repair was made.
+The scientific core SHA256 remains the B freeze. The diagnostic source is
+experiments/forecast_evidence.py; all raw rows, forecasts' errors, candidate
+scores, selections, restoration checks and continuation outcomes remain under:
+
+/home/abc/workspace/shixu/outputs/forecast_control_b/evidence_diagnostic/
+
+### 1. Training Fit Versus Independent Forecast Evaluation
+
+Shared inputs are identical across predictors. Every fourth frame is sampled
+from all128 archived successful IL episodes, giving1609 training roots. The
+independent case IDs80000-80031 do not overlap the IL cases. Two visitation
+controls are reported separately:
+
+- Same ORCA teacher as IL:32 native5-circle cases,401 roots,29 successes and
+  three collisions. All cases are retained; a success-only sensitivity summary
+  is also archived because IL selected successful demonstrations.
+- Original Parent419 commands:32 native5-circle cases plus four cases in each
+  of the other five geometry/population cells,1151 roots total. Commands replay
+  with identical termination/time/path and matching legal tokens. This is a
+  different visitation policy from the ORCA demonstrations, not a clean
+  overfitting-only test. These cases were already used for development
+  evaluation; they are independent of training, not fresh confirmation cases.
+
+The online MC replay was never serialized. These data therefore cannot measure
+fit on the actual3000-episode RL training replay or establish an optimization
+failure there. Forecast labels cover later lawful visible measurements;
+unavailable terminal tails are masked. Hidden simulator truth is not used for
+these fit metrics.
+
+The following are measured means across four paired seeds. Loss is exactly the
+forecast training objective: two-coordinate displacement MSE divided by elapsed
+time squared, averaged over the nine valid forecast horizons. Its units are
+(m/s)^2, not ADE.
+
+| Checkpoint | Predictor | Seen IL loss | Independent ORCA loss | Independent ORCA0.25s ADE(m) | Independent ORCA2s ADE(m) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| IL | Current | 0.029218 | 0.029510 | 0.028426 | 0.387550 |
+| IL | GRU | 0.022803 | 0.023157 | 0.026869 | 0.331141 |
+| IL | KDA | 0.018625 | 0.020586 | 0.027745 | 0.319588 |
+| Final | Current | 0.034230 | 0.033589 | 0.026949 | 0.385844 |
+| Final | GRU | 0.031694 | 0.030953 | 0.025930 | 0.353090 |
+| Final | KDA | 0.029683 | 0.028690 | 0.025093 | 0.327661 |
+
+KDA's forecast objective is lower than Current's on both datasets in all four
+seeds at both phases. The independent ORCA long-horizon advantage is not just a
+training-set effect. Final checkpoints have worse loss on the original IL data
+than IL checkpoints in all learned arms; conversely their Parent-visited test
+errors decrease. This measures a phase-dependent redistribution of errors. It
+does not identify its cause without the missing online replay.
+
+Final forecast errors on the32 independent Parent-visited5-circle cases:
+
+| Predictor | 0.25s ADE(m) | 2s ADE(m) | Forecast loss |
+| --- | ---: | ---: | ---: |
+| CV | 0.015388 | 0.277600 | 0.027079 |
+| Current | 0.019980 | 0.296111 | 0.019765 |
+| GRU | 0.019577 | 0.270116 | 0.018223 |
+| KDA | 0.018990 | 0.234101 | 0.016668 |
+
+KDA beats Current at both forecast horizons in all four seeds in this cohort.
+The previous statement that KDA is worse at0.25s must be restricted to the
+earlier six-cell pooled workload. In the20 other-cell episodes, final Current
+and KDA0.25s ADE are0.022209 and0.023148m; their2s ADE are0.363932 and0.324216m.
+Therefore short-horizon performance depends on the evaluated workload; it is
+not uniformly worse for the temporal predictor. CV still has the lowest0.25s
+error in the Parent-visited cohorts.
+
+A frozen-weight input intervention removes older lawful frames while leaving
+the current frame, current neighbours and labels unchanged:
+
+| Predictor/input | Independent ORCA0.25s/2s ADE(m) | Parent5-circle0.25s/2s ADE(m) |
+| --- | --- | --- |
+| KDA24 frames | 0.025093 /0.327661 | 0.018990 /0.234101 |
+| KDA last3 frames | 0.031678 /0.424772 | 0.024462 /0.329058 |
+| KDA current frame only | 0.039645 /0.468802 | 0.029400 /0.349584 |
+| GRU24 frames | 0.025930 /0.353090 | 0.019577 /0.270116 |
+| GRU current frame only | 0.028116 /0.402207 | 0.022018 /0.330513 |
+
+Current outputs are unchanged by this intervention. This demonstrates useful
+history dependence in these frozen predictors; it is not a retrained last-k
+baseline, proof of optimal fitting, or proof that KDA matrix memory is necessary.
+Measured training/test errors do not support declaring history redundant or
+the temporal predictor wholly unlearned.
+
+### 2. Does Forecast Consumption Target High-Error Dangerous States?
+
+The bridge directly reads only0.25s predicted positions. Its2s predictions do
+not enter candidate queries, rewards or safety filters. The longer targets
+still influence shared predictor parameters during training; they are not
+directly consumed by control.
+
+On the original591 shared roots, four KDA-trained critics and four fresh-CV
+critics are each frozen. CV, Current, GRU, KDA and true-one-step positions are
+substituted into the same critic/history/candidate arrays. Four seeds reuse the
+same roots and are not2364 independent states.
+
+| Frozen consumer | KDA/CV raw ranking winner changes | KDA/CV filtered winner changes |
+| --- | ---: | ---: |
+| KDA-trained critic,591 roots x4 seeds | 77 /2364 | 69 /2364 |
+| Fresh-CV-trained critic,591 roots x4 seeds | 113 /2364 | 110 /2364 |
+
+For the KDA-trained consumer, the69 changed root/seed conditions have mean
+one-step position error0.050447m versus0.035866m for the2295 unchanged conditions.
+These are state means over currently active tracks using diagnostic simulator
+positions, including retained hidden actors; they are not the visible-label ADE
+from the preceding tables. Current lawful surface clearance<=0.8m occurs in
+32/69 changed conditions versus756/2295 unchanged conditions:46.38% versus32.94%.
+Only1/69 changed conditions has a CV-selected native clearance below the fixed
+0.2m safety margin. For fresh-CV consumers, corresponding mean errors are
+0.045774 versus0.035829m and near-state counts42/110 versus746/2254.
+
+Thus changes coincide with larger measured errors on average and are somewhat
+more frequent in near encounters, but are not exclusively danger-state changes.
+These associations do not prove prediction error caused an episode failure.
+The modest raw-to-filtered count reduction also does not identify the safety
+filter as the unique cause of missing navigation gains. The direct
+long-horizon-to-one-step consumption mismatch is established by the code path;
+its share of the observed performance difference is not isolated.
+
+### 3. Fixed Critic, True One-Step Positions and Actual Consequences
+
+Selection rules were saved before calculating any new outcomes:
+
+- Primary: one root per original24 episodes, first sampled root after2s with
+  lawful surface clearance<=0.8m; otherwise the closest sampled root after2s.
+- Secondary: the first sampled root after2s in each episode where true-position
+  and CV substitutions select different actions in any fixed consumer.20 roots
+  qualify. This set is explicitly action-selected, not an unbiased population
+  estimate. Five roots overlap primary;39 distinct worlds are evaluated.
+
+World restoration was checked against archived commands and rewards at all39
+roots. Maximum one-step human-position error is4.47035e-7m and reward errors are
+zero. Robot-invisible native dynamics make human future positions independent
+of the substituted root command. Truth is supplied only for currently tracked
+actors; it does not reveal unseen pedestrians or enter deployed models.
+
+Each alternative uses the identical critic weights, lawful history,80 native
+candidates, original reward, CV safety/risk filtering and common previous
+executed command for smoothing. Only forecast positions are swapped. The
+selected command is executed for one0.25s step, then a common lawful ORCA rule
+continues to termination. Unbraked ORCA is a separately reported sensitivity
+control.510 unique native continuation branches were executed, reusing exact
+duplicates across variants. Discounting uses the original gamma0.99; progress
+is recorded but not substituted for the original reward. These are selected
+action Q^pi outcomes, not Q*, a full truth-trained navigation benchmark, or
+complete deployed-policy success rates.
+
+Primary outcomes under the common ORCA continuation,24 roots x4 seeds per
+consumer. Counts repeat root worlds across critic conditions; they must not be
+interpreted as96 independent evaluation episodes.
+
+| Frozen consumer | Prediction | Success/collision/timeout | Mean discounted return |
+| --- | --- | --- | ---: |
+| Fresh CV | CV | 73 /1 /22 | 0.456462 |
+| Fresh CV | Current | 73 /1 /22 | 0.456330 |
+| Fresh CV | KDA | 73 /1 /22 | 0.456462 |
+| Fresh CV | True0.25s positions | 73 /1 /22 | 0.456379 |
+| KDA | CV | 70 /4 /22 | 0.417699 |
+| KDA | Current | 70 /4 /22 | 0.417699 |
+| KDA | KDA | 70 /4 /22 | 0.417615 |
+| KDA | True0.25s positions | 70 /4 /22 | 0.417564 |
+
+No primary root/seed condition changes terminal outcome, under either
+continuation. Tiny time/return changes remain archived rather than promoted to
+a method gain. In the secondary set, fresh-CV consumers retain64 successes,
+zero collisions and16 timeouts for all four substitutions. KDA-trained
+consumers have64/1/15 under CV and Current versus63/1/16 under KDA and truth.
+The changed terminal is one20-person square root,case80002,tick20,critic seed467:
+CV's action reaches the goal; KDA and true-position substitutions time out.
+The same terminal difference persists with unbraked ORCA. It is not averaged
+away or treated as a safety benefit. True-position mean-return changes versus
+CV are nonpositive in every primary/secondary consumer aggregate for both
+continuations.
+
+This supplies no positive outcome headroom for improving positions within this
+specific fixed one-step bridge on these roots. It does not establish that better
+prediction is useless generally. Truth is perfect one-step position, not full
+future state: velocity/masks/age, immediate reward and safety-filter geometry
+remain the parent quantities. Substituted queries are not co-trained with the
+fixed critic; distribution compatibility is not independently established.
+One-step interventions with ORCA continuation also do not measure repeated
+closed-loop forecast use. These are explicit limits, not inferred explanations
+for the negative result.
+
+### Answer and Research Boundary
+
+Established: temporal predictors learned measurable forecast improvements,
+including on independent lawful histories; removing history worsens their
+frozen predictions; the bridge directly consumes only a single short horizon;
+and even exact positions at that horizon do not improve terminal outcomes in
+the evaluated primary roots. The earlier pooled short-term comparison must not
+be generalized to every density/geometry/visitation policy.
+
+Not established: a unique optimization, generalization, memory or critic cause;
+matrix associative memory necessity; redundant historical information; or a
+universal absence of prediction-to-control value. Continuing to optimize only
+this predictor has no demonstrated navigation payoff in this frozen bridge.
+No KDA V9/V10, new consumer or new navigation training follows this diagnostic.
+All133 tests finish successfully with three existing optional-asset skips.
