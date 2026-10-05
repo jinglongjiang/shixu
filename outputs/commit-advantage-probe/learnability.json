@@ -1,0 +1,311 @@
+{
+  "verdict": "GO_LEARNABILITY",
+  "models": [
+    {
+      "kind": "linear",
+      "folds": [
+        {
+          "heldout_seed": null,
+          "train_rows": 840,
+          "validation_rows": 207,
+          "checkpoint": "outputs/commit-advantage-probe/probes/linear-case-only.pt",
+          "checkpoint_sha256": "c4b886ea3f2c4e2bc53c48d241eff5219fa4e06c04a66537032a2ec6d467bc75",
+          "metrics": {
+            "rows": 212,
+            "cases": 16,
+            "selected": 56,
+            "mae": 0.04898054228093603,
+            "rmse": 0.12396674600250909,
+            "selected_advantage": 0.0037807170404901484,
+            "always_commit_advantage": 0.0008643428104293811,
+            "fixed_trigger_advantage": -0.004566224830004012,
+            "positive_cases": 16,
+            "negative_cases": 16,
+            "balanced_accuracy": 0.585075493612079,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 20,
+            "negative_selected": 23,
+            "meaningful": 179
+          }
+        },
+        {
+          "heldout_seed": 419,
+          "train_rows": 629,
+          "validation_rows": 155,
+          "checkpoint": "outputs/commit-advantage-probe/probes/linear-419.pt",
+          "checkpoint_sha256": "51f354471ad5cb0d181768ebbe86af9ab567e49c0b3c901d8847dae7d65685bf",
+          "metrics": {
+            "rows": 55,
+            "cases": 16,
+            "selected": 6,
+            "mae": 0.0742664546594353,
+            "rmse": 0.16757030958849725,
+            "selected_advantage": 0.005278268881401135,
+            "always_commit_advantage": 0.022950943657693106,
+            "fixed_trigger_advantage": 0.00824931558857374,
+            "positive_cases": 12,
+            "negative_cases": 13,
+            "balanced_accuracy": 0.560428849902534,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 3,
+            "negative_selected": 1,
+            "meaningful": 46
+          }
+        },
+        {
+          "heldout_seed": 443,
+          "train_rows": 635,
+          "validation_rows": 156,
+          "checkpoint": "outputs/commit-advantage-probe/probes/linear-443.pt",
+          "checkpoint_sha256": "038946ffb3b1740cb70b3659d6a126b02b9b643e7fbb9e179f883afc678afd7c",
+          "metrics": {
+            "rows": 50,
+            "cases": 16,
+            "selected": 18,
+            "mae": 0.03522713600179094,
+            "rmse": 0.053303715312079634,
+            "selected_advantage": 0.0011618031273509877,
+            "always_commit_advantage": -0.010747716432365884,
+            "fixed_trigger_advantage": 0.0005094196586507665,
+            "positive_cases": 10,
+            "negative_cases": 15,
+            "balanced_accuracy": 0.5056980056980057,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 4,
+            "negative_selected": 8,
+            "meaningful": 40
+          }
+        },
+        {
+          "heldout_seed": 467,
+          "train_rows": 627,
+          "validation_rows": 152,
+          "checkpoint": "outputs/commit-advantage-probe/probes/linear-467.pt",
+          "checkpoint_sha256": "2e708876ed8646aa6860c26dfc2eeed131f09dd4e87d137c335129ccb07b6242",
+          "metrics": {
+            "rows": 55,
+            "cases": 16,
+            "selected": 11,
+            "mae": 0.024013858328044486,
+            "rmse": 0.03247321185905291,
+            "selected_advantage": -0.0019309814914807385,
+            "always_commit_advantage": -0.019772462526639903,
+            "fixed_trigger_advantage": -0.012301620954701293,
+            "positive_cases": 7,
+            "negative_cases": 15,
+            "balanced_accuracy": 0.47307692307692306,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 1,
+            "negative_selected": 6,
+            "meaningful": 49
+          }
+        },
+        {
+          "heldout_seed": 491,
+          "train_rows": 629,
+          "validation_rows": 158,
+          "checkpoint": "outputs/commit-advantage-probe/probes/linear-491.pt",
+          "checkpoint_sha256": "20c7e1d02046ff56f5dc1c2358b1a3ec4ca63a562f2007ac27afb8b0d06714a2",
+          "metrics": {
+            "rows": 52,
+            "cases": 16,
+            "selected": 11,
+            "mae": 0.06663743850674414,
+            "rmse": 0.17551800649313487,
+            "selected_advantage": 0.00031619621454450546,
+            "always_commit_advantage": 0.011026606543030204,
+            "fixed_trigger_advantage": -0.014722013612539261,
+            "positive_cases": 8,
+            "negative_cases": 11,
+            "balanced_accuracy": 0.5238095238095238,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 3,
+            "negative_selected": 5,
+            "meaningful": 44
+          }
+        }
+      ],
+      "joint": {
+        "rows": 212,
+        "cases": 16,
+        "selected": 46,
+        "mae": 0.05003622187400371,
+        "rmse": 0.12528185703985942,
+        "selected_advantage": 0.0012063216829539725,
+        "always_commit_advantage": 0.0008643428104293811,
+        "fixed_trigger_advantage": -0.004566224830004012,
+        "positive_cases": 16,
+        "negative_cases": 16,
+        "balanced_accuracy": 0.5169134727061556,
+        "selected_collision_delta": 0.0,
+        "positive_selected": 11,
+        "negative_selected": 20,
+        "meaningful": 179
+      },
+      "gates": {
+        "label_support": true,
+        "case_only_gain": true,
+        "joint_gain": true,
+        "three_seed_nonnegative": true,
+        "case_collision_guard": true,
+        "joint_collision_guard": true
+      },
+      "passed": true
+    },
+    {
+      "kind": "mlp",
+      "folds": [
+        {
+          "heldout_seed": null,
+          "train_rows": 840,
+          "validation_rows": 207,
+          "checkpoint": "outputs/commit-advantage-probe/probes/mlp-case-only.pt",
+          "checkpoint_sha256": "6fece2b0757dbd5220f511c49c83e22b1beac4d355dee3566b750362bf8e85bc",
+          "metrics": {
+            "rows": 212,
+            "cases": 16,
+            "selected": 55,
+            "mae": 0.04940623688710063,
+            "rmse": 0.12321153993181591,
+            "selected_advantage": 0.003163320990757884,
+            "always_commit_advantage": 0.0008643428104293811,
+            "fixed_trigger_advantage": -0.004566224830004012,
+            "positive_cases": 16,
+            "negative_cases": 16,
+            "balanced_accuracy": 0.5858739837398375,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 21,
+            "negative_selected": 25,
+            "meaningful": 179
+          }
+        },
+        {
+          "heldout_seed": 419,
+          "train_rows": 629,
+          "validation_rows": 155,
+          "checkpoint": "outputs/commit-advantage-probe/probes/mlp-419.pt",
+          "checkpoint_sha256": "c7f156fc1da02636adfdaf70e1bbf73d74752ac4c3f338b106c4691ebac1dcbe",
+          "metrics": {
+            "rows": 55,
+            "cases": 16,
+            "selected": 3,
+            "mae": 0.0800491334090016,
+            "rmse": 0.16783653635443485,
+            "selected_advantage": -0.0001325386429299723,
+            "always_commit_advantage": 0.022950943657693106,
+            "fixed_trigger_advantage": 0.00824931558857374,
+            "positive_cases": 12,
+            "negative_cases": 13,
+            "balanced_accuracy": 0.48148148148148145,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 0,
+            "negative_selected": 1,
+            "meaningful": 46
+          }
+        },
+        {
+          "heldout_seed": 443,
+          "train_rows": 635,
+          "validation_rows": 156,
+          "checkpoint": "outputs/commit-advantage-probe/probes/mlp-443.pt",
+          "checkpoint_sha256": "a06aec9e236d68fe248b73d19c6ad9f1f7833edde1169098840a693e13910a5c",
+          "metrics": {
+            "rows": 50,
+            "cases": 16,
+            "selected": 7,
+            "mae": 0.041033566053391736,
+            "rmse": 0.05546100733573094,
+            "selected_advantage": 0.0005529285542778327,
+            "always_commit_advantage": -0.010747716432365884,
+            "fixed_trigger_advantage": 0.0005094196586507665,
+            "positive_cases": 10,
+            "negative_cases": 15,
+            "balanced_accuracy": 0.5028490028490029,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 2,
+            "negative_selected": 4,
+            "meaningful": 40
+          }
+        },
+        {
+          "heldout_seed": 467,
+          "train_rows": 627,
+          "validation_rows": 152,
+          "checkpoint": "outputs/commit-advantage-probe/probes/mlp-467.pt",
+          "checkpoint_sha256": "3f1f7673d5620d88922e80530427ca206cde5a23092d0934c7d71c20dc9149f2",
+          "metrics": {
+            "rows": 55,
+            "cases": 16,
+            "selected": 6,
+            "mae": 0.030244734288170996,
+            "rmse": 0.037236646964265846,
+            "selected_advantage": -0.0025637367058708544,
+            "always_commit_advantage": -0.019772462526639903,
+            "fixed_trigger_advantage": -0.012301620954701293,
+            "positive_cases": 7,
+            "negative_cases": 15,
+            "balanced_accuracy": 0.4858974358974359,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 1,
+            "negative_selected": 5,
+            "meaningful": 49
+          }
+        },
+        {
+          "heldout_seed": 491,
+          "train_rows": 629,
+          "validation_rows": 158,
+          "checkpoint": "outputs/commit-advantage-probe/probes/mlp-491.pt",
+          "checkpoint_sha256": "1e4145d255281f1a8e82517189e47e5c2196fa94263e092f3b8baa9b07d4f788",
+          "metrics": {
+            "rows": 52,
+            "cases": 16,
+            "selected": 0,
+            "mae": 0.06393318620403687,
+            "rmse": 0.17739146449991977,
+            "selected_advantage": 0.0,
+            "always_commit_advantage": 0.011026606543030204,
+            "fixed_trigger_advantage": -0.014722013612539261,
+            "positive_cases": 8,
+            "negative_cases": 11,
+            "balanced_accuracy": 0.5,
+            "selected_collision_delta": 0.0,
+            "positive_selected": 0,
+            "negative_selected": 0,
+            "meaningful": 44
+          }
+        }
+      ],
+      "joint": {
+        "rows": 212,
+        "cases": 16,
+        "selected": 16,
+        "mae": 0.05381515498865029,
+        "rmse": 0.12658922330190198,
+        "selected_advantage": -0.0005358366986307485,
+        "always_commit_advantage": 0.0008643428104293811,
+        "fixed_trigger_advantage": -0.004566224830004012,
+        "positive_cases": 16,
+        "negative_cases": 16,
+        "balanced_accuracy": 0.48613530778164926,
+        "selected_collision_delta": 0.0,
+        "positive_selected": 3,
+        "negative_selected": 10,
+        "meaningful": 179
+      },
+      "gates": {
+        "label_support": true,
+        "case_only_gain": true,
+        "joint_gain": false,
+        "three_seed_nonnegative": false,
+        "case_collision_guard": true,
+        "joint_collision_guard": true
+      },
+      "passed": false
+    }
+  ],
+  "labels": 1259,
+  "dataset_sha256": "7bb322f5f5460bbc25c61f1b400522b8168718451baacbd3ce0b64bebcefd64d",
+  "protocol_sha256": "81a3f4e24799e2347e83e124a76e6db07b21e4ed4902da90c13879158671d372",
+  "limits": "One-shot labels under Parent continuation and Parent visitation, not repeated-gate Q or online success proof. Test cases have been consumed, not used to refit a winning model."
+}
