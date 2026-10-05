@@ -61,6 +61,7 @@ class QueryContractTests(unittest.TestCase):
         cfg.set("model", "representation", "tracks")
         policy = ValuePolicy.__new__(ValuePolicy)
         policy.config, policy.time_step = cfg, .25
+        policy.phase, policy.last_action = "test", None
         policy.encode = encode_tracks
         policy.action_space = [ActionXY(.1, .3), ActionXY(-.2, .4)]
         state = self.state()
@@ -86,6 +87,7 @@ class QueryContractTests(unittest.TestCase):
         cfg.set("eval_protocol", "safety_margin", ".2")
         policy = ValuePolicy.__new__(ValuePolicy)
         policy.config, policy.time_step = cfg, .25
+        policy.phase, policy.last_action = "test", None
         policy.encode = encode_tracks
         policy.action_space = [ActionXY(0, .4), ActionXY(0, -.4)]
         state = self.state()
