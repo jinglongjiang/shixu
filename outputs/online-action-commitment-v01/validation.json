@@ -1,0 +1,33 @@
+{
+  "episodes": 2304,
+  "matched_initial_worlds": 768,
+  "control_steps": {
+    "parent": 65079,
+    "v0": 64341,
+    "v01": 65134
+  },
+  "max_smoothing_error": 0.0,
+  "exact_no_intervention_pairs": {
+    "v0/v01": 728,
+    "parent/v0": 225,
+    "parent/v01": 236
+  },
+  "identical_command_prefix_before_first_release": 40,
+  "releases": {
+    "v0:budget-completed": 639,
+    "v01:budget-completed": 624,
+    "v0:safety-blocked": 155,
+    "v01:safety-blocked": 151,
+    "v01:all-unsafe": 42
+  },
+  "parameters": [
+    333313
+  ],
+  "protocol_sha256": "3ae9d72de40d57f736ee5360d7fd687933a26a47205b091b4e7c25634f157bd2",
+  "summary_sha256": "b024a56b2cf75771d64d4e8310ae3c7c37c1d7799d0973d51baeeb44e39d3d00",
+  "episode_summary_sha256": "65230c02fc96fea64f8e7cf0bc63cfdd8ea5fd1f3eecc9c3dc7c360e674a12ee",
+  "validator_sha256": "bbdc78ac28172d88539913bd287c251c78b64a5774e371f8263a0fe3292dfdda",
+  "metadata_bundle_sha256": "6fc7e27c873dde1e8be65d136dd076b54a46ea1ce679cbe59a79681a4d7216b1",
+  "correction": "Frozen runner's validation sorted filenames lexically, producing one1.1e-16 mean_q difference. This independent checker uses the original numeric execution-summary order. No source used for control, protocol, episode or summary changed; no reruns.",
+  "limits": "State vectors are native to_array float32; commands/time float64. GPU concurrent timings are descriptive, not matched-state latency benchmarks."
+}

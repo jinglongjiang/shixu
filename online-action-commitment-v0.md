@@ -209,3 +209,12 @@ square还出现4个原timeout→碰撞，circle出现1个；这些转变不能�
 
 完整本地证据：
 /home/abc/workspace/shixu/outputs/online-action-commitment-v0/
+
+## 12. 后续单一release确认（2026-10-05）
+
+另一个全新87000–87031块完成Parent/V0/V0.1三臂2304episode；V0.1唯一新增all-unsafe同一步release。相对该块V0，碰撞40→26，原有26个失败挽救全部保留；square相对Parent成功275→288。但square破坏11个原成功、circle破坏9个，circle SR下降1.30pp，原九项Gate仍有三项失败，裁决B。
+
+这提供了release规则的真实增量，不改写本报告86000块的V0负结果；未证明余下损害全部来自trigger。本次单一release验证已完成，不自动追加V0.2或新训练。
+
+完整三臂报告：
+/home/abc/workspace/shixu/online-action-commitment-v01.md

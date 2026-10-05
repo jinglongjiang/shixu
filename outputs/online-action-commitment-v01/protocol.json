@@ -1,0 +1,140 @@
+{
+  "rules": {
+    "change": "Only when commitment exists (including this tick's new start), no candidate clearance>=original0.2m means immediate release and same-tick Parent choice. No rearm while trigger stays true. Trigger, duration, fallback, scoring unchanged.",
+    "inherited": {
+      "scope": "One evaluation-only wrapper, same existing four CV IL50/RL3000 checkpoints. No training, new critic, reward, action, observation, history or native filter changes.",
+      "trigger": "Nine actual control-frame distances cover exactly2s. Current distance>1m and d[t-8]-d[t]<=0.2m;1e-12m roundoff tolerance only. Require parent-selected grid action not blocked by the original hard filter. No future features or old root times.",
+      "hold": "At most8 executed0.25s steps including the trigger step; fixed grid index, alpha0.3 smoothing recomputed once every step. Each real observation updates tracker/history. Held steps skip critic ranking but recheck the original hard filter on all actual smoothed candidates. On blocking: release and call parent score on the SAME step.",
+      "rearm": "After budget exhaustion or safety release, condition must clear and then recur before another commitment. No immediate recommit while continuously low-progress.",
+      "randomness": "Consume the same one NumPy draw as native predict per control tick even when holding, so action commitment does not silently change simulator RNG consumption.",
+      "primary": "Square low-progress timeouts: original offline32-step/8s definition unchanged. Require strictly fewer;>=4 distinct numeric case IDs rescued failure->success with new full-episode minimum clearance>=0.02m; positive low-timeout and SR net change in>=2 population cells;>=3/4 seeds nonnegative on both low-timeout and SR; square collision increase<=1pp. Counts, not significance claims.",
+      "guard": "In each geometry, parent-success->failure count<=2pp of all384 paired episodes (<=7); circle net SR loss<=1pp and collision increase<=1pp (<=3 each). Frozen operational meaning of no large damage, not post-hoc safety tuning. Report all gaps."
+    },
+    "test": "Unused87000..87031, three arms, four original checkpoints, six cells,32cases:2304episodes. No tuning, training, new roots or outcome-based stopping; evaluate nine original gates separately for V0/V0.1.",
+    "diagnostic": "Count collisions on terminal steps still held with all-unsafe clearance, and paired V0/V0.1 outcomes. Eliminating held/all-unsafe labels by definition is not proof of safer outcomes. Report total collisions, former V0 collision outcomes, rescues and destroyed successes.",
+    "limits": "Full closed-loop single-rule intervention identifies its net effect, not whether all remaining damage is caused by initiation rather than duration, action choice or their interaction. No automatic V0.2, duration sweep, adaptive network, literature search or training."
+  },
+  "cases": [
+    87000,
+    87001,
+    87002,
+    87003,
+    87004,
+    87005,
+    87006,
+    87007,
+    87008,
+    87009,
+    87010,
+    87011,
+    87012,
+    87013,
+    87014,
+    87015,
+    87016,
+    87017,
+    87018,
+    87019,
+    87020,
+    87021,
+    87022,
+    87023,
+    87024,
+    87025,
+    87026,
+    87027,
+    87028,
+    87029,
+    87030,
+    87031
+  ],
+  "seeds": [
+    419,
+    443,
+    467,
+    491
+  ],
+  "cells": [
+    [
+      5,
+      "circle"
+    ],
+    [
+      5,
+      "square"
+    ],
+    [
+      10,
+      "circle"
+    ],
+    [
+      10,
+      "square"
+    ],
+    [
+      20,
+      "circle"
+    ],
+    [
+      20,
+      "square"
+    ]
+  ],
+  "arms": [
+    "parent",
+    "v0",
+    "v01"
+  ],
+  "checkpoints": {
+    "419": {
+      "path": "outputs/forecast_control_b_fresh_cv/419/cv/model.pt",
+      "sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1"
+    },
+    "443": {
+      "path": "outputs/forecast_control_b_fresh_cv/443/cv/model.pt",
+      "sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e"
+    },
+    "467": {
+      "path": "outputs/forecast_control_b_fresh_cv/467/cv/model.pt",
+      "sha256": "872eb870660df7e3856465ae8b5b941581ba91eca4998251f0154fca2cb212c3"
+    },
+    "491": {
+      "path": "outputs/forecast_control_b_fresh_cv/491/cv/model.pt",
+      "sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948"
+    }
+  },
+  "parent_sha256": "f6b80c598d76d6f4a3cec7935f678481b05a40908e18febf1ef79e162b170c62",
+  "core_sha256": "7a918168032e93bc29ee9775f535b058a9456ba6f9e1a60afa95f82d7cd1889b",
+  "helpers": {
+    "/home/abc/workspace/shixu/experiments/online_action_commitment_v01.py": "cadfc6b725c28d002109b875a9cb7c7221659c50a2201021483c55456e9fda3c",
+    "experiments/online_action_commitment_v0.py": "e4c95d67ceb1420bbe1f72fc69596040be3214a966e2d2bdc955a3bfafe45c2d",
+    "shixu/commitment.py": "388c65d97fc124a630a8de91e6e32583fbce70eef31d0cb73e2ae363a107e01b",
+    "experiments/forecast_evidence.py": "e3798408795b5e46f910523294c394789df4df9b67b3d317a463f6dd058ff3a7",
+    "experiments/repeatable_defect_audit.py": "43a06842b163b30e17ad3c8989b7e6aba662a91ea2caba4727b5b4e83452609a",
+    "experiments/multihorizon_control.py": "a042d99ac307e6bfb949a22a4bb407c5afe7737ad7a91015b6180ad03e61971a"
+  },
+  "inherited_protocol_sha256": "d46c2577bb15e42fd241c631e8a67c0bccdfa0eb731c6808f61822d7890b616d",
+  "case_unused_check": {
+    "command": [
+      "rg",
+      "-l",
+      "--glob",
+      "*.json",
+      "\"case\"\\s*:\\s*870(?:0[0-9]|[12][0-9]|3[01])\\b|\"(?:test_case_start|eval_case_start|case_start)\"\\s*:\\s*87000\\b",
+      "outputs"
+    ],
+    "exit_code": 1,
+    "matches": "",
+    "scope": "Existing local JSON case/start fields only; not external assets."
+  },
+  "created_utc": "2026-10-05T12:29:07.055458+00:00",
+  "parent_commit": "ac33c4c2420294f3c47964a0f2d9205816ec13a1",
+  "runtime": {
+    "device": "cuda",
+    "torch": "2.1.0+cu121",
+    "python": "3.8.10",
+    "gpu": "NVIDIA GeForce RTX 3060",
+    "tf32_cudnn": true,
+    "tf32_matmul": false
+  }
+}
