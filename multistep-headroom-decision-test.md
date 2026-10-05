@@ -116,3 +116,12 @@
 /home/abc/workspace/shixu/outputs/multistep-headroom-decision-test/
 
 protocol.json、implementation-correction.json、primary-constant.json、summary.json和validation.json纳入Git；validation包含4条完整成功见证，primary-constant包含全部640条结果及原始分支哈希。完整640条续跑命令及既有checkpoint保留本地，不能宣称单独clone就是自包含复现。
+
+## 9. 后续在线原型结果（2026-10-05）
+
+ONLINE_ACTION_COMMITMENT_V0已在全新86000–86031完成1536个配对闭环episode。固定过去2秒净进展≤0.2米触发、原选grid动作持有2秒、逐步重查原filter的组合，square挽救14个失败、同时破坏15个原成功；整体SR82.81%→80.73%，CR2.60%→5.34%。冻结裁决为B_RESCUE_WITH_UNACCEPTABLE_DAMAGE，不继续调参救V0。
+
+这不改写本报告4/4多步headroom和原动作持有挽救3/4的事实；它否定的是本次固定在线触发/持有/释放组合的合格净收益。持有期间27次碰撞出现在原filter的all-unsafe fallback下，是否提前释放即可改善仍未验证，不从该共现推断唯一根因。
+
+完整在线报告：
+/home/abc/workspace/shixu/online-action-commitment-v0.md

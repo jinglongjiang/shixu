@@ -1,0 +1,55 @@
+{
+  "roots": [
+    {
+      "seed": 419,
+      "people": 5,
+      "case": 81003,
+      "old_root_seconds": 2.0,
+      "first_eligible_seconds": 2.0,
+      "trigger_at_or_before_root": true
+    },
+    {
+      "seed": 491,
+      "people": 5,
+      "case": 81000,
+      "old_root_seconds": 7.25,
+      "first_eligible_seconds": 3.25,
+      "trigger_at_or_before_root": true
+    },
+    {
+      "seed": 419,
+      "people": 10,
+      "case": 81001,
+      "old_root_seconds": 8.25,
+      "first_eligible_seconds": 6.25,
+      "trigger_at_or_before_root": true
+    },
+    {
+      "seed": 443,
+      "people": 10,
+      "case": 81006,
+      "old_root_seconds": 11.25,
+      "first_eligible_seconds": 3.25,
+      "trigger_at_or_before_root": true
+    }
+  ],
+  "counts": {
+    "episodes": 1024,
+    "eligible_frames": 29004,
+    "episodes_with_trigger": 743,
+    "successful_episodes": 860,
+    "successful_episodes_with_trigger": 591,
+    "examined_frames": 81599,
+    "fast_goal_progress_frames": 40614,
+    "fast_goal_progress_trigger_frames": 0,
+    "trigger_while_speed_above_05": 4126
+  },
+  "passed": true,
+  "archives": {
+    "outputs/repeatable_defect_audit/discovery-atlas.json": "664bf879d27b2214b47c9b9e7c627dc4e785425547e00b2cc2e82643c84695d8",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-5-atlas.json": "ea0130ee573e9287402830636bd15503a42423a01a0268299ef6ae9246f73dfb",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-10-atlas.json": "c11cf6c34331c7e1855a7a44bd5d07a6843c320dc4cc84f13819a472332c4c89",
+    "outputs/repeatable_defect_audit/pooled-fresh-selection.json": "fcfd78b0aff0fbef1805ec9aad4d405290caea81886052ee1baf061601f4a29e"
+  },
+  "limitation": "Archived eligibility only, not new-policy trigger/outcome. High actual speed with low net goal progress is not automatically a false trigger. Zero triggers at>0.25m/s net goal progress follows the rule and does not prove selectivity."
+}

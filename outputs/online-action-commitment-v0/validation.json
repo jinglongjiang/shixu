@@ -1,0 +1,145 @@
+{
+  "protocol_sha256": "d46c2577bb15e42fd241c631e8a67c0bccdfa0eb731c6808f61822d7890b616d",
+  "summary_sha256": "df39de57221e608bfb6b8ee69323da34d9d1533406408dbe72abff07523c3867",
+  "episode_summary_sha256": "baf7114f59ebe861955b0dbce76dcb9bf2a3dd7f5b102f1f6e6fb486c29a5b8b",
+  "metadata_bundle_sha256": "7ea3a1ced5943c1f6e905d64676b270dd3b7d2739efaeee385c2f433327450ff",
+  "episodes": 1536,
+  "matched_initial_worlds": 768,
+  "trace_hashes_verified": 1536,
+  "control_steps": {
+    "commitment": 65908,
+    "parent": 66049
+  },
+  "max_command_smoothing_error": 0,
+  "no_commit_pairs_with_exact_trajectory_parity": 227,
+  "held_steps": 5680,
+  "commitment_seconds": 1420,
+  "episodes_with_commitment": 541,
+  "max_starts": 5,
+  "starts": 816,
+  "safety_releases": 150,
+  "held_no_safe_candidate_steps": 141,
+  "collisions_while_still_holding": 27,
+  "parameters": [
+    333313
+  ],
+  "inference_seconds_distribution": {
+    "parent": {
+      "count": 66049,
+      "mean": 0.005817866332528595,
+      "p50": 0.005666095996275544,
+      "p90": 0.007280151208397001,
+      "max": 0.38811837194953114
+    },
+    "commitment": {
+      "count": 65908,
+      "mean": 0.006040574565421675,
+      "p50": 0.006178878480568528,
+      "p90": 0.007941453706007452,
+      "max": 0.3849786539794877
+    },
+    "held": {
+      "count": 5680,
+      "mean": 0.0018096115821964291,
+      "p50": 0.0010104480024892837,
+      "p90": 0.006064008461544291,
+      "max": 0.011492062010802329
+    },
+    "commitment_normal": {
+      "count": 60228,
+      "mean": 0.006439589471191738,
+      "p50": 0.0062774959951639175,
+      "p90": 0.008003452687989921,
+      "max": 0.3849786539794877
+    }
+  },
+  "paired_success_time": [
+    {
+      "people": 5,
+      "geometry": "circle",
+      "both_success": 122,
+      "mean_time_delta": 0.6680327868852459
+    },
+    {
+      "people": 5,
+      "geometry": "square",
+      "both_success": 93,
+      "mean_time_delta": 0.3225806451612903
+    },
+    {
+      "people": 10,
+      "geometry": "circle",
+      "both_success": 119,
+      "mean_time_delta": 0.5819327731092437
+    },
+    {
+      "people": 10,
+      "geometry": "square",
+      "both_success": 91,
+      "mean_time_delta": 0.6840659340659341
+    },
+    {
+      "people": 20,
+      "geometry": "circle",
+      "both_success": 105,
+      "mean_time_delta": 0.9023809523809524
+    },
+    {
+      "people": 20,
+      "geometry": "square",
+      "both_success": 72,
+      "mean_time_delta": 0.4583333333333333
+    }
+  ],
+  "seed_terminals": {
+    "419": {
+      "parent": {
+        "reach_goal": 158,
+        "timeout": 26,
+        "collision": 8
+      },
+      "commitment": {
+        "reach_goal": 150,
+        "timeout": 27,
+        "collision": 15
+      }
+    },
+    "443": {
+      "parent": {
+        "timeout": 32,
+        "reach_goal": 156,
+        "collision": 4
+      },
+      "commitment": {
+        "timeout": 28,
+        "reach_goal": 155,
+        "collision": 9
+      }
+    },
+    "467": {
+      "parent": {
+        "reach_goal": 170,
+        "timeout": 18,
+        "collision": 4
+      },
+      "commitment": {
+        "reach_goal": 165,
+        "timeout": 18,
+        "collision": 9
+      }
+    },
+    "491": {
+      "parent": {
+        "reach_goal": 152,
+        "timeout": 36,
+        "collision": 4
+      },
+      "commitment": {
+        "reach_goal": 150,
+        "timeout": 34,
+        "collision": 8
+      }
+    }
+  },
+  "limits": "Timing under four concurrent GPU workers is descriptive, not a matched-state latency benchmark. Stored state vectors use native to_array float32; actual commands/timestamps are float64. Do not claim float32 state logs preserve every original float64 scalar."
+}

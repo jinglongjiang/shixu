@@ -1,0 +1,7 @@
+{
+  "all_collisions": 41,
+  "holding_collisions": 27,
+  "holding_collisions_with_no_margin_safe_candidate": 27,
+  "holding_collision_selected_cv_clearance_at_least_point2": 0,
+  "scope": "Terminal-step coincidence from existing episode logs. Does not establish that releasing would avoid these collisions or explain all21 net additional collisions."
+}
