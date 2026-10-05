@@ -85,9 +85,17 @@ class ValuePolicy:
             reward -= cfg.getfloat("reward", "discomfort_penalty_factor") * (margin - clearance) * self.time_step
         return float(reward), float(clearance)
 
-    def aligned_candidates(self, state):
+    def candidate_actions(self):
+        alpha = self.config.getfloat("eval_protocol", "action_smoothing") if self.phase != "train" else 0
+        if self.last_action is None or alpha <= 0:
+            return self.action_space
+        return [ActionXY(alpha * self.last_action.vx + (1 - alpha) * action.vx,
+                         alpha * self.last_action.vy + (1 - alpha) * action.vy)
+                for action in self.action_space]
+
+    def aligned_candidates(self, state, commands=None):
         robot = state.self_state
-        velocities = np.array(self.action_space, dtype=np.float64)
+        velocities = np.array(self.candidate_actions() if commands is None else commands, dtype=np.float64)
         robots = np.tile([robot.px, robot.py, robot.vx, robot.vy, robot.radius,
                           robot.gx, robot.gy, robot.v_pref, robot.theta], (len(velocities), 1))
         robots[:, :2] += self.time_step * velocities
@@ -111,11 +119,12 @@ class ValuePolicy:
         return tokens, rewards, clearances
 
     @torch.inference_mode()
-    def score(self, state):
+    def score(self, state, commands=None):
         self.model.eval()
+        commands = self.candidate_actions() if commands is None else commands
         current = self.encode(state)
         if self.encode in (encode_aligned, encode_tracks):
-            tokens, rewards, clearances = self.aligned_candidates(state)
+            tokens, rewards, clearances = self.aligned_candidates(state, commands)
             prefix = window(list(self.history) + [current], self.length,
                             "zero" if self.encode is encode_tracks else "repeat")
             if not getattr(self.model, "full_observed_window", False):
@@ -128,7 +137,7 @@ class ValuePolicy:
                 values = self.model(torch.as_tensor(sequences, device=self.device))
         else:
             sequences, rewards, clearances = [], [], []
-            for action in self.action_space:
+            for action in commands:
                 future = successor(state, action, self.time_step)
                 sequences.append(window(list(self.history) + [current, self.encode(future)], self.length))
                 reward, clearance = self.immediate_reward(state, future, action)
@@ -153,13 +162,10 @@ class ValuePolicy:
         robot = state.self_state
         if np.hypot(robot.px - robot.gx, robot.py - robot.gy) < self.config.getfloat("robot", "success_radius"):
             return ActionXY(0, 0)
-        scores = self.score(state)
+        commands = self.candidate_actions()
+        scores = self.score(state, commands)
         index = np.random.randint(len(scores)) if np.random.random() < epsilon else int(np.argmax(scores))
-        selected = self.action_space[index]
+        selected = commands[index]
         self.history.append(self.encode(state))
-        alpha = self.config.getfloat("eval_protocol", "action_smoothing") if self.phase != "train" else 0
-        if self.last_action is not None and alpha > 0:
-            selected = ActionXY(alpha * self.last_action.vx + (1 - alpha) * selected.vx,
-                                alpha * self.last_action.vy + (1 - alpha) * selected.vy)
         self.last_action = selected
         return selected
