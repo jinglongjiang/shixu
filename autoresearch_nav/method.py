@@ -1,10 +1,10 @@
-"""Cost-sensitive logistic initiation, weighted by the original return difference."""
+"""One-hidden-layer utility classifier; deployment is just a tiny numpy readout."""
 
 import numpy as np
 import torch
 
-SPEC = dict(name="logistic-utility", parent="linear-advantage", family="logistic", hidden=[],
-            hypothesis="Fit the advantage sign with |delta-Q| weights rather than value MSE; zero advantage has zero training weight.")
+SPEC = dict(name="mlp-utility", parent="logistic-utility", family="mlp", hidden=[16],
+            hypothesis="Add only nonlinear feature interactions to the same return-weighted logistic objective and inputs.")
 
 
 def fit(rows, budget):
@@ -22,7 +22,7 @@ def fit(rows, budget):
     targets = torch.tensor(y > 0., dtype=torch.float32)
     weights = torch.tensor(w*np.abs(y), dtype=torch.float32)
     weights = weights/weights.sum()
-    model = torch.nn.Sequential(torch.nn.Linear(x.shape[1], 1))
+    model = torch.nn.Sequential(torch.nn.Linear(x.shape[1], 16), torch.nn.ReLU(), torch.nn.Linear(16, 1))
     optimizer = torch.optim.Adam(model.parameters(), lr=budget["lr"], weight_decay=budget["weight_decay"])
     for _ in range(budget["epochs"]):
         loss = (weights*torch.nn.functional.binary_cross_entropy_with_logits(model(inputs).flatten(), targets, reduction="none")).sum()
