@@ -1,0 +1,17 @@
+{
+  "tag": "logistic-utility",
+  "commit": "a57a97a62883cdd0f19502e8e848ed465b827d1a",
+  "spec": {
+    "name": "logistic-utility",
+    "parent": "linear-advantage",
+    "family": "logistic",
+    "hidden": [],
+    "hypothesis": "Fit the advantage sign with |delta-Q| weights rather than value MSE; zero advantage has zero training weight."
+  },
+  "parameters": 25,
+  "training_seconds": 0.4902727540466003,
+  "method_sha256": "9d5703ab2c519a63cdd897075312b71cbf6fe85cc35b3a847f4ac954cbb9c13f",
+  "weights_sha256": "a8ecc902f3c1bfd6193bdae16097ff8a3642195a1847b2b264d4c93ebdc500a2",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "dataset_sha256": "d733e879f19f6013d4f15108185dd7b0e53a9f90bb9268bf67280f0adfe0dd43"
+}

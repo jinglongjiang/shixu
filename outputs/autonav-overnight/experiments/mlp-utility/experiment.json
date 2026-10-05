@@ -1,0 +1,19 @@
+{
+  "tag": "mlp-utility",
+  "commit": "b629361f510cc4c0d6b9886830b17f41a9112858",
+  "spec": {
+    "name": "mlp-utility",
+    "parent": "logistic-utility",
+    "family": "mlp",
+    "hidden": [
+      16
+    ],
+    "hypothesis": "Add only nonlinear feature interactions to the same return-weighted logistic objective and inputs."
+  },
+  "parameters": 417,
+  "training_seconds": 0.5384731120429933,
+  "method_sha256": "bb759615130c066dbaa3ecd3d07059fff5d8074e4e187c3c5b989604eac267e1",
+  "weights_sha256": "edca8ccc5ab40af7d9b734cb51a99483305f8cc16f93370fa084b170c4b8e559",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "dataset_sha256": "d733e879f19f6013d4f15108185dd7b0e53a9f90bb9268bf67280f0adfe0dd43"
+}

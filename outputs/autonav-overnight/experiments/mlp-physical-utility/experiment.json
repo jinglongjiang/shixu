@@ -1,0 +1,19 @@
+{
+  "tag": "mlp-physical-utility",
+  "commit": "02e10f1c4857c6044e2ac4b45510b72a969f3673",
+  "spec": {
+    "name": "mlp-physical-utility",
+    "parent": "mlp-physical",
+    "family": "mlp",
+    "hidden": [
+      16
+    ],
+    "hypothesis": "On the same compact inputs, test original-return-weighted decision loss instead of delta-Q MSE."
+  },
+  "parameters": 193,
+  "training_seconds": 0.5392700809752569,
+  "method_sha256": "df1f5cfa5371b635721dafba8bdb3856095ceb996a19e404683fe0b27ac6681e",
+  "weights_sha256": "f7b496c662762bdd586378200b654b688fddbd2450bbb3fdcb15bf15f589ff3e",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "dataset_sha256": "d733e879f19f6013d4f15108185dd7b0e53a9f90bb9268bf67280f0adfe0dd43"
+}

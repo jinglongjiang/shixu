@@ -1,0 +1,19 @@
+{
+  "tag": "mlp-physical",
+  "commit": "4f9df4063075daec84debc9cd416895dd543983f",
+  "spec": {
+    "name": "mlp-physical",
+    "parent": "mlp-advantage",
+    "family": "mlp",
+    "hidden": [
+      16
+    ],
+    "hypothesis": "Simplify the fixed regression network to physical/continuity inputs, removing critic-score and observational nuisance correlations."
+  },
+  "parameters": 193,
+  "training_seconds": 0.5295258470578119,
+  "method_sha256": "ad82edc2c8dd3ab8560ecf764cbfa97a7667315d0c899aafd57743c283aa2c56",
+  "weights_sha256": "29277196ce5ee0397c3bbe52d9d59c8015cd0614f89f1581d2815acbd61b65d4",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "dataset_sha256": "d733e879f19f6013d4f15108185dd7b0e53a9f90bb9268bf67280f0adfe0dd43"
+}

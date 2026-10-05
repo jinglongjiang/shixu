@@ -1,0 +1,60 @@
+{
+  "records": [
+    {
+      "people": 5,
+      "geometry": "circle",
+      "case": 87000,
+      "arm": "parent",
+      "steps": 66,
+      "trace_sha256": "ff0fdb7c2cf49949f248055b0900ca6ac0bcb82d044d804a8759706a3e42b042",
+      "exact": true
+    },
+    {
+      "people": 5,
+      "geometry": "circle",
+      "case": 87000,
+      "arm": "v01",
+      "steps": 66,
+      "trace_sha256": "0e89b8b68b829717cc203b4bb60809b0a1281a19d806aeb93d961a86187100da",
+      "exact": true
+    },
+    {
+      "people": 10,
+      "geometry": "square",
+      "case": 87000,
+      "arm": "parent",
+      "steps": 201,
+      "trace_sha256": "b3148cb4b2c3d481fc64af0d744981340bb3e4cc70aaf977f7dd6440b13430cf",
+      "exact": true
+    },
+    {
+      "people": 10,
+      "geometry": "square",
+      "case": 87000,
+      "arm": "v01",
+      "steps": 201,
+      "trace_sha256": "3a276e3ff5e6f7ba82f825c7a9c22fea1b0ec1abe2934d89937b47972e6281c2",
+      "exact": true
+    },
+    {
+      "people": 20,
+      "geometry": "square",
+      "case": 87009,
+      "arm": "parent",
+      "steps": 73,
+      "trace_sha256": "1ccf34946de75339f015fbe9372d14ceaf95e90f3c82df4559545492a1e41183",
+      "exact": true
+    },
+    {
+      "people": 20,
+      "geometry": "square",
+      "case": 87009,
+      "arm": "v01",
+      "steps": 86,
+      "trace_sha256": "e4ac846f161f653cb0767e70c4df91873c19a7755d96822821ebad5386e29d4a",
+      "exact": true
+    }
+  ],
+  "all_accept_v01": true,
+  "all_reject_parent": true
+}

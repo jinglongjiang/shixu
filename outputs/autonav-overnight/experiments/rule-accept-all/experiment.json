@@ -1,0 +1,17 @@
+{
+  "tag": "rule-accept-all",
+  "commit": "2702168dea6660611d411c4288a67ae467ea57f0",
+  "spec": {
+    "name": "rule-accept-all",
+    "parent": null,
+    "family": "rule",
+    "hidden": [],
+    "hypothesis": "Baseline V0.1: accept every original low-progress proposal."
+  },
+  "parameters": 0,
+  "training_seconds": 6.704998668283224e-06,
+  "method_sha256": "9d8b8d359a3f8c29276229c1fa758d07d4187f16c924eb5d4140c97c99605c53",
+  "weights_sha256": "313ab7ab3eef1da548b475fe63b763dde879af53a2cff0e481a680b6ee981018",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "dataset_sha256": "d733e879f19f6013d4f15108185dd7b0e53a9f90bb9268bf67280f0adfe0dd43"
+}

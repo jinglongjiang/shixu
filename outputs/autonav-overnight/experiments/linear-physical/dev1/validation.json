@@ -1,0 +1,13 @@
+{
+  "episodes": 768,
+  "control_steps": {
+    "candidate": 64485
+  },
+  "method_sha256": "cc6b5f2fcbb46a83ee249267db95a63e065abb4301e4796823637c5ff928689b",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "proposal_only": true,
+  "execution": true,
+  "reward": true,
+  "release": true,
+  "gate_outputs": true
+}

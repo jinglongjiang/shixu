@@ -1,0 +1,17 @@
+{
+  "tag": "rule-cv-clearance",
+  "commit": "ec7f6f1b0a4f4e96f610cc8ef4cdc33d14aa833d",
+  "spec": {
+    "name": "rule-cv-clearance",
+    "parent": "rule-accept-all",
+    "family": "rule",
+    "hidden": [],
+    "hypothesis": "Use the unchanged 0.2m margin only as an initiation veto on the two-second CV hold."
+  },
+  "parameters": 0,
+  "training_seconds": 7.961993105709553e-06,
+  "method_sha256": "0bf40fd3172b1d18b4fb123eb252e61fec0781e1afaf62f6320964307f7684a7",
+  "weights_sha256": "313ab7ab3eef1da548b475fe63b763dde879af53a2cff0e481a680b6ee981018",
+  "protocol_sha256": "e43cb74a0daaa9e28309bf5330e05cccbeeec6712926446cc47991e604debc57",
+  "dataset_sha256": "d733e879f19f6013d4f15108185dd7b0e53a9f90bb9268bf67280f0adfe0dd43"
+}
