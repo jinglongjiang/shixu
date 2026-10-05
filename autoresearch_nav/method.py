@@ -1,7 +1,7 @@
-"""Accept only a proposed hold that makes forward progress under lawful CV."""
+"""Veto initiation if lawful CV predicts a sub-margin encounter during the hold."""
 
-SPEC = dict(name="rule-forward", parent="rule-accept-all", family="rule", hidden=[],
-            hypothesis="Reject holds whose two-second smoothed CV endpoint does not reduce own-goal distance.")
+SPEC = dict(name="rule-cv-clearance", parent="rule-accept-all", family="rule", hidden=[],
+            hypothesis="Use the unchanged 0.2m margin only as an initiation veto on the two-second CV hold.")
 
 
 def fit(rows, budget):
@@ -9,7 +9,7 @@ def fit(rows, budget):
 
 
 def accept(features, fitted):
-    return bool(features[23] > 0.)
+    return bool(features[8] >= .2)
 
 
 def parameters(fitted):
