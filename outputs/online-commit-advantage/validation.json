@@ -1,0 +1,21 @@
+{
+  "episodes": 3072,
+  "matched_worlds": 768,
+  "control_steps": {
+    "linear": 58527,
+    "mlp": 58948,
+    "parent": 59700,
+    "v01": 62597
+  },
+  "exact_no_intervention_pairs": {
+    "v01": 265,
+    "mlp": 42,
+    "linear": 11
+  },
+  "protocol_sha256": "4e1c569114a20e82b4af886acffe35b2e67e5ea8f840b335c007a04d86d8192a",
+  "summary_sha256": "266bbcfeaf4d7f7a7d6007e9463bb96ac940ad8dff53478994c7041ac4f0f073",
+  "validated_smoothing": true,
+  "validated_rewards": true,
+  "validated_gate_inputs": true,
+  "validated_same_tick_release": true
+}

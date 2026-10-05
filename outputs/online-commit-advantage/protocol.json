@@ -1,0 +1,167 @@
+{
+  "rules": {
+    "scope": "Freeze original four critics. Train/validation labels only native5-person circle. Deploy existing case-only ridge/MLP fitted on90000..90063, selected on90064..90079. No test refit, reward/action/filter/critic/duration changes. Shared gate across four critics, not four independently trained gates; MLP retained as an unsuccessful seed-heldout control.",
+    "initiation": "Use the frozen feature extractor, same18 semantic/128 latent features. At inactive ticks after8 previous real frames and own-goal distance>1m, A>0 may start current Parent argmax grid if safe. No low-progress prerequisite. No case/seed/geometry input.",
+    "option": "Original smoothing0.3 each real0.25s tick. Max8steps including initiation. Original V0.1 clearance0.2m release on held-grid unsafe OR all-unsafe, same-tick Parent choice. No learned release/duration. After completion/release A>0 must clear and recur before restart, as V0.1 trigger rearming. No gate reevaluation while safely holding; real observations/history update everytick. One native NumPy draw everytick.",
+    "test": "Fresh99000..99031 x4critics x5/10/20 xcircle/square x4arms=3072episodes. Complete matched block, no threshold/checkpoint selection, no outcome-dependent stopping.",
+    "gates": "Each method vsParent: original nine V0 gates unchanged. For a learned-method development positive additionally require square success count and mean original Q strictly above fixedV0.1; MLP must also exceed semantic ridge on both for evidence of nonlinear/latent increment.",
+    "limits": "One-shot supervised labels under Parent continuation do not train a repeated-option critic. Online repeated interventions/changed visitation are explicitly tested here. Four Parent training seeds, one fitted ridge and one fitted MLP: not four independently trained gates. Timing under concurrent GPU workers is descriptive, not isolated latency measurement. No automatic retuning, additional rescue, or adaptive-duration development."
+  },
+  "cases": [
+    99000,
+    99001,
+    99002,
+    99003,
+    99004,
+    99005,
+    99006,
+    99007,
+    99008,
+    99009,
+    99010,
+    99011,
+    99012,
+    99013,
+    99014,
+    99015,
+    99016,
+    99017,
+    99018,
+    99019,
+    99020,
+    99021,
+    99022,
+    99023,
+    99024,
+    99025,
+    99026,
+    99027,
+    99028,
+    99029,
+    99030,
+    99031
+  ],
+  "seeds": [
+    419,
+    443,
+    467,
+    491
+  ],
+  "cells": [
+    [
+      5,
+      "circle"
+    ],
+    [
+      5,
+      "square"
+    ],
+    [
+      10,
+      "circle"
+    ],
+    [
+      10,
+      "square"
+    ],
+    [
+      20,
+      "circle"
+    ],
+    [
+      20,
+      "square"
+    ]
+  ],
+  "arms": [
+    "parent",
+    "v01",
+    "linear",
+    "mlp"
+  ],
+  "checkpoints": {
+    "419": {
+      "path": "outputs/forecast_control_b_fresh_cv/419/cv/model.pt",
+      "sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1"
+    },
+    "443": {
+      "path": "outputs/forecast_control_b_fresh_cv/443/cv/model.pt",
+      "sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e"
+    },
+    "467": {
+      "path": "outputs/forecast_control_b_fresh_cv/467/cv/model.pt",
+      "sha256": "872eb870660df7e3856465ae8b5b941581ba91eca4998251f0154fca2cb212c3"
+    },
+    "491": {
+      "path": "outputs/forecast_control_b_fresh_cv/491/cv/model.pt",
+      "sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948"
+    }
+  },
+  "gates": {
+    "linear": {
+      "heldout_seed": null,
+      "train_rows": 840,
+      "validation_rows": 207,
+      "checkpoint": "outputs/commit-advantage-probe/probes/linear-case-only.pt",
+      "checkpoint_sha256": "c4b886ea3f2c4e2bc53c48d241eff5219fa4e06c04a66537032a2ec6d467bc75",
+      "metrics": {
+        "rows": 212,
+        "cases": 16,
+        "selected": 56,
+        "mae": 0.04898054228093603,
+        "rmse": 0.12396674600250909,
+        "selected_advantage": 0.0037807170404901484,
+        "always_commit_advantage": 0.0008643428104293811,
+        "fixed_trigger_advantage": -0.004566224830004012,
+        "positive_cases": 16,
+        "negative_cases": 16,
+        "balanced_accuracy": 0.585075493612079,
+        "selected_collision_delta": 0.0,
+        "positive_selected": 20,
+        "negative_selected": 23,
+        "meaningful": 179
+      }
+    },
+    "mlp": {
+      "heldout_seed": null,
+      "train_rows": 840,
+      "validation_rows": 207,
+      "checkpoint": "outputs/commit-advantage-probe/probes/mlp-case-only.pt",
+      "checkpoint_sha256": "6fece2b0757dbd5220f511c49c83e22b1beac4d355dee3566b750362bf8e85bc",
+      "metrics": {
+        "rows": 212,
+        "cases": 16,
+        "selected": 55,
+        "mae": 0.04940623688710063,
+        "rmse": 0.12321153993181591,
+        "selected_advantage": 0.003163320990757884,
+        "always_commit_advantage": 0.0008643428104293811,
+        "fixed_trigger_advantage": -0.004566224830004012,
+        "positive_cases": 16,
+        "negative_cases": 16,
+        "balanced_accuracy": 0.5858739837398375,
+        "selected_collision_delta": 0.0,
+        "positive_selected": 21,
+        "negative_selected": 25,
+        "meaningful": 179
+      }
+    }
+  },
+  "core_sha256": "337cff44fdfa12e351e08271bcf769f705d0b93708396c39a129ddc13d286fbb",
+  "helpers": {
+    "/home/abc/workspace/shixu/experiments/online_commit_advantage.py": "cf637a5eb95f64be1ef8fcf097512156357e3d99f3b5776a8147d6f46b5aa4e7",
+    "experiments/online_action_commitment_v0.py": "e4c95d67ceb1420bbe1f72fc69596040be3214a966e2d2bdc955a3bfafe45c2d",
+    "experiments/forecast_evidence.py": "e3798408795b5e46f910523294c394789df4df9b67b3d317a463f6dd058ff3a7",
+    "experiments/repeatable_defect_audit.py": "43a06842b163b30e17ad3c8989b7e6aba662a91ea2caba4727b5b4e83452609a"
+  },
+  "label_protocol_sha256": "81a3f4e24799e2347e83e124a76e6db07b21e4ed4902da90c13879158671d372",
+  "dataset_sha256": "7bb322f5f5460bbc25c61f1b400522b8168718451baacbd3ce0b64bebcefd64d",
+  "learnability_sha256": "04277edc0fbc5e6cde0d77e8f6f6a4a9c48b07985217ca29459a4a2ea29d334e",
+  "case_unused_check": {
+    "exit_code": 1,
+    "matches": ""
+  },
+  "device": "cuda",
+  "created_utc": "2026-10-05T13:48:52.173726+00:00",
+  "parent_commit": "e2f0621f439e7c39c90390699e374f36258243ec"
+}

@@ -1,0 +1,44 @@
+{
+  "scope": "Timing-only checks; no new model selection or navigation outcome. Original fitted weights unchanged.",
+  "deterministic_case_only_refit": {
+    "training_cases": "90000..90063",
+    "validation_cases": "90064..90079",
+    "test_used": false,
+    "exact_normalization_and_parameters_match": true,
+    "linear_seconds": 0.010403312975540757,
+    "mlp_seconds": 0.535472507996019,
+    "limit": "Measured deterministic verification refit, not a retrospectively measured original training job. Original ten fits were not individually timed."
+  },
+  "linear": {
+    "parameters": 19,
+    "checkpoint_bytes": 1924,
+    "gate_only_cpu_mean_ms": 0.014515281945932657,
+    "gate_only_cpu_median_ms": 0.014388002455234528,
+    "gate_only_cpu_p95_ms": 0.015226018149405718
+  },
+  "mlp": {
+    "parameters": 2369,
+    "checkpoint_bytes": 15424,
+    "gate_only_cpu_mean_ms": 0.03472528833663091,
+    "gate_only_cpu_median_ms": 0.03408297197893262,
+    "gate_only_cpu_p95_ms": 0.03596901660785079
+  },
+  "gate_only_samples": 1000,
+  "gate_only_warmup": 100,
+  "matched_score_path": {
+    "seed": 419,
+    "case": 90080,
+    "root": "first saved root, tick8",
+    "device": "cuda, RTX3060",
+    "warmup_per_path": 10,
+    "samples_per_path": 100,
+    "order": "rotate three paths each repetition, CUDA synchronize before and after",
+    "parent_mean_ms": 2.795373950502835,
+    "linear_mean_ms": 3.441195588093251,
+    "mlp_mean_ms": 3.4679019829491153,
+    "parent_median_ms": 2.7320985100232065,
+    "linear_median_ms": 3.322617005323991,
+    "mlp_median_ms": 3.3554424881003797,
+    "limit": "Same fixed lawful state/history; score versus score+feature extraction+gate only. No world advancement. Excludes extra wrapper filter precheck/history update; not complete deployment latency."
+  }
+}
