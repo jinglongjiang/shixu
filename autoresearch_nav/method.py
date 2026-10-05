@@ -3,13 +3,14 @@
 import numpy as np
 import torch
 
-SPEC = dict(name="mlp-advantage", parent="mlp-utility", family="mlp", hidden=[16],
-            hypothesis="Replace sign-classification loss by episode-balanced delta-Q regression; keep architecture, inputs and compute budget fixed.")
+SPEC = dict(name="mlp-physical", parent="mlp-advantage", family="mlp", hidden=[16],
+            hypothesis="Simplify the fixed regression network to physical/continuity inputs, removing critic-score and observational nuisance correlations.")
+INDICES = (0, 2, 4, 8, 10, 12, 16, 17, 21, 23)
 
 
 def fit(rows, budget):
     torch.manual_seed(budget["seed"])
-    x = np.array([r["features"] for r in rows], np.float64)
+    x = np.array([r["features"] for r in rows], np.float64)[:, INDICES]
     y = np.array([r["y"] for r in rows], np.float64)
     counts = {}
     for r in rows:
@@ -35,7 +36,7 @@ def fit(rows, budget):
 
 
 def accept(features, fitted):
-    x = (features-fitted["mean"])/fitted["scale"]
+    x = (features[list(INDICES)]-fitted["mean"])/fitted["scale"]
     for i, (weight, bias) in enumerate(fitted["layers"]):
         x = weight@x+bias
         if i+1 < len(fitted["layers"]):
