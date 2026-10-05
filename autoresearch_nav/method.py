@@ -1,13 +1,14 @@
-"""Episode-balanced linear estimate of the original commit advantage."""
+"""Simplify the advantage regression to progress and encounter geometry."""
 
 import numpy as np
 
-SPEC = dict(name="linear-advantage", parent="rule-forward", family="linear", hidden=[],
-            hypothesis="Learn delta-Q directly from the fixed lawful features; commit only if predicted advantage is positive.")
+SPEC = dict(name="linear-physical", parent="linear-advantage", family="linear", hidden=[],
+            hypothesis="Remove critic and observational nuisance features; estimate advantage from hold progress, clearance and motion continuity.")
+INDICES = (0, 2, 4, 8, 10, 12, 16, 17, 21, 23)
 
 
 def fit(rows, budget):
-    x = np.array([r["features"] for r in rows], np.float64)
+    x = np.array([r["features"] for r in rows], np.float64)[:, INDICES]
     y = np.array([r["y"] for r in rows], np.float64)
     counts = {}
     for r in rows:
@@ -24,7 +25,7 @@ def fit(rows, budget):
 
 
 def accept(features, fitted):
-    normalized = (features-fitted["mean"])/fitted["scale"]
+    normalized = (features[list(INDICES)]-fitted["mean"])/fitted["scale"]
     return bool(normalized@fitted["coefficients"][:-1]+fitted["coefficients"][-1] > 0.)
 
 
