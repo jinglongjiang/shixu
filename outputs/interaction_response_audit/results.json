@@ -1,0 +1,448 @@
+{
+  "protocol_sha256": "830fb3307c001d9b4272478c1b2483a642b63c9faa07be20f3c304b5d4563a63",
+  "episodes": [
+    {
+      "archive": "/home/abc/workspace/bayes_occ_mpc/src/safe-interactive-crowdnav/results_sicnav-np/hallway_bottleneck_N_3/sicnav-np_hallway_bottleneck_N_3_point_stab_robrad_2_K_4_Ko_04_hmodel_orca_casadi_kkt_tc_0.pkl",
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "frames": 15,
+      "roots": [
+        0,
+        7,
+        14
+      ],
+      "maximum_physical_error": 1.1102230246251565e-16,
+      "archived_success": 1,
+      "archived_collisions": 0
+    },
+    {
+      "archive": "/home/abc/workspace/bayes_occ_mpc/src/safe-interactive-crowdnav/results_sicnav-np/circle_crossing_N_5/sicnav-np_circle_crossing_N_5_point_stab_robrad_2_K_4_Ko_04_hmodel_orca_casadi_kkt_tc_0.pkl",
+      "geometry": "circle_crossing",
+      "people": 5,
+      "frames": 18,
+      "roots": [
+        0,
+        9,
+        17
+      ],
+      "maximum_physical_error": 1.8451906669270102e-13,
+      "archived_success": 1,
+      "archived_collisions": 0
+    }
+  ],
+  "rows": [
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 0,
+      "actor": 0,
+      "warm": [
+        0.04064216464757919,
+        0.04366902634501457
+      ],
+      "cold": [
+        0.04064216464757919,
+        0.04366902634501457
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0021531842648983
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 0,
+      "actor": 1,
+      "warm": [
+        -0.4530300498008728,
+        1.236499547958374
+      ],
+      "cold": [
+        -0.4530300498008728,
+        1.236499547958374
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 0,
+      "actor": 2,
+      "warm": [
+        0.23778654634952545,
+        0.49628549814224243
+      ],
+      "cold": [
+        0.23778654634952545,
+        0.49628549814224243
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.2965106703341007
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 7,
+      "actor": 0,
+      "warm": [
+        0.016178427264094353,
+        0.006073096767067909
+      ],
+      "cold": [
+        0.016178427264094353,
+        0.006073096767067909
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.012130167335271835
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 7,
+      "actor": 1,
+      "warm": [
+        0.09781584143638611,
+        1.4040889739990234
+      ],
+      "cold": [
+        0.09781584143638611,
+        1.4040889739990234
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 7,
+      "actor": 2,
+      "warm": [
+        -0.14244139194488525,
+        0.6313816905021667
+      ],
+      "cold": [
+        -0.14244139194488525,
+        0.6313816905021667
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.31477612257003784
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 14,
+      "actor": 0,
+      "warm": [
+        -0.016496114432811737,
+        -0.0002561442379374057
+      ],
+      "cold": [
+        -0.016496114432811737,
+        -0.0002561442379374057
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0115319793112576
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 14,
+      "actor": 1,
+      "warm": [
+        0.0366705060005188,
+        0.5263835787773132
+      ],
+      "cold": [
+        0.0366705060005188,
+        0.5263835787773132
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "hallway_bottleneck",
+      "people": 3,
+      "case": 0,
+      "tick": 14,
+      "actor": 2,
+      "warm": [
+        -0.12825152277946472,
+        0.626879096031189
+      ],
+      "cold": [
+        -0.12825152277946472,
+        0.626879096031189
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.289716899394989
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 0,
+      "actor": 0,
+      "warm": [
+        0.13184216618537903,
+        0.20973829925060272
+      ],
+      "cold": [
+        0.13184216618537903,
+        0.20973829925060272
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.040478065609931946
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 0,
+      "actor": 1,
+      "warm": [
+        0.4981779158115387,
+        0.05755508691072464
+      ],
+      "cold": [
+        0.4981779158115387,
+        0.05755508691072464
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 0,
+      "actor": 2,
+      "warm": [
+        0.2738281488418579,
+        -0.6902394890785217
+      ],
+      "cold": [
+        0.2738281488418579,
+        -0.6902394890785217
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.12858742475509644
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 0,
+      "actor": 3,
+      "warm": [
+        -0.6354625821113586,
+        -0.28126707673072815
+      ],
+      "cold": [
+        -0.6354625821113586,
+        -0.28126707673072815
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.5016858279705048
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 0,
+      "actor": 4,
+      "warm": [
+        0.3939462900161743,
+        -0.16664722561836243
+      ],
+      "cold": [
+        0.3939462900161743,
+        -0.16664722561836243
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.2803830951452255
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 9,
+      "actor": 0,
+      "warm": [
+        0.8267005085945129,
+        0.5981248617172241
+      ],
+      "cold": [
+        0.8267005085945129,
+        0.5981248617172241
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 9,
+      "actor": 1,
+      "warm": [
+        -0.004403135739266872,
+        -0.017553269863128662
+      ],
+      "cold": [
+        -0.004403135739266872,
+        -0.017553269863128662
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 9,
+      "actor": 2,
+      "warm": [
+        0.07668674737215042,
+        -0.3468385636806488
+      ],
+      "cold": [
+        0.07668674737215042,
+        -0.3468385636806488
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 9,
+      "actor": 3,
+      "warm": [
+        -0.5871450901031494,
+        0.40590953826904297
+      ],
+      "cold": [
+        -0.5871450901031494,
+        0.40590953826904297
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 9,
+      "actor": 4,
+      "warm": [
+        0.5397706031799316,
+        -0.3397994935512543
+      ],
+      "cold": [
+        0.5397706031799316,
+        -0.3397994935512543
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 17,
+      "actor": 0,
+      "warm": [
+        0.1240975633263588,
+        0.08978565037250519
+      ],
+      "cold": [
+        0.1240975633263588,
+        0.08978565037250519
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 17,
+      "actor": 1,
+      "warm": [
+        -0.0008624037727713585,
+        -0.0025245239958167076
+      ],
+      "cold": [
+        -0.0008624037727713585,
+        -0.0025245239958167076
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 17,
+      "actor": 2,
+      "warm": [
+        0.007677334360778332,
+        -0.03472302109003067
+      ],
+      "cold": [
+        0.007677334360778332,
+        -0.03472302109003067
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 17,
+      "actor": 3,
+      "warm": [
+        -0.05878080055117607,
+        0.040636785328388214
+      ],
+      "cold": [
+        -0.05878080055117607,
+        0.040636785328388214
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    },
+    {
+      "geometry": "circle_crossing",
+      "people": 5,
+      "case": 0,
+      "tick": 17,
+      "actor": 4,
+      "warm": [
+        0.05403801053762436,
+        -0.034018319100141525
+      ],
+      "cold": [
+        0.05403801053762436,
+        -0.034018319100141525
+      ],
+      "history_reset_difference": 0.0,
+      "current_robot_velocity_difference": 0.0
+    }
+  ],
+  "response_queries": 24,
+  "changed_by_history_reset": 0,
+  "changed_by_current_robot_velocity": 10,
+  "navigation_action_value_evidence": false,
+  "verdict": "NO_PERSISTENT_RESPONSE_STATE_IN_TESTED_NATIVE_ORCA"
+}

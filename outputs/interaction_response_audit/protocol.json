@@ -1,0 +1,24 @@
+{
+  "parent_commit": "c702fb8ac9ba6439ca61da7dde68b8524bbc6a1f",
+  "parent_dirty": " M crowd_sim_plus/envs/crowd_sim_plus.py\n",
+  "source_sha256": {
+    "crowd_sim_plus/envs/crowd_sim_plus.py": "712739ac676ee7f6e8fbd0f66e0ce21030094179e83a0b87b5760d1bd771f253",
+    "crowd_sim_plus/envs/policy/orca.py": "c3883f8761217e35c4f8ce7e4b31af59c1a2a2ce2b179e7c2018db2a9020200b",
+    "crowd_sim_plus/envs/policy/orca_plus.py": "4fb102d5762654e1139c5df00f875579d2f6209bce9ea2226f0731493847270b",
+    "crowd_sim_plus/envs/policy/social_force.py": "6acb9fc1566062b73b2e61194582fce9fc256bafaf3f6e6f19d81b1fc4be4e80",
+    "crowd_sim_plus/envs/utils/human_plus.py": "538a6e2462cf5e0b3239212ac89b59d739549b61014f40dc0219b5946c6e355e",
+    "crowd_sim_plus/envs/utils/agent_plus.py": "dd29ad2b481ad1bd082451eabcee17c8ed207e9401bca80c0d1716ac679ca0bd",
+    "sicnav/policy/campc.py": "56aba857889b54e59178f2b45291631723571590d3b7dd215e01a758845479a6",
+    "sicnav/configs/env.config": "50022318e82d7a9b5a1d262585cbdf59676b54c68c80641e575a3c3fc6d272f5",
+    "sicnav/configs/policy.config": "86a2a3dbaa596aaeae09f89a085fdc038817d59cacbc43880144d0a108b3e022"
+  },
+  "archive_sha256": {
+    "/home/abc/workspace/bayes_occ_mpc/src/safe-interactive-crowdnav/results_sicnav-np/hallway_bottleneck_N_3/sicnav-np_hallway_bottleneck_N_3_point_stab_robrad_2_K_4_Ko_04_hmodel_orca_casadi_kkt_tc_0.pkl": "c264e65f7bd84088579c4f2388bb8f826e224b17826dfd9d47257d1e07418ab7",
+    "/home/abc/workspace/bayes_occ_mpc/src/safe-interactive-crowdnav/results_sicnav-np/circle_crossing_N_5/sicnav-np_circle_crossing_N_5_point_stab_robrad_2_K_4_Ko_04_hmodel_orca_casadi_kkt_tc_0.pkl": "a255644aa3d64c5c00d1a555bb7d057e1acceea14f3f7c265299bfe69224f543"
+  },
+  "script_sha256": "7e2ffbe81a48662900f2ce969c8e8432fd01a132bdb90d07a7bc3ea2eedbb205",
+  "selection": "Existing SICNav-np case0 hallway and circle only. Roots0, midpoint, last logged step, fixed before response queries. No new episodes or root search.",
+  "contract": "Replay logged first controls with original ActionRot omega*dt conversion; verify current p/v/heading/speed within1e-5 of logged initial MPC columns. Compare history-bearing ORCAPlus with fresh same-parameter ORCAPlus, at identical full human state, neighbours, robot state and walls. Goals/v_pref held fixed. No new modes, planner solve, controller or training.",
+  "sensitivity": "Only a function-level positive control changes current robot velocity to +/-v_pref along its heading. Not a navigation intervention or benefit.",
+  "limits": "Two old successful runs; missing raw observation/reward/executed-command archives. Logged controls are inferred from saved optimizer outputs and parity-checked. No natural same-observation/different-history failure pair or navigation gain claim."
+}
