@@ -1,0 +1,158 @@
+{
+  "rows": [
+    {
+      "split": "exploratory-fresh-square-5",
+      "seed": 491,
+      "people": 5,
+      "geometry": "square",
+      "case": 81000,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 8.87788599810435,
+      "minimum_clearance": 0.1833705292225214,
+      "return_": -0.5044249632503751,
+      "discounted_return": -0.07093408441227356,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-5/491_5_square_81000.npz",
+      "trace_sha256": "5f965dd4b2db96bb0f14f66c890dcc820d15f08d6e014b0ffeffeb31dfb0c37a",
+      "elapsed_seconds": 1.4841038610320538,
+      "device": "cuda",
+      "checkpoint_sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948",
+      "root": {
+        "goal_distance": 5.040062663317442,
+        "legal_clearance": 0.30499666477149884,
+        "active_count": 5,
+        "visible_count": 5,
+        "local_density": 0.15915494309189535,
+        "phase": 0.145,
+        "grid_action": 34,
+        "tick": 29,
+        "time": 7.25,
+        "executed_action": [
+          -0.7298706500206171,
+          0.6458899479900954
+        ],
+        "raw_top": 34,
+        "final_top": 34
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-10",
+      "seed": 419,
+      "people": 10,
+      "geometry": "square",
+      "case": 81001,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 7.024502451817989,
+      "minimum_clearance": 0.178937294787621,
+      "return_": -0.5090866670572358,
+      "discounted_return": -0.07509764056115033,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-10/419_10_square_81001.npz",
+      "trace_sha256": "c7e699a98621e1e5f539d1c9e74c277aa8f365d2103de2d9e95e8f0e35775484",
+      "elapsed_seconds": 1.662308682978619,
+      "device": "cuda",
+      "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+      "root": {
+        "goal_distance": 5.538461601842178,
+        "legal_clearance": 1.666358397154068,
+        "active_count": 9,
+        "visible_count": 7,
+        "local_density": 0.238732414637843,
+        "phase": 0.165,
+        "grid_action": 22,
+        "tick": 33,
+        "time": 8.25,
+        "executed_action": [
+          0.058602767254467614,
+          0.4723423643175274
+        ],
+        "raw_top": 22,
+        "final_top": 22
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-5",
+      "seed": 419,
+      "people": 5,
+      "geometry": "square",
+      "case": 81003,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 8.33713643777905,
+      "minimum_clearance": 0.21574067920533097,
+      "return_": -0.5,
+      "discounted_return": -0.06698983742898086,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-5/419_5_square_81003.npz",
+      "trace_sha256": "3c4c15824db05dbf2a1c7cab767763aa85fbf6d8a955e8af10f76590ad1b2d8b",
+      "elapsed_seconds": 1.4600787329836749,
+      "device": "cuda",
+      "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+      "root": {
+        "goal_distance": 8.09188016104695,
+        "legal_clearance": 0.8048035127074715,
+        "active_count": 5,
+        "visible_count": 4,
+        "local_density": 0.07957747154594767,
+        "phase": 0.04,
+        "grid_action": 60,
+        "tick": 8,
+        "time": 2.0,
+        "executed_action": [
+          -0.03276273674164237,
+          -0.08489004471373143
+        ],
+        "raw_top": 60,
+        "final_top": 60
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-10",
+      "seed": 443,
+      "people": 10,
+      "geometry": "square",
+      "case": 81006,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 10.85323491641044,
+      "minimum_clearance": 0.10920463066164665,
+      "return_": -0.5282362386815296,
+      "discounted_return": -0.09206176008665432,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-10/443_10_square_81006.npz",
+      "trace_sha256": "a8a44a388f29b88028ce42bfaf072f588cda4a9012001360a0baf3177310e638",
+      "elapsed_seconds": 1.6658124619862065,
+      "device": "cuda",
+      "checkpoint_sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e",
+      "root": {
+        "goal_distance": 2.850988569492477,
+        "legal_clearance": 1.163805947205616,
+        "active_count": 9,
+        "visible_count": 7,
+        "local_density": 0.15915494309189535,
+        "phase": 0.225,
+        "grid_action": 28,
+        "tick": 45,
+        "time": 11.25,
+        "executed_action": [
+          -0.26905344689389876,
+          0.7448041176921529
+        ],
+        "raw_top": 28,
+        "final_top": 28
+      }
+    }
+  ],
+  "protocol_sha256": "73229aa3f5a1a8299844575908583a3919875c363dc74d917080e2b1aa957124",
+  "archives": {
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-5-atlas.json": "ea0130ee573e9287402830636bd15503a42423a01a0268299ef6ae9246f73dfb",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-10-atlas.json": "c11cf6c34331c7e1855a7a44bd5d07a6843c320dc4cc84f13819a472332c4c89"
+  },
+  "selected_before_action_outcomes": true
+}

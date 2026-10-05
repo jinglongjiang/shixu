@@ -1,0 +1,5 @@
+{
+  "workers": 4,
+  "device": "cuda",
+  "change": "Parallel disjoint roots; same frozen headroom function and native scalar continuation. Completed roots/branches resumed, no batched-policy approximation."
+}

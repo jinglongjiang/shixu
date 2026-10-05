@@ -1,0 +1,142 @@
+{
+  "rules": {
+    "parent": "Four existing fresh-CV IL50/RL3000 checkpoints, identical repaired execution contract. No training, reward/filter/history/model edits. All runs on one local runtime/device.",
+    "discovery": "All80000..80031 x5/10/20 people xcircle/square x419/443/467/491;768 episodes. No exclusion for success, failure,80009 or prior method results.",
+    "behavior": "Collision; persistent-low-progress timeout; other timeout. Low progress means first 32-control-step/8s interval at t>=2s with net goal-distance decrease<=0.8m and all distances>1m. This is a descriptive label, not proof of feasible alternatives.",
+    "root": "Low-progress: start of first qualifying interval. Other failures: first t>=2s legal clearance<=0.8m within final10s; otherwise beginning of final10s. One root per episode.",
+    "repeat": "Stratum=(behavior,population,geometry);at least3 distinct numeric case IDs. Separate multi-seed repeat counts; do not count seeds as independent cases.",
+    "selection": "At most3 qualifying strata, descending distinct-case count, then count of cases failed in>=2 seeds, then lexical stratum key. First3 case IDs per stratum, lowest failed seed per case. Freeze all roots before any intervention outcome.",
+    "headroom": "All80 already-smoothed root commands once for0.25s, then same corrected checkpoint policy with lawful sensing until termination. No second smoothing. Q^pi, not Q*. Full native-return and command baseline replay parity required.",
+    "attribution": "Raw-top success with final-top failure: postprocessing. Otherwise true-one-step same-actor-support query selecting a successful action: successor/query interface. Otherwise successful action raw rank>=10: value-ranking residual. No successful first command: no-single-step-rescue; other patterns unresolved. These localize a consumer stage, not training/representation/temporal causation.",
+    "safety": "Keep every actual clearance. Successful branches below0.02m are flagged fragile, not counted as safety-qualified rescues;0.02m is a diagnostic screen, not a new reward.",
+    "nominate": "First selected stratum whose3 independent roots have safety-qualified rescues and the same one of the three localized stages. Otherwise stop with no nominee.",
+    "fresh": "Only after nominee definition frozen:81000..81031 x4 same seeds in its unchanged population/geometry cell. Same behavior/root/attribution rules. First4 distinct failed case IDs, lowest failed seed; all80 continuations. Require>=2 independently repeated safety-qualified localized defects. No threshold or checkpoint selection on fresh data.",
+    "limits": "No feasible-path claim from slow motion alone; no global model cause from one root; no overall navigator gain from one-step oracle rescue. Negative truth intervention only constrains this frozen consumer. Fresh confirmation remains development evidence."
+  },
+  "checkpoints": {
+    "419": {
+      "path": "outputs/forecast_control_b_fresh_cv/419/cv/model.pt",
+      "sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1"
+    },
+    "443": {
+      "path": "outputs/forecast_control_b_fresh_cv/443/cv/model.pt",
+      "sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e"
+    },
+    "467": {
+      "path": "outputs/forecast_control_b_fresh_cv/467/cv/model.pt",
+      "sha256": "872eb870660df7e3856465ae8b5b941581ba91eca4998251f0154fca2cb212c3"
+    },
+    "491": {
+      "path": "outputs/forecast_control_b_fresh_cv/491/cv/model.pt",
+      "sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948"
+    }
+  },
+  "config": {
+    "model": {
+      "backbone": "cv",
+      "width": "128",
+      "layers": "2",
+      "architecture": "forecast_native",
+      "representation": "tracks",
+      "read_clock": "candidate",
+      "interaction_order": "write",
+      "prediction_weight": "0.1"
+    },
+    "env": {
+      "time_limit": "50",
+      "time_step": "0.25",
+      "val_size": "100",
+      "test_size": "500",
+      "randomize_attributes": "false"
+    },
+    "reward": {
+      "success_reward": "1.0",
+      "collision_penalty": "-0.5",
+      "timeout_penalty": "-0.5",
+      "progress_reward": "0.0",
+      "time_penalty": "0.0",
+      "stand_penalty": "0.0",
+      "discomfort_dist": "0.2",
+      "discomfort_penalty_factor": "0.5"
+    },
+    "sim": {
+      "train_val_sim": "circle_crossing",
+      "test_sim": "circle_crossing",
+      "square_width": "10",
+      "circle_radius": "4",
+      "human_num": "5"
+    },
+    "humans": {
+      "visible": "true",
+      "policy": "orca",
+      "radius": "0.3",
+      "v_pref": "1.0",
+      "sensor": "coordinates"
+    },
+    "robot": {
+      "visible": "false",
+      "policy": "none",
+      "radius": "0.3",
+      "v_pref": "1.0",
+      "sensor": "coordinates",
+      "success_radius": "0.25"
+    },
+    "orca": {
+      "neighbor_dist": "10",
+      "max_neighbors": "10",
+      "time_horizon": "5",
+      "time_horizon_obst": "5",
+      "safety_space": "0.10"
+    },
+    "action_space": {
+      "kinematics": "holonomic"
+    },
+    "policy": {
+      "n_speeds": "5",
+      "n_headings": "16",
+      "v_min": "0.05",
+      "v_max": "1.0",
+      "sampling": "exponential",
+      "include_stop": "false"
+    },
+    "eval_protocol": {
+      "safety_margin": "0.2",
+      "risk_lambda": "0.8",
+      "action_smoothing": "0.3"
+    },
+    "train": {
+      "gamma": "0.99",
+      "batch_size": "256",
+      "learning_rate": "1e-5",
+      "updates_per_ep": "4",
+      "il_epochs": "50",
+      "il_batch_size": "256",
+      "il_learning_rate": "1e-4"
+    },
+    "buffer": {
+      "capacity": "200000",
+      "seq_len": "24"
+    },
+    "imitation_learning": {
+      "max_il_prefill": "50000",
+      "teacher_safety_space": "0.25",
+      "teacher_neighbor_dist": "6",
+      "teacher_max_neighbors": "15",
+      "teacher_time_horizon": "5",
+      "teacher_time_horizon_obst": "5"
+    },
+    "sarl": {
+      "epsilon_start": "0.3",
+      "epsilon_end": "0.05",
+      "epsilon_decay_episodes": "1500"
+    },
+    "observation": {
+      "retention_seconds": "2.0"
+    }
+  },
+  "core_sha256": "f6b80c598d76d6f4a3cec7935f678481b05a40908e18febf1ef79e162b170c62",
+  "script_sha256": "22ce8e55c236f44ed594f9c0eb533168bfcad5bbc266f33f66b55d252f4867ea",
+  "parent_commit": "354df9436c985b567f848ae45b85bebfc7a4497e",
+  "corrected_contract_origin": "9c7c62a951988cf0d4a158e88acb9910e2197fef",
+  "created_utc": "2026-10-05T09:25:18.175095+00:00"
+}

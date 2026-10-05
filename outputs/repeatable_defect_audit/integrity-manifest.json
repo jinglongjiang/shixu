@@ -1,0 +1,60 @@
+{
+  "core_sha256": "f6b80c598d76d6f4a3cec7935f678481b05a40908e18febf1ef79e162b170c62",
+  "checkpoints": {
+    "419": {
+      "path": "outputs/forecast_control_b_fresh_cv/419/cv/model.pt",
+      "sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1"
+    },
+    "443": {
+      "path": "outputs/forecast_control_b_fresh_cv/443/cv/model.pt",
+      "sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e"
+    },
+    "467": {
+      "path": "outputs/forecast_control_b_fresh_cv/467/cv/model.pt",
+      "sha256": "872eb870660df7e3856465ae8b5b941581ba91eca4998251f0154fca2cb212c3"
+    },
+    "491": {
+      "path": "outputs/forecast_control_b_fresh_cv/491/cv/model.pt",
+      "sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948"
+    }
+  },
+  "script_sha256": "43a06842b163b30e17ad3c8989b7e6aba662a91ea2caba4727b5b4e83452609a",
+  "inputs": {
+    "outputs/repeatable_defect_audit/action-evidence.json": "04f9f51c761ff01cf734f081f6b0ed616c257510c9712dd5535f99d7abc60cb2",
+    "outputs/repeatable_defect_audit/discovery-atlas.json": "664bf879d27b2214b47c9b9e7c627dc4e785425547e00b2cc2e82643c84695d8",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-10-atlas.json": "c11cf6c34331c7e1855a7a44bd5d07a6843c320dc4cc84f13819a472332c4c89",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-5-atlas.json": "ea0130ee573e9287402830636bd15503a42423a01a0268299ef6ae9246f73dfb",
+    "outputs/repeatable_defect_audit/headroom-orchestration.json": "f45a313e53ed2a38c31d0e2e36627ee02275b1c781bfef0458da000e0ada71b1",
+    "outputs/repeatable_defect_audit/headroom-selection.json": "ea39cd8a690fbb05a915523e490a70c2ef3c75b21ff9667e7ec4651928c83cb1",
+    "outputs/repeatable_defect_audit/implementation-correction.json": "82f022abb943ecb9e762acfcf4c5548aa1fabdd49d63d0c2da1fb8dec87af341",
+    "outputs/repeatable_defect_audit/nominee.json": "93b3534716a06c08ef823dd7963275e18787c1c726644c51909e74636a9aac5a",
+    "outputs/repeatable_defect_audit/pooled-confirmation-protocol.json": "73229aa3f5a1a8299844575908583a3919875c363dc74d917080e2b1aa957124",
+    "outputs/repeatable_defect_audit/pooled-fresh-selection.json": "fcfd78b0aff0fbef1805ec9aad4d405290caea81886052ee1baf061601f4a29e",
+    "outputs/repeatable_defect_audit/protocol.json": "87871e60b01cea2d30b11facae17e57a17d2ca44bd4d3d3493ac416325510178",
+    "outputs/repeatable_defect_audit/runtime.json": "d043ea4adbbbd599430d867ec64ecc2649b46e60c22c81ce47d26b82e8e3f778",
+    "outputs/repeatable_defect_audit/summary.json": "4c59eb29385f0965b57b10260bc3ec980dd1ccaaf8e2bd3846369bac661eba1e"
+  },
+  "helpers": {
+    "experiments/action_ranking_attribution.py": "de0941b516af9f04918c92efbc36b6192b364c4fde3d18719aad201eca5f9b4a",
+    "experiments/decision_state.py": "65b82c9396cc3b92e69e3758950c1dda611b8bc99f1d01e32126207481ebbc82",
+    "experiments/forecast_evidence.py": "e3798408795b5e46f910523294c394789df4df9b67b3d317a463f6dd058ff3a7",
+    "experiments/multihorizon_control.py": "a042d99ac307e6bfb949a22a4bb407c5afe7737ad7a91015b6180ad03e61971a",
+    "experiments/forecast_control_diagnostic.py": "cc843cf3858cf9c3992d674f392baba39d950f841b5a50e3a03a5138134c8cc2"
+  },
+  "headroom_records": {
+    "outputs/repeatable_defect_audit/headroom/419_10_square_80004.json": "bc1a16f8da99efbebbd9816cd3cc5c70c93afd9a49b508b13ab4e69f250e9092",
+    "outputs/repeatable_defect_audit/headroom/419_10_square_80009.json": "813015770f6319b12ee312230c875e9de75f9a2d52edeeb253813938820eb06a",
+    "outputs/repeatable_defect_audit/headroom/419_20_square_80001.json": "3cd896cf5172cf769d826311dd7d731a613b103a3f91f8883ce06899bf5da48d",
+    "outputs/repeatable_defect_audit/headroom/419_5_square_80007.json": "f81c03fd8d35079b46a5d3b0a1d17721ec8467541c98ee661d61319e37c0edee",
+    "outputs/repeatable_defect_audit/headroom/419_5_square_80009.json": "52108e2ca7c107a67b877f1f1978507fccaffa9f7f872382278519218b444aac",
+    "outputs/repeatable_defect_audit/headroom/443_10_square_80005.json": "c045916e384ad44d75395a6a60042ca7a72990ed4afa1147ce04728b1a31ed05",
+    "outputs/repeatable_defect_audit/headroom/443_20_square_80002.json": "f485cdda5a2b8198aac9e1e13fb690f2714210511e305f0649aea491992a262d",
+    "outputs/repeatable_defect_audit/headroom/443_5_square_80005.json": "6ea468561cd0b49d3be430092055c116389848d0b86119073901340ffbd3f9b2",
+    "outputs/repeatable_defect_audit/headroom/491_20_square_80000.json": "29ed3e719b3ef432727cd15e6446bd163d23eeb30e6022d81139ee237ea922de",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/419_10_square_81001.json": "aac6e0897a31fb7f747c8a5635dbd3bbb248f1bfd3ad7841061ba167160f7568",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/419_5_square_81003.json": "94dbe103538c0ed8d138409355c955dab8b04ecc1c19b46ac80af661d20eda37",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/443_10_square_81006.json": "1b344c509084a2ff4d94947ccb9eaad79ad504462a03dbe8b4004abf6c9f3acb",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/491_5_square_81000.json": "851ad131da739a3665e7ecc672665d89997031df34261e551ed2afd5273d138b"
+  },
+  "scope": "Full traces/checkpoints stay local. Compact80-action evidence and complete parent atlas metadata are versioned; no claim of self-contained reproduction from Git alone."
+}

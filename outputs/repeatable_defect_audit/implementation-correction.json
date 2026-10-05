@@ -1,0 +1,6 @@
+{
+  "protocol_sha256": "87871e60b01cea2d30b11facae17e57a17d2ca44bd4d3d3493ac416325510178",
+  "original_script_sha256": "22ce8e55c236f44ed594f9c0eb533168bfcad5bbc266f33f66b55d252f4867ea",
+  "corrected_script_sha256": "43a06842b163b30e17ad3c8989b7e6aba662a91ea2caba4727b5b4e83452609a",
+  "reason": "Convert logged legal-clearance list to an ndarray in root selection. Preserve and equality-check orphan traces before writing missing episode metadata. Rules, checkpoints, scientific core and all controls unchanged; completed episode metadata/traces retained."
+}

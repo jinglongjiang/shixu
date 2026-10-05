@@ -1,0 +1,64 @@
+{
+  "created_utc": "2026-10-05T09:41:10.593336+00:00",
+  "original_protocol_sha256": "87871e60b01cea2d30b11facae17e57a17d2ca44bd4d3d3493ac416325510178",
+  "original_nominee_sha256": "93b3534716a06c08ef823dd7963275e18787c1c726644c51909e74636a9aac5a",
+  "provenance": "Exploratory discovery, not an original per-cell nomination. Preserve failed original gate. Original user criterion was3 independent cases, not3 per population; freeze this pooled definition before any fresh case.",
+  "problem": "Native square low-progress timeout with safety-qualified first-action rescue, raw-ranking residual, good action not blocked, and raw top equals final top. Same-support true one-step query does not select a successful command. No temporal claim or unique training-cause claim.",
+  "evidence": [
+    {
+      "case": 80004,
+      "people": 10,
+      "seed": 419,
+      "raw_rank": 78
+    },
+    {
+      "case": 80009,
+      "people": 10,
+      "seed": 419,
+      "raw_rank": 49
+    },
+    {
+      "case": 80007,
+      "people": 5,
+      "seed": 419,
+      "raw_rank": 69
+    }
+  ],
+  "inputs": {
+    "outputs/repeatable_defect_audit/headroom/419_10_square_80004.json": "bc1a16f8da99efbebbd9816cd3cc5c70c93afd9a49b508b13ab4e69f250e9092",
+    "outputs/repeatable_defect_audit/headroom/419_10_square_80009.json": "813015770f6319b12ee312230c875e9de75f9a2d52edeeb253813938820eb06a",
+    "outputs/repeatable_defect_audit/headroom/419_20_square_80001.json": "3cd896cf5172cf769d826311dd7d731a613b103a3f91f8883ce06899bf5da48d",
+    "outputs/repeatable_defect_audit/headroom/419_5_square_80007.json": "f81c03fd8d35079b46a5d3b0a1d17721ec8467541c98ee661d61319e37c0edee",
+    "outputs/repeatable_defect_audit/headroom/419_5_square_80009.json": "52108e2ca7c107a67b877f1f1978507fccaffa9f7f872382278519218b444aac",
+    "outputs/repeatable_defect_audit/headroom/443_10_square_80005.json": "c045916e384ad44d75395a6a60042ca7a72990ed4afa1147ce04728b1a31ed05",
+    "outputs/repeatable_defect_audit/headroom/443_20_square_80002.json": "f485cdda5a2b8198aac9e1e13fb690f2714210511e305f0649aea491992a262d",
+    "outputs/repeatable_defect_audit/headroom/443_5_square_80005.json": "6ea468561cd0b49d3be430092055c116389848d0b86119073901340ffbd3f9b2",
+    "outputs/repeatable_defect_audit/headroom/491_20_square_80000.json": "29ed3e719b3ef432727cd15e6446bd163d23eeb30e6022d81139ee237ea922de"
+  },
+  "cells": [
+    [
+      5,
+      "square"
+    ],
+    [
+      10,
+      "square"
+    ]
+  ],
+  "seeds": [
+    419,
+    443,
+    467,
+    491
+  ],
+  "cases": [
+    81000,
+    81031
+  ],
+  "selection": "Parent-only fresh low-progress-timeout records. Round-robin populations5 then10, ascending case IDs, skip case IDs already selected across populations; lowest failed seed per case. At most4 distinct cases. Freeze all4 roots before new action outcomes.",
+  "root": "Low-progress: start of first qualifying interval. Other failures: first t>=2s legal clearance<=0.8m within final10s; otherwise beginning of final10s. One root per episode.",
+  "headroom": "All80 already-smoothed root commands once for0.25s, then same corrected checkpoint policy with lawful sensing until termination. No second smoothing. Q^pi, not Q*. Full native-return and command baseline replay parity required.",
+  "safety": "Keep every actual clearance. Successful branches below0.02m are flagged fragile, not counted as safety-qualified rescues;0.02m is a diagnostic screen, not a new reward.",
+  "attribution": "Raw-top success with final-top failure: postprocessing. Otherwise true-one-step same-actor-support query selecting a successful action: successor/query interface. Otherwise successful action raw rank>=10: value-ranking residual. No successful first command: no-single-step-rescue; other patterns unresolved. These localize a consumer stage, not training/representation/temporal causation.",
+  "pass_rule": "At least2 distinct fresh case IDs satisfy the unchanged value-ranking-residual classification, with good not blocked and raw_top==final_top. Report training-seed scope separately. Otherwise this pooled candidate stops; no redefinition or extra cases."
+}

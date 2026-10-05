@@ -1,0 +1,385 @@
+{
+  "groups": [
+    {
+      "key": [
+        "low-progress-timeout",
+        20,
+        "square"
+      ],
+      "cases": 17,
+      "multiseed_cases": 9,
+      "selected": [
+        {
+          "split": "discovery",
+          "seed": 491,
+          "people": 20,
+          "geometry": "square",
+          "case": 80000,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 16.727974152305368,
+          "minimum_clearance": 0.11548427280936846,
+          "return_": -0.5295910327325974,
+          "discounted_return": -0.0809790298891675,
+          "trace": "outputs/repeatable_defect_audit/discovery/491_20_square_80000.npz",
+          "trace_sha256": "df049ed789caefe5ce566e23f552601b16f498c810169854644d6a73980fcfc9",
+          "elapsed_seconds": 2.4529252540087327,
+          "device": "cuda",
+          "checkpoint_sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948",
+          "root": {
+            "goal_distance": 8.509122866278473,
+            "legal_clearance": 0.21540173743586527,
+            "active_count": 11,
+            "visible_count": 7,
+            "local_density": 0.238732414637843,
+            "phase": 0.04,
+            "grid_action": 44,
+            "tick": 8,
+            "time": 2.0,
+            "executed_action": [
+              -0.9206372244596499,
+              -0.06529197457341705
+            ],
+            "raw_top": 48,
+            "final_top": 44
+          }
+        },
+        {
+          "split": "discovery",
+          "seed": 419,
+          "people": 20,
+          "geometry": "square",
+          "case": 80001,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 8.580638039884025,
+          "minimum_clearance": 0.15846970818581407,
+          "return_": -0.5264025100141241,
+          "discounted_return": -0.0851488896369882,
+          "trace": "outputs/repeatable_defect_audit/discovery/419_20_square_80001.npz",
+          "trace_sha256": "a15147613d33a3e095e6f595b06c818f7ccbd3868e79cd1f0023fdef1b4c6b1b",
+          "elapsed_seconds": 2.347533041029237,
+          "device": "cuda",
+          "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+          "root": {
+            "goal_distance": 7.767611673934128,
+            "legal_clearance": 0.5768676370462626,
+            "active_count": 14,
+            "visible_count": 13,
+            "local_density": 0.238732414637843,
+            "phase": 0.04,
+            "grid_action": 10,
+            "tick": 8,
+            "time": 2.0,
+            "executed_action": [
+              0.14506907557269388,
+              0.07191809467537355
+            ],
+            "raw_top": 10,
+            "final_top": 10
+          }
+        },
+        {
+          "split": "discovery",
+          "seed": 443,
+          "people": 20,
+          "geometry": "square",
+          "case": 80002,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 8.732605400450892,
+          "minimum_clearance": 0.17718112613144887,
+          "return_": -0.509619216320861,
+          "discounted_return": -0.07586432371585185,
+          "trace": "outputs/repeatable_defect_audit/discovery/443_20_square_80002.npz",
+          "trace_sha256": "a0f752585c3f9c632510a13cdbfd9e6988827f0df8c7fec8e67703265ca5da26",
+          "elapsed_seconds": 2.398926869034767,
+          "device": "cuda",
+          "checkpoint_sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e",
+          "root": {
+            "goal_distance": 7.797126114937794,
+            "legal_clearance": 0.1864044323512205,
+            "active_count": 16,
+            "visible_count": 9,
+            "local_density": 0.3978873577297384,
+            "phase": 0.04,
+            "grid_action": 4,
+            "tick": 8,
+            "time": 2.0,
+            "executed_action": [
+              0.9861114699243019,
+              0.0019895758463263314
+            ],
+            "raw_top": 13,
+            "final_top": 4
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "low-progress-timeout",
+        5,
+        "square"
+      ],
+      "cases": 15,
+      "multiseed_cases": 5,
+      "selected": [
+        {
+          "split": "discovery",
+          "seed": 443,
+          "people": 5,
+          "geometry": "square",
+          "case": 80005,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 10.855428786415757,
+          "minimum_clearance": 0.2919464905011447,
+          "return_": -0.5,
+          "discounted_return": -0.06698983742898086,
+          "trace": "outputs/repeatable_defect_audit/discovery/443_5_square_80005.npz",
+          "trace_sha256": "529f2e0d51d3dbd2edc0be1681a48cf7acd1c9eb8a1c275a265799081b0c07c3",
+          "elapsed_seconds": 1.4795734049985185,
+          "device": "cuda",
+          "checkpoint_sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e",
+          "root": {
+            "goal_distance": 4.469897860883407,
+            "legal_clearance": 1.3607103590306666,
+            "active_count": 5,
+            "visible_count": 5,
+            "local_density": 0.15915494309189535,
+            "phase": 0.19,
+            "grid_action": 38,
+            "tick": 38,
+            "time": 9.5,
+            "executed_action": [
+              -0.6798376656544656,
+              0.3090407075991051
+            ],
+            "raw_top": 38,
+            "final_top": 38
+          }
+        },
+        {
+          "split": "discovery",
+          "seed": 419,
+          "people": 5,
+          "geometry": "square",
+          "case": 80007,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 10.213535510697486,
+          "minimum_clearance": 0.9102275241591702,
+          "return_": -0.5,
+          "discounted_return": -0.06698983742898086,
+          "trace": "outputs/repeatable_defect_audit/discovery/419_5_square_80007.npz",
+          "trace_sha256": "58b15d3ed6f1fc63de9c1f562be16970b77a9eab97470b9916d48af0f4072df1",
+          "elapsed_seconds": 1.4462254829704762,
+          "device": "cuda",
+          "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+          "root": {
+            "goal_distance": 3.9295310540086223,
+            "legal_clearance": 1.1135676620168142,
+            "active_count": 5,
+            "visible_count": 5,
+            "local_density": 0.3183098861837907,
+            "phase": 0.15,
+            "grid_action": 70,
+            "tick": 30,
+            "time": 7.5,
+            "executed_action": [
+              -0.050117995162226064,
+              0.19887942693565927
+            ],
+            "raw_top": 70,
+            "final_top": 70
+          }
+        },
+        {
+          "split": "discovery",
+          "seed": 419,
+          "people": 5,
+          "geometry": "square",
+          "case": 80009,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 8.340591652982537,
+          "minimum_clearance": 0.1983426022289838,
+          "return_": -0.500207174721377,
+          "discounted_return": -0.06718293780773867,
+          "trace": "outputs/repeatable_defect_audit/discovery/419_5_square_80009.npz",
+          "trace_sha256": "56e33763861849b53c31344059e35a74ce4e36a02eabd9940221848771f8085c",
+          "elapsed_seconds": 1.515339892997872,
+          "device": "cuda",
+          "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+          "root": {
+            "goal_distance": 3.494505445112365,
+            "legal_clearance": 1.2545989867695841,
+            "active_count": 5,
+            "visible_count": 5,
+            "local_density": 0.07957747154594767,
+            "phase": 0.29,
+            "grid_action": 77,
+            "tick": 58,
+            "time": 14.5,
+            "executed_action": [
+              0.28526627091111967,
+              0.09465635956018001
+            ],
+            "raw_top": 77,
+            "final_top": 77
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "low-progress-timeout",
+        10,
+        "square"
+      ],
+      "cases": 13,
+      "multiseed_cases": 6,
+      "selected": [
+        {
+          "split": "discovery",
+          "seed": 419,
+          "people": 10,
+          "geometry": "square",
+          "case": 80004,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 6.955368407109844,
+          "minimum_clearance": 0.20051049173439078,
+          "return_": -0.5,
+          "discounted_return": -0.06698983742898086,
+          "trace": "outputs/repeatable_defect_audit/discovery/419_10_square_80004.npz",
+          "trace_sha256": "fde7ab0e43ac71b19ee3b78a4b353326f59c62f6620245d9fdb096a39a624401",
+          "elapsed_seconds": 1.7290919160004705,
+          "device": "cuda",
+          "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+          "root": {
+            "goal_distance": 7.819775158257316,
+            "legal_clearance": 1.7820193346136215,
+            "active_count": 8,
+            "visible_count": 5,
+            "local_density": 0.07957747154594767,
+            "phase": 0.04,
+            "grid_action": 65,
+            "tick": 8,
+            "time": 2.0,
+            "executed_action": [
+              0.056068064082306884,
+              -0.10369135063381488
+            ],
+            "raw_top": 65,
+            "final_top": 65
+          }
+        },
+        {
+          "split": "discovery",
+          "seed": 443,
+          "people": 10,
+          "geometry": "square",
+          "case": 80005,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 9.622156401751026,
+          "minimum_clearance": 0.2434434729583173,
+          "return_": -0.5,
+          "discounted_return": -0.06698983742898086,
+          "trace": "outputs/repeatable_defect_audit/discovery/443_10_square_80005.npz",
+          "trace_sha256": "183adea739de7cca2873772c02b62a8820439cd329b8408b7f8a635df213750e",
+          "elapsed_seconds": 1.8454119950183667,
+          "device": "cuda",
+          "checkpoint_sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e",
+          "root": {
+            "goal_distance": 3.451178463132479,
+            "legal_clearance": 0.9307238664593318,
+            "active_count": 9,
+            "visible_count": 8,
+            "local_density": 0.238732414637843,
+            "phase": 0.205,
+            "grid_action": 32,
+            "tick": 41,
+            "time": 10.25,
+            "executed_action": [
+              -0.30135202659662885,
+              0.38351511968521057
+            ],
+            "raw_top": 32,
+            "final_top": 32
+          }
+        },
+        {
+          "split": "discovery",
+          "seed": 419,
+          "people": 10,
+          "geometry": "square",
+          "case": 80009,
+          "terminal": "timeout",
+          "behavior": "low-progress-timeout",
+          "steps": 201,
+          "navigation_time": 50.25,
+          "path": 7.035402527287814,
+          "minimum_clearance": 0.1546869347795744,
+          "return_": -0.5241929543492557,
+          "discounted_return": -0.08496814154457706,
+          "trace": "outputs/repeatable_defect_audit/discovery/419_10_square_80009.npz",
+          "trace_sha256": "4c22702778f13a1a369afe45d373fc7e56e948eacc5c903349521a55dbc8bc93",
+          "elapsed_seconds": 1.7341387160122395,
+          "device": "cuda",
+          "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+          "root": {
+            "goal_distance": 7.288217888263903,
+            "legal_clearance": 1.32516251963788,
+            "active_count": 10,
+            "visible_count": 6,
+            "local_density": 0.3183098861837907,
+            "phase": 0.075,
+            "grid_action": 12,
+            "tick": 15,
+            "time": 3.75,
+            "executed_action": [
+              0.2788241753197687,
+              0.31833192065675375
+            ],
+            "raw_top": 12,
+            "final_top": 12
+          }
+        }
+      ]
+    }
+  ],
+  "atlas_sha256": "664bf879d27b2214b47c9b9e7c627dc4e785425547e00b2cc2e82643c84695d8",
+  "rules": {
+    "parent": "Four existing fresh-CV IL50/RL3000 checkpoints, identical repaired execution contract. No training, reward/filter/history/model edits. All runs on one local runtime/device.",
+    "discovery": "All80000..80031 x5/10/20 people xcircle/square x419/443/467/491;768 episodes. No exclusion for success, failure,80009 or prior method results.",
+    "behavior": "Collision; persistent-low-progress timeout; other timeout. Low progress means first 32-control-step/8s interval at t>=2s with net goal-distance decrease<=0.8m and all distances>1m. This is a descriptive label, not proof of feasible alternatives.",
+    "root": "Low-progress: start of first qualifying interval. Other failures: first t>=2s legal clearance<=0.8m within final10s; otherwise beginning of final10s. One root per episode.",
+    "repeat": "Stratum=(behavior,population,geometry);at least3 distinct numeric case IDs. Separate multi-seed repeat counts; do not count seeds as independent cases.",
+    "selection": "At most3 qualifying strata, descending distinct-case count, then count of cases failed in>=2 seeds, then lexical stratum key. First3 case IDs per stratum, lowest failed seed per case. Freeze all roots before any intervention outcome.",
+    "headroom": "All80 already-smoothed root commands once for0.25s, then same corrected checkpoint policy with lawful sensing until termination. No second smoothing. Q^pi, not Q*. Full native-return and command baseline replay parity required.",
+    "attribution": "Raw-top success with final-top failure: postprocessing. Otherwise true-one-step same-actor-support query selecting a successful action: successor/query interface. Otherwise successful action raw rank>=10: value-ranking residual. No successful first command: no-single-step-rescue; other patterns unresolved. These localize a consumer stage, not training/representation/temporal causation.",
+    "safety": "Keep every actual clearance. Successful branches below0.02m are flagged fragile, not counted as safety-qualified rescues;0.02m is a diagnostic screen, not a new reward.",
+    "nominate": "First selected stratum whose3 independent roots have safety-qualified rescues and the same one of the three localized stages. Otherwise stop with no nominee.",
+    "fresh": "Only after nominee definition frozen:81000..81031 x4 same seeds in its unchanged population/geometry cell. Same behavior/root/attribution rules. First4 distinct failed case IDs, lowest failed seed; all80 continuations. Require>=2 independently repeated safety-qualified localized defects. No threshold or checkpoint selection on fresh data.",
+    "limits": "No feasible-path claim from slow motion alone; no global model cause from one root; no overall navigator gain from one-step oracle rescue. Negative truth intervention only constrains this frozen consumer. Fresh confirmation remains development evidence."
+  }
+}
