@@ -1,0 +1,360 @@
+{
+  "rules": {
+    "scope": "Four unchanged fresh roots. No training, critic/reward/filter/history/model changes; an offline control-space diagnostic, not a deployable policy or causal attribution.",
+    "constant": "All80 native grid actions held4 or8 control steps (1s or2s). Each step applies the unchanged alpha=0.3 smoothing once to the previous executed action. Then restore the same checkpoint's native scalar predict() until terminal.",
+    "sequence": "If fewer than2 primary roots have qualified constant-action rescues: allA in80 and B in deduplicated same/heading+/-1,+/-2/speed+/-1 neighbors. Headings wrap; speed boundaries clip by omission. 2stepsA+2stepsB or4stepsA+4stepsB. No search.",
+    "memory": "Observe legally every0.25s; append each actually observed frame once, including during forced controls. Keep executed last_action for smoothing and continuation. Do not write hypothetical candidate states. Abort intervention at native terminal.",
+    "safety": "Record all collisions/clearances. ReachGoal with full root-to-terminal minimum surface clearance>=0.02m is qualified. Below0.02m is fragile. This does not change the parent's0.2m filter or reward. Forced interventions bypass action selection, not dynamics; log predicted CV clearance and whether native filter would block.",
+    "metric": "Native gamma0.99 discounted original rewards from root to termination, actual commands, minimum clearance, terminal, remaining/absolute arrival time. No progress proxy.",
+    "backup": "Freeze4 before outcomes from existing81000..81031 parent-only square5/10 atlas: roundrobin populations, ascending case IDs, cross-population unique IDs, exclude all4 primary cases, lowest failed seed. Same low-progress root rule. Activate only if exactly1/4 primary roots qualifies after applicable layers. Establish80-step1 controls for backups before multistep; single-step rescuable backups cannot qualify as specifically multistep defects. Complete fixed blocks, not favorable branches only.",
+    "decision": ">=2 independent case IDs with qualified multi-step rescues and zero qualified single-step rescues: MULTISTEP_HEADROOM_CONFIRMED. Zero primary rescues: NO_BOUNDED_MULTISTEP_HEADROOM_FOUND. Exactly1: use frozen backups; if still<2, INSUFFICIENT_REPEATABLE_MULTISTEP_HEADROOM. Stop tested route; no80x80 expansion. No root/threshold/checkpoint changes after outcomes. A positive is development headroom, not overall SR, unique cause, or method novelty. Do not implement Ours here."
+  },
+  "primary": [
+    {
+      "split": "exploratory-fresh-square-5",
+      "seed": 491,
+      "people": 5,
+      "geometry": "square",
+      "case": 81000,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 8.87788599810435,
+      "minimum_clearance": 0.1833705292225214,
+      "return_": -0.5044249632503751,
+      "discounted_return": -0.07093408441227356,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-5/491_5_square_81000.npz",
+      "trace_sha256": "5f965dd4b2db96bb0f14f66c890dcc820d15f08d6e014b0ffeffeb31dfb0c37a",
+      "elapsed_seconds": 1.4841038610320538,
+      "device": "cuda",
+      "checkpoint_sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948",
+      "root": {
+        "goal_distance": 5.040062663317442,
+        "legal_clearance": 0.30499666477149884,
+        "active_count": 5,
+        "visible_count": 5,
+        "local_density": 0.15915494309189535,
+        "phase": 0.145,
+        "grid_action": 34,
+        "tick": 29,
+        "time": 7.25,
+        "executed_action": [
+          -0.7298706500206171,
+          0.6458899479900954
+        ],
+        "raw_top": 34,
+        "final_top": 34
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-10",
+      "seed": 419,
+      "people": 10,
+      "geometry": "square",
+      "case": 81001,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 7.024502451817989,
+      "minimum_clearance": 0.178937294787621,
+      "return_": -0.5090866670572358,
+      "discounted_return": -0.07509764056115033,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-10/419_10_square_81001.npz",
+      "trace_sha256": "c7e699a98621e1e5f539d1c9e74c277aa8f365d2103de2d9e95e8f0e35775484",
+      "elapsed_seconds": 1.662308682978619,
+      "device": "cuda",
+      "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+      "root": {
+        "goal_distance": 5.538461601842178,
+        "legal_clearance": 1.666358397154068,
+        "active_count": 9,
+        "visible_count": 7,
+        "local_density": 0.238732414637843,
+        "phase": 0.165,
+        "grid_action": 22,
+        "tick": 33,
+        "time": 8.25,
+        "executed_action": [
+          0.058602767254467614,
+          0.4723423643175274
+        ],
+        "raw_top": 22,
+        "final_top": 22
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-5",
+      "seed": 419,
+      "people": 5,
+      "geometry": "square",
+      "case": 81003,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 8.33713643777905,
+      "minimum_clearance": 0.21574067920533097,
+      "return_": -0.5,
+      "discounted_return": -0.06698983742898086,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-5/419_5_square_81003.npz",
+      "trace_sha256": "3c4c15824db05dbf2a1c7cab767763aa85fbf6d8a955e8af10f76590ad1b2d8b",
+      "elapsed_seconds": 1.4600787329836749,
+      "device": "cuda",
+      "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+      "root": {
+        "goal_distance": 8.09188016104695,
+        "legal_clearance": 0.8048035127074715,
+        "active_count": 5,
+        "visible_count": 4,
+        "local_density": 0.07957747154594767,
+        "phase": 0.04,
+        "grid_action": 60,
+        "tick": 8,
+        "time": 2.0,
+        "executed_action": [
+          -0.03276273674164237,
+          -0.08489004471373143
+        ],
+        "raw_top": 60,
+        "final_top": 60
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-10",
+      "seed": 443,
+      "people": 10,
+      "geometry": "square",
+      "case": 81006,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 10.85323491641044,
+      "minimum_clearance": 0.10920463066164665,
+      "return_": -0.5282362386815296,
+      "discounted_return": -0.09206176008665432,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-10/443_10_square_81006.npz",
+      "trace_sha256": "a8a44a388f29b88028ce42bfaf072f588cda4a9012001360a0baf3177310e638",
+      "elapsed_seconds": 1.6658124619862065,
+      "device": "cuda",
+      "checkpoint_sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e",
+      "root": {
+        "goal_distance": 2.850988569492477,
+        "legal_clearance": 1.163805947205616,
+        "active_count": 9,
+        "visible_count": 7,
+        "local_density": 0.15915494309189535,
+        "phase": 0.225,
+        "grid_action": 28,
+        "tick": 45,
+        "time": 11.25,
+        "executed_action": [
+          -0.26905344689389876,
+          0.7448041176921529
+        ],
+        "raw_top": 28,
+        "final_top": 28
+      }
+    }
+  ],
+  "backups": [
+    {
+      "split": "exploratory-fresh-square-5",
+      "seed": 443,
+      "people": 5,
+      "geometry": "square",
+      "case": 81004,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 5.395292581593162,
+      "minimum_clearance": 0.5675370824374204,
+      "return_": -0.5,
+      "discounted_return": -0.06698983742898086,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-5/443_5_square_81004.npz",
+      "trace_sha256": "c12c02a2326e32bc8c6e187defb9e74ea38abd9edf4c6be88a46568e40f2d4fb",
+      "elapsed_seconds": 1.3450478879967704,
+      "device": "cuda",
+      "checkpoint_sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e",
+      "root": {
+        "goal_distance": 8.214234053665898,
+        "legal_clearance": 0.8659560665444335,
+        "active_count": 5,
+        "visible_count": 3,
+        "local_density": 0.07957747154594767,
+        "phase": 0.04,
+        "grid_action": 75,
+        "tick": 8,
+        "time": 2.0,
+        "executed_action": [
+          0.18863463925432328,
+          -0.08806671733737487
+        ],
+        "raw_top": 0,
+        "final_top": 75
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-10",
+      "seed": 419,
+      "people": 10,
+      "geometry": "square",
+      "case": 81007,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 5.081352450716155,
+      "minimum_clearance": 0.28635713287125936,
+      "return_": -0.5,
+      "discounted_return": -0.06698983742898086,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-10/419_10_square_81007.npz",
+      "trace_sha256": "b993542c2a7e130bb97649999ab87e2ef0dfa2d8f1946d63b1ae3853d2965176",
+      "elapsed_seconds": 1.6849526080186479,
+      "device": "cuda",
+      "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+      "root": {
+        "goal_distance": 7.849363499926854,
+        "legal_clearance": 0.3735351780863306,
+        "active_count": 9,
+        "visible_count": 6,
+        "local_density": 0.15915494309189535,
+        "phase": 0.04,
+        "grid_action": 10,
+        "tick": 8,
+        "time": 2.0,
+        "executed_action": [
+          0.03022497235228632,
+          0.07236220776736275
+        ],
+        "raw_top": 10,
+        "final_top": 10
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-5",
+      "seed": 419,
+      "people": 5,
+      "geometry": "square",
+      "case": 81010,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 5.833132258191221,
+      "minimum_clearance": 0.4441859605842536,
+      "return_": -0.5,
+      "discounted_return": -0.06698983742898086,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-5/419_5_square_81010.npz",
+      "trace_sha256": "27d9292703387cc8d1efe63bbbe9f6b98533bfcb6e3854ca83a5338e8999aa36",
+      "elapsed_seconds": 1.4010596760199405,
+      "device": "cuda",
+      "checkpoint_sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1",
+      "root": {
+        "goal_distance": 7.5797653301574215,
+        "legal_clearance": 0.9137487435494178,
+        "active_count": 5,
+        "visible_count": 4,
+        "local_density": 0.07957747154594767,
+        "phase": 0.04,
+        "grid_action": 8,
+        "tick": 8,
+        "time": 2.0,
+        "executed_action": [
+          0.5181358611887362,
+          0.22558665427498087
+        ],
+        "raw_top": 8,
+        "final_top": 8
+      }
+    },
+    {
+      "split": "exploratory-fresh-square-10",
+      "seed": 491,
+      "people": 10,
+      "geometry": "square",
+      "case": 81011,
+      "terminal": "timeout",
+      "behavior": "low-progress-timeout",
+      "steps": 201,
+      "navigation_time": 50.25,
+      "path": 9.101848470752046,
+      "minimum_clearance": 0.1907294084909028,
+      "return_": -0.5011588239386372,
+      "discounted_return": -0.06790949665891151,
+      "trace": "outputs/repeatable_defect_audit/exploratory-fresh-square-10/491_10_square_81011.npz",
+      "trace_sha256": "c4314d8be4b53a225e2b8c8f53087df734b2ca0bed634e17f7520878ce008146",
+      "elapsed_seconds": 1.7459900390240364,
+      "device": "cuda",
+      "checkpoint_sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948",
+      "root": {
+        "goal_distance": 6.959685847044892,
+        "legal_clearance": 0.2197401776561841,
+        "active_count": 8,
+        "visible_count": 6,
+        "local_density": 0.3978873577297384,
+        "phase": 0.195,
+        "grid_action": 18,
+        "tick": 39,
+        "time": 9.75,
+        "executed_action": [
+          0.29789662195180244,
+          0.6466042979494798
+        ],
+        "raw_top": 18,
+        "final_top": 18
+      }
+    }
+  ],
+  "old_single_step_results": {
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/491_5_square_81000.json": "851ad131da739a3665e7ecc672665d89997031df34261e551ed2afd5273d138b",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/419_10_square_81001.json": "aac6e0897a31fb7f747c8a5635dbd3bbb248f1bfd3ad7841061ba167160f7568",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/419_5_square_81003.json": "94dbe103538c0ed8d138409355c955dab8b04ecc1c19b46ac80af661d20eda37",
+    "outputs/repeatable_defect_audit/pooled-fresh-headroom/443_10_square_81006.json": "1b344c509084a2ff4d94947ccb9eaad79ad504462a03dbe8b4004abf6c9f3acb"
+  },
+  "archives": {
+    "outputs/repeatable_defect_audit/pooled-fresh-selection.json": "fcfd78b0aff0fbef1805ec9aad4d405290caea81886052ee1baf061601f4a29e",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-5-atlas.json": "ea0130ee573e9287402830636bd15503a42423a01a0268299ef6ae9246f73dfb",
+    "outputs/repeatable_defect_audit/exploratory-fresh-square-10-atlas.json": "c11cf6c34331c7e1855a7a44bd5d07a6843c320dc4cc84f13819a472332c4c89"
+  },
+  "core_sha256": "f6b80c598d76d6f4a3cec7935f678481b05a40908e18febf1ef79e162b170c62",
+  "helpers": {
+    "/home/abc/workspace/shixu/experiments/multistep_headroom_decision_test.py": "98ba6600c4c69e0b65dae3c8b7ad660c81ac3c1f16a795e4b0739704aa16da30",
+    "experiments/repeatable_defect_audit.py": "43a06842b163b30e17ad3c8989b7e6aba662a91ea2caba4727b5b4e83452609a",
+    "experiments/multihorizon_control.py": "a042d99ac307e6bfb949a22a4bb407c5afe7737ad7a91015b6180ad03e61971a",
+    "experiments/forecast_evidence.py": "e3798408795b5e46f910523294c394789df4df9b67b3d317a463f6dd058ff3a7",
+    "experiments/decision_state.py": "65b82c9396cc3b92e69e3758950c1dda611b8bc99f1d01e32126207481ebbc82",
+    "experiments/forecast_control_diagnostic.py": "cc843cf3858cf9c3992d674f392baba39d950f841b5a50e3a03a5138134c8cc2"
+  },
+  "checkpoints": {
+    "419": {
+      "path": "outputs/forecast_control_b_fresh_cv/419/cv/model.pt",
+      "sha256": "1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1"
+    },
+    "443": {
+      "path": "outputs/forecast_control_b_fresh_cv/443/cv/model.pt",
+      "sha256": "d2ce892834062dca6d2b670bad014d14ace5106e9a3ef737db7239f9d4557e4e"
+    },
+    "467": {
+      "path": "outputs/forecast_control_b_fresh_cv/467/cv/model.pt",
+      "sha256": "872eb870660df7e3856465ae8b5b941581ba91eca4998251f0154fca2cb212c3"
+    },
+    "491": {
+      "path": "outputs/forecast_control_b_fresh_cv/491/cv/model.pt",
+      "sha256": "41c1c40045afe7e572e6456a638d68bceedf5eefbac9a3b10f67765ac1f41948"
+    }
+  },
+  "created_utc": "2026-10-05T11:15:00.697485+00:00",
+  "parent_commit": "97766b4443284a2d73971f7cd86fab6227eb022c",
+  "runtime": {
+    "device": "cuda",
+    "torch": "2.1.0+cu121",
+    "python": "3.8.10",
+    "gpu": "NVIDIA GeForce RTX 3060",
+    "tf32_cudnn": true,
+    "tf32_matmul": false
+  }
+}

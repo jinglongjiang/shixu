@@ -192,6 +192,14 @@ value-ranking residual不是唯一训练原因。若成功动作同时被filter�
 
 完整性manifest SHA256：a85687a009ecd0c1ef9a782aa945294676ba1747bba9903e699b6ba621119acd。action-evidence.json包含13个root的80动作分数、真一步查询、原Q、终局、时长、最小间距及完整续跑命令哈希。图谱metadata、协议、summary及紧凑动作证据纳入Git；完整压缩trace和checkpoint保留本地，不声称单独clone仓库即可自包含复现。
 
+## 后续独立授权实验（2026-10-05）
+
+本报告的单步负结果不变。随后在用户新授权的有限多步实验中，同一4个fresh root各自出现了1秒或2秒连续原生控制后的合格到达序列，4/4通过预先冻结的多步headroom判据。该结果补上本报告“多步空间未知”一项，不改写单步错排确认失败，也不证明新算法成功。
+
+特别是持续原策略已选grid动作2秒就挽救3/4个root，复杂规划并非已证明必要。事后root时刻、在线触发、成功保护和简单持有之外的剩余方法空间仍未知。完整证据与边界另见：
+
+/home/abc/workspace/shixu/multistep-headroom-decision-test.md
+
 入口：experiments/repeatable_defect_audit.py。协议、运行环境、768条episode metadata、逐步trace、headroom选择和逐动作真实续跑记录保存在：
 
 /home/abc/workspace/shixu/outputs/repeatable_defect_audit/

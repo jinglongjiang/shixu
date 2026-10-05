@@ -1,0 +1,9 @@
+{
+  "protocol_sha256": "b2298dc768a9aba6370e179b59f53502d19ed02a55b9a28c6546f7a142b79841",
+  "original_script_sha256": "98ba6600c4c69e0b65dae3c8b7ad660c81ac3c1f16a795e4b0739704aa16da30",
+  "corrected_script_sha256": "07736e5d7f402903c595cecfcff3c86baf1da5fb2bf2c95919db45f4a7b087c1",
+  "created_utc": "2026-10-05T11:19:09.303081+00:00",
+  "correction": "Convert NumPy fragile-count aggregate to Python int for JSON only; verify accepts this recorded script correction. No rules/core/checkpoints/root/branch computation changes. All640 saved branches reused, no overwrites.",
+  "completed_branches": 640,
+  "initial_constant_layer_wall_seconds": 146.7
+}
