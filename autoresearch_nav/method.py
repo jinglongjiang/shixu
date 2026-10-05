@@ -1,7 +1,7 @@
 """Veto initiation if lawful CV predicts a sub-margin encounter during the hold."""
 
-SPEC = dict(name="rule-cv-clearance", parent="rule-accept-all", family="rule", hidden=[],
-            hypothesis="Use the unchanged 0.2m margin only as an initiation veto on the two-second CV hold.")
+SPEC = dict(name="rule-forward-cv", parent="rule-forward", family="rule", hidden=[],
+            hypothesis="Combine progress and existing-margin CV feasibility, without fitting thresholds.")
 
 
 def fit(rows, budget):
@@ -9,7 +9,7 @@ def fit(rows, budget):
 
 
 def accept(features, fitted):
-    return bool(features[8] >= .2)
+    return bool(features[23] > 0. and features[8] >= .2)
 
 
 def parameters(fitted):
