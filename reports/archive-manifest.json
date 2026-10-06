@@ -1,0 +1,507 @@
+{
+  "format": 1,
+  "verification": {
+    "source_documents_reconstructed": 23,
+    "protected_files_unchanged": 43337,
+    "protected_bytes_unchanged": 2908972804,
+    "unit_tests_run": 231,
+    "unit_tests_passed": 228,
+    "unit_tests_skipped": 3,
+    "skip_reason": "Legacy parity tests require explicit CAMRL_PARENT and CAMRL_CHECKPOINT",
+    "training_started": false
+  },
+  "created": "2026-10-06T02:49:48.461Z",
+  "policy": "Original source bytes are recoverable from bounded archive parts. Historical conclusions and instructions are not new experiment authorization. Core code, frozen program.md, protocols, checkpoints and raw evidence remain unchanged.",
+  "sources": [
+    {
+      "source": "OCCLUSION_KDA_INTERIM_REPORT_20261004.md",
+      "bytes": 48091,
+      "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 1037,
+          "bytes": 48091,
+          "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313"
+        }
+      ]
+    },
+    {
+      "source": "LATENT_TEMPORAL_INFORMATION_AUDIT.md",
+      "bytes": 13955,
+      "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291",
+      "parts": [
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 1226,
+          "bytes": 13955,
+          "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291"
+        }
+      ]
+    },
+    {
+      "source": "CIRCLE_HISTORY_CAUSAL_AUDIT.md",
+      "bytes": 19915,
+      "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8",
+      "parts": [
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 15412,
+          "bytes": 19915,
+          "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8"
+        }
+      ]
+    },
+    {
+      "source": "FORECAST_CONTROL_EXPERIMENT.md",
+      "bytes": 42594,
+      "sha256": "fdeecb188647d55887b698f99b41a120d5012ae9b677f7a388b217c1cf1b85e4",
+      "parts": [
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 1205,
+          "bytes": 42594,
+          "sha256": "fdeecb188647d55887b698f99b41a120d5012ae9b677f7a388b217c1cf1b85e4"
+        }
+      ]
+    },
+    {
+      "source": "TEMPORAL_DECISION_STATE_REBUILD.md",
+      "bytes": 19168,
+      "sha256": "7156a2c58d78024a8b8ce41d8ee6b742caf393737ff8b1738becec08e45068a9",
+      "parts": [
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 44034,
+          "bytes": 19168,
+          "sha256": "7156a2c58d78024a8b8ce41d8ee6b742caf393737ff8b1738becec08e45068a9"
+        }
+      ]
+    },
+    {
+      "source": "TEMPORAL_DECISION_PROBLEM_AUDIT.md",
+      "bytes": 35772,
+      "sha256": "83baecad860979fe13d5d53f5ef8806de14b4da433038009279e56da38057000",
+      "parts": [
+        {
+          "target": "reports/value-and-defect-audits.md",
+          "offset": 1017,
+          "bytes": 35772,
+          "sha256": "83baecad860979fe13d5d53f5ef8806de14b4da433038009279e56da38057000"
+        }
+      ]
+    },
+    {
+      "source": "CV419_VALUE_TRAINING_CONTRACT_AUDIT.md",
+      "bytes": 15604,
+      "sha256": "787206ad9ef57554feb14e8851951e63189416545dc9a0e5be8d27ddada2c631",
+      "parts": [
+        {
+          "target": "reports/value-and-defect-audits.md",
+          "offset": 37028,
+          "bytes": 15604,
+          "sha256": "787206ad9ef57554feb14e8851951e63189416545dc9a0e5be8d27ddada2c631"
+        }
+      ]
+    },
+    {
+      "source": "repeatable-navigation-defect-audit.md",
+      "bytes": 15698,
+      "sha256": "e26512a67096f6aa5850d25a9ddf520089d3fa60c29c13f1bf8c34c1871fa7f9",
+      "parts": [
+        {
+          "target": "reports/value-and-defect-audits.md",
+          "offset": 52870,
+          "bytes": 15698,
+          "sha256": "e26512a67096f6aa5850d25a9ddf520089d3fa60c29c13f1bf8c34c1871fa7f9"
+        }
+      ]
+    },
+    {
+      "source": "PAS_TEMPORAL_PROBLEM_DISCOVERY.md",
+      "bytes": 15596,
+      "sha256": "dee6909b7098d34cd2d300106ae6d378d62bbbaa6ddd9882ebd484abaeec018a",
+      "parts": [
+        {
+          "target": "reports/external-temporal-problems.md",
+          "offset": 1023,
+          "bytes": 15596,
+          "sha256": "dee6909b7098d34cd2d300106ae6d378d62bbbaa6ddd9882ebd484abaeec018a"
+        }
+      ]
+    },
+    {
+      "source": "pas-history-confirmation.md",
+      "bytes": 9085,
+      "sha256": "c4d7cf95a718bf0f9a3039f448a6ebb723951b729ecb5017011965d198de1224",
+      "parts": [
+        {
+          "target": "reports/external-temporal-problems.md",
+          "offset": 16847,
+          "bytes": 9085,
+          "sha256": "c4d7cf95a718bf0f9a3039f448a6ebb723951b729ecb5017011965d198de1224"
+        }
+      ]
+    },
+    {
+      "source": "pas-failure-confirmation.md",
+      "bytes": 13081,
+      "sha256": "4a4c3d8e8612a50b90913377dc5f020a420dfe2a407871cfa710a5e310121fd1",
+      "parts": [
+        {
+          "target": "reports/external-temporal-problems.md",
+          "offset": 26160,
+          "bytes": 13081,
+          "sha256": "4a4c3d8e8612a50b90913377dc5f020a420dfe2a407871cfa710a5e310121fd1"
+        }
+      ]
+    },
+    {
+      "source": "interaction-response-problem-audit.md",
+      "bytes": 10759,
+      "sha256": "c7cec34e71b8daf05ada790b043cf4659bd1929f56c746899226a7ba91eb7257",
+      "parts": [
+        {
+          "target": "reports/external-temporal-problems.md",
+          "offset": 39479,
+          "bytes": 10759,
+          "sha256": "c7cec34e71b8daf05ada790b043cf4659bd1929f56c746899226a7ba91eb7257"
+        }
+      ]
+    },
+    {
+      "source": "multistep-headroom-decision-test.md",
+      "bytes": 10399,
+      "sha256": "2811373c97cfb39871edc2543b9288b3271099145b9f66f70358aea69cdc004d",
+      "parts": [
+        {
+          "target": "reports/action-commitment-experiments.md",
+          "offset": 1109,
+          "bytes": 10399,
+          "sha256": "2811373c97cfb39871edc2543b9288b3271099145b9f66f70358aea69cdc004d"
+        }
+      ]
+    },
+    {
+      "source": "online-action-commitment-v0.md",
+      "bytes": 14118,
+      "sha256": "05093a91782c2a2a074145a8afa0c28f7c850934fd526d02b68d518d5d9cd03d",
+      "parts": [
+        {
+          "target": "reports/action-commitment-experiments.md",
+          "offset": 11739,
+          "bytes": 14118,
+          "sha256": "05093a91782c2a2a074145a8afa0c28f7c850934fd526d02b68d518d5d9cd03d"
+        }
+      ]
+    },
+    {
+      "source": "online-action-commitment-v01.md",
+      "bytes": 12809,
+      "sha256": "cf3b6c76e00d3f41feffbaafedf7e5590198905dc09c05cd3bf8fab89da5e1c4",
+      "parts": [
+        {
+          "target": "reports/action-commitment-experiments.md",
+          "offset": 26089,
+          "bytes": 12809,
+          "sha256": "cf3b6c76e00d3f41feffbaafedf7e5590198905dc09c05cd3bf8fab89da5e1c4"
+        }
+      ]
+    },
+    {
+      "source": "commit-advantage-learnability.md",
+      "bytes": 16263,
+      "sha256": "905449272371cc33ea1e6b750a5f7e343a010e93f051118431d96ecaf73f6f05",
+      "parts": [
+        {
+          "target": "reports/action-commitment-experiments.md",
+          "offset": 39131,
+          "bytes": 16263,
+          "sha256": "905449272371cc33ea1e6b750a5f7e343a010e93f051118431d96ecaf73f6f05"
+        }
+      ]
+    },
+    {
+      "source": "AUTONAV_OVERNIGHT_REPORT.md",
+      "bytes": 15980,
+      "sha256": "9a990179029cf1c231d24728d061e22ac9fff8dfc1af18b4c7dca6f391cc4f8d",
+      "parts": [
+        {
+          "target": "reports/action-commitment-experiments.md",
+          "offset": 55622,
+          "bytes": 15980,
+          "sha256": "9a990179029cf1c231d24728d061e22ac9fff8dfc1af18b4c7dca6f391cc4f8d"
+        }
+      ]
+    },
+    {
+      "source": "README.md",
+      "bytes": 66480,
+      "sha256": "0f5332ec89c79e6ab9fc605bb8e502e3aca61323ac48851518db15cb3f732d9a",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 49368,
+          "bytes": 57383,
+          "sha256": "bab5edaf25ef7c428a05e7f8797c561dc63ba5426465b4bbee8c12d823f57caa"
+        },
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 35567,
+          "bytes": 2641,
+          "sha256": "f9a66d54a9742ca5a6aafb30dca133f8401d42244d3a62d1d3881a54f481700e"
+        },
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 38448,
+          "bytes": 2114,
+          "sha256": "8b7960de25b2c7802a6b232d266e6ff49e99c2130d70b1634cf56ca414ae0da4"
+        },
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 63442,
+          "bytes": 4342,
+          "sha256": "58ae9b39e1367d198723219f18fdd8c259cfc328b8d68216bd9c418ad90e5b03"
+        }
+      ]
+    },
+    {
+      "source": "outputs/forecast_control_remote_backup_20261004/CIRCLE_HISTORY_CAUSAL_AUDIT.md",
+      "bytes": 19915,
+      "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8",
+      "parts": [
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 15412,
+          "bytes": 19915,
+          "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8"
+        }
+      ],
+      "duplicate_of": "CIRCLE_HISTORY_CAUSAL_AUDIT.md"
+    },
+    {
+      "source": "outputs/forecast_control_remote_backup_20261004/FORECAST_CONTROL_EXPERIMENT.md",
+      "bytes": 13968,
+      "sha256": "5aad171abdc0b7b35177eb00fd8e48aa37422f675b3d66090bd2ebdf3a2cc49b",
+      "parts": [
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 68063,
+          "bytes": 13968,
+          "sha256": "5aad171abdc0b7b35177eb00fd8e48aa37422f675b3d66090bd2ebdf3a2cc49b"
+        }
+      ]
+    },
+    {
+      "source": "outputs/forecast_control_remote_backup_20261004/LATENT_TEMPORAL_INFORMATION_AUDIT.md",
+      "bytes": 13955,
+      "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291",
+      "parts": [
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 1226,
+          "bytes": 13955,
+          "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291"
+        }
+      ],
+      "duplicate_of": "LATENT_TEMPORAL_INFORMATION_AUDIT.md"
+    },
+    {
+      "source": "outputs/forecast_control_remote_backup_20261004/OCCLUSION_KDA_INTERIM_REPORT_20261004.md",
+      "bytes": 48091,
+      "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 1037,
+          "bytes": 48091,
+          "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313"
+        }
+      ],
+      "duplicate_of": "OCCLUSION_KDA_INTERIM_REPORT_20261004.md"
+    },
+    {
+      "source": "outputs/forecast_control_remote_backup_20261004/README.md",
+      "bytes": 63667,
+      "sha256": "d5ac9d5a389c9f6a37c0f9ddc216d8995770f37cc60863cfa476233835b54058",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 107039,
+          "bytes": 57383,
+          "sha256": "bab5edaf25ef7c428a05e7f8797c561dc63ba5426465b4bbee8c12d823f57caa"
+        },
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 40850,
+          "bytes": 2641,
+          "sha256": "f9a66d54a9742ca5a6aafb30dca133f8401d42244d3a62d1d3881a54f481700e"
+        },
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 43779,
+          "bytes": 2114,
+          "sha256": "8b7960de25b2c7802a6b232d266e6ff49e99c2130d70b1634cf56ca414ae0da4"
+        },
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 82319,
+          "bytes": 1529,
+          "sha256": "4de326ac7d7c5c6c2de218970cfa640e5d68242810857fddb49f4fda2bf65556"
+        }
+      ]
+    }
+  ],
+  "cleanup": [
+    {
+      "path": ".pytest_cache",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 45643,
+      "files": 6
+    },
+    {
+      "path": "autoresearch_nav/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 44149,
+      "files": 4
+    },
+    {
+      "path": "experiments/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 584808,
+      "files": 40
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/linear-advantage/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 1915,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/linear-physical/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 2043,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/logistic-utility/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 2783,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/mlp-physical/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 2913,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/mlp-physical-utility/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 2907,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/mlp-utility/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 2793,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/rule-forward/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 831,
+      "files": 1
+    },
+    {
+      "path": "outputs/autonav-overnight/experiments/rule-forward-cv/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 860,
+      "files": 1
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/experiments/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 60583,
+      "files": 4
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/shixu/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 77099,
+      "files": 11
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/tests/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 130434,
+      "files": 16
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/vendor/crowd_sim/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 379,
+      "files": 1
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/vendor/crowd_sim/envs/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 19533,
+      "files": 2
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/vendor/crowd_sim/envs/policy/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 9853,
+      "files": 5
+    },
+    {
+      "path": "outputs/forecast_control_remote_backup_20261004/vendor/crowd_sim/envs/utils/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 17564,
+      "files": 8
+    },
+    {
+      "path": "shixu/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 95074,
+      "files": 16
+    },
+    {
+      "path": "tests/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 349655,
+      "files": 51
+    },
+    {
+      "path": "vendor/crowd_sim/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 362,
+      "files": 1
+    },
+    {
+      "path": "vendor/crowd_sim/envs/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 19709,
+      "files": 2
+    },
+    {
+      "path": "vendor/crowd_sim/envs/policy/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 9820,
+      "files": 5
+    },
+    {
+      "path": "vendor/crowd_sim/envs/utils/__pycache__",
+      "reason": "Regenerable interpreter/test cache",
+      "bytes": 17761,
+      "files": 8
+    },
+    {
+      "path": "outputs/buildcheck/shixu-0.1.0-py3-none-any.whl",
+      "reason": "Regenerable wheel; no source references",
+      "bytes": 34715,
+      "files": 1
+    }
+  ]
+}

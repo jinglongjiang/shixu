@@ -1,3 +1,27 @@
+# Value Contracts and Navigation Defects
+
+Execution-contract corrections, value attribution and repeatability checks. Missing online RL replay prevents a unique training-coverage diagnosis. Single-root findings must not be generalized.
+
+## Archive Policy
+
+This is a classification-only consolidation. Original stage text, numbers, negative results and withdrawn claims are preserved byte-for-byte below. Later closure reports supersede earlier proposed next steps. The historical README is retained in thematic sections. Snapshot variants are labeled by their original paths. Frozen protocols and autoresearch_nav/program.md are not changed.
+
+## Stage Index
+
+- [TEMPORAL_DECISION_PROBLEM_AUDIT.md](#stage-1)
+- [CV419_VALUE_TRAINING_CONTRACT_AUDIT.md](#stage-2)
+- [repeatable-navigation-defect-audit.md](#stage-3)
+
+
+---
+
+<a id="stage-1"></a>
+
+## Source: TEMPORAL_DECISION_PROBLEM_AUDIT.md
+
+Original full-source SHA-256: 83baecad860979fe13d5d53f5ef8806de14b4da433038009279e56da38057000
+
+<!-- BEGIN PRESERVED SOURCE -->
 # Temporal Decision Problem Audit
 
 日期：2026-10-05。开始于02:23:42 UTC；本轮为限定范围诊断，不是新的模型竞赛或完整基线复现。
@@ -407,3 +431,400 @@ circle的排序缺陷对这项首动作变化仍成立；square的成功依赖�
 /home/abc/workspace/shixu/outputs/action_ranking_attribution/
 
 protocol.json记录允许干预；manifest.json记录运行环境；root_05/21.json含全部80动作逐层分数、真实一步奖励、已有Q^pi、5条新平滑绕过续跑和差值分解；queries_05/21.pt含未改变的历史及所有查询张量；archive_verified.json记录归档校验。
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="stage-2"></a>
+
+## Source: CV419_VALUE_TRAINING_CONTRACT_AUDIT.md
+
+Original full-source SHA-256: 787206ad9ef57554feb14e8851951e63189416545dc9a0e5be8d27ddada2c631
+
+<!-- BEGIN PRESERVED SOURCE -->
+# CV419 Value Training Contract Audit
+
+日期：2026-10-05。对象固定为20人circle / case80009 / tick18 / 4.50s。
+
+本轮只读：没有训练、修改模型、增加历史、新建消费者、扩场景或继续处理20人square / 80005。CC的V8 KDA历史干预不参与这里的解释。
+
+## 1. 结论
+
+按指定的四类结论，正式选择：**发现训练/执行合同不一致。** 具体是测试时按未平滑grid命令评分，却执行平滑命令；不是MC回报递推或replay标签错位。
+
+**但这项不一致不足以解释80009的主要高估。** 用实际执行命令重新构造查询，final仍选17，9仍排54。严重偏差仍在后续标量价值与真实续跑之间。
+
+这次还确定了时间顺序：**相对同一final续跑参考，IL50已经认为17优于9；final将17从第22推到第1，而17的绝对高估略有下降，不是上升。** 因此撤回“严重高估必然在在线MC阶段才产生/放大”的解释。
+
+为什么产生这种偏差，现有资产仍不能区分训练覆盖、泛化、表示及策略目标差异。下面分别记录已证实、可疑和缺失证据，不把检查到了设计差异写成已经找到根因。
+
+## 2. 训练合同核对表
+
+同一fresh-CV419训练运行：128条成功ORCA示范、50个IL epoch、3000个在线MC episode。实际metadata为reused_il_sha256=null，不是复用V8权重。原训练源码快照与当前对应文件核对一致。
+
+| 核查项 | 实际合同与核对结果 | 判断 |
+|---|---|---|
+| IL输入/target | 执行动作前的合法历史H_t对应G_t；G_t=r_t+0.99G_(t+1)。成功ORCA示范回报，不是80动作Q标签 | 已证实；不能把ORCA回报与final策略回报混为一物 |
+| 在线MC target | 同一回报递推，label来自实际环境奖励；监督model(H_t)而非动作编号 | 源码已证；原在线replay未保存，无法逐样本复核 |
+| terminal | 成功最后一步target=1；碰撞/超时最后一步target=-0.5；之后回报为0，不bootstrap，不保存post-terminal训练状态 | 源码、单测已证；128条IL均成功，未将其冒充失败episode动态核验 |
+| gamma位置 | MC每控制步乘0.99；候选评分r+0.99V；控制步0.25s，没有另乘时间指数 | 已证实 |
+| state/label时序 | runner在env.step前记录tokens，step后记录r_t；Replay.add把相同index的H_t和G_t配对 | 已证实；未发现off-by-one |
+| 环境reward与IL归档 | 重放全部128条原指令、6245帧；reward、token、实际robot速度最大误差分别为0、0、0；MC labels重新计算一致 | 已证实；不是新场景实验 |
+| IL动作 | ORCA连续动作直接执行，不经过80动作编号或本策略平滑；6237/6245条指令不在grid上 | 已证实；这是teacher协议，不是编号bug |
+| RL执行动作 | phase=train关闭test-time过滤/risk/平滑；非探索时执行所选grid命令，探索时执行随机grid命令 | 源码已证；动作轨迹/replay缺失，不能宣称逐步核过原3000回合 |
+| 测试执行动作 | 先按u_i构造successor和评分；再执行a_i=0.3a_(t-1)+0.7u_i，首步无previous时例外 | **已证实的评分/执行不一致** |
+| 动作编号/存储 | action_space顺序固定；episode保存实际连续命令；value replay不以编号作为监督，训练的是state value | 未发现编号错位；原RL逐步选择编号未存，不能补推 |
+| train/test续跑策略 | 在线含epsilon探索且无test过滤/risk/平滑；部署为greedy并加这些规则；IL续跑又是ORCA | 已证实的行为策略/目标差异；尚未证明这是80009根因 |
+| terminal候选评分 | score始终加gamma V，没有terminal mask；与终止MC不bootstrap的合同不同 | 静态缺口真实；80009的80个根动作均非终止，不能解释该root |
+| 80009 immediate reward/后处理 | 17/9真实与解析首步reward均0；80动作均未被硬过滤；17/9无risk扣分 | 已证实；此次错排不是这两个动作的即时奖励或过滤造成 |
+
+源码定位：shixu/runner.py::run_episode，shixu/replay.py::returns/add/sample，shixu/training.py::train/update，shixu/forecast.py::ForecastSuccessorValueModel.forward/supervised_loss，shixu/policy.py::aligned_candidates/score/predict。环境终止奖励见vendor/crowd_sim/envs/crowd_sim.py::step。
+
+### 2.1 合同修复的范围
+
+最小评分/执行修复应把每个grid index先映射成即将执行的平滑命令，再用这份命令一致地计算successor、即时奖励、clearance、过滤和value；选中后直接执行它，不重复平滑。训练阶段alpha=0，应保留原训练行为。动作编号、历史写入频率和80个候选数量不能改变。
+
+**本轮没有实施修复。** 既有A线已完成这项root级对齐诊断，不需要重跑80条续跑：final仍选17，预测Q=0.668024；真实Q=-0.115502。因此不能承诺修合同会挽救80009。
+
+terminal mask是另一个静态合同问题，单列记录，不把无关缺口混入本root的修复或归因。
+
+## 3. IL到final：完全相同root/history/80 actions
+
+仅有同一运行的il.pt和model.pt；本地运行目录及对应原备份没有合法中间checkpoint。其他seed419版本不是这次训练的中间权重。
+
+动作index从0开始，名次从1开始。共同参考为**已归档final-CV419策略的实际平滑首动作 + 原策略续跑**：Q^pi(17)=-0.115502151，Q^pi(9)=+0.575354750。它不是Q*，也不是IL策略自己的续跑回报。
+
+| checkpoint / 查询合同 | 17分数 | 17名次 | 9分数 | 9名次 | 17-9分差 | 80动作Spearman / Kendall | 选中index |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| IL50 / 原grid-CV | 0.685344 | 22 | 0.627119 | 66 | +0.058225 | 0.560338 / 0.411392 | 34 |
+| RL3000 / 原grid-CV | 0.667977 | 1 | 0.623940 | 53 | +0.044038 | 0.244187 / 0.162658 | 17 |
+| IL50 / 实际平滑命令-CV | 0.690071 | 25 | 0.647087 | 69 | +0.042983 | 0.548312 / 0.405696 | 34 |
+| RL3000 / 实际平滑命令-CV | 0.668024 | 1 | 0.645167 | 54 | +0.022858 | 0.171449 / 0.116456 | 17 |
+
+grid评分对照的是同编号的平滑首动作Q，故该两行的相关性是原系统评分与真实执行后果的一致性，不是严格同动作的critic准确度；下面按实际命令对齐误差。
+
+| checkpoint，实际平滑命令-CV | 17预测V | 17预测Q减实际Q | 17预测V减实际tail | 9预测V | 9预测Q减实际Q | 9预测V减实际tail |
+|---|---:|---:|---:|---:|---:|---:|
+| IL50 | 0.697041 | +0.805573 | +0.813710 | 0.653623 | +0.071732 | +0.072457 |
+| RL3000 | 0.674772 | +0.783527 | +0.791441 | 0.651684 | +0.069812 | +0.070517 |
+
+两动作首步reward=0、均非终止，因此actual tail=(Q-r)/0.99：17为-0.116669，9为+0.581166。
+
+**事实：** 相对共同final参考，两个阶段都严重高估17；9也略高估，不是绝对价值低估。final的17高估减少0.022046，但排序上升至第一；两两分差还缩小了。不能用一个17-9分差说明全部80动作排序健康，也不能说“RL把17的绝对高估放大”。
+
+**边界：** IL学的是ORCA续跑的回报，在线学的是变化中的训练行为策略回报。本表证明相同外部参考下的阶段差异，不证明IL的teacher标签错误、在线训练因果性退化，或critic对其条件期望价值存在统计意义的普遍失准。这里只有一个完整隐藏世界、一种共同continuation。
+
+已缓存一步干预也按相同权重复核：同actor真实p/v替换后，final仍是17第一、9第54；实际合法下一帧使9/17分别为第9/12，但第一变成12，其既有续跑仍超时，80动作Spearman反而为-0.155016。局部两两顺序纠正不等于总体排序或终局改善。
+
+## 4. 覆盖、target与泛化证据
+
+### 4.1 IL数据及相邻样本
+
+全部6245个IL target均为正，范围0.425590至1，均值0.788674；5%/50%/95%分位为0.598956/0.785678/0.980100。它们来自成功ORCA示范，不能当成在线target分布。
+
+| 同一6245个IL训练状态，对原ORCA MC label | MSE | MAE | 平均预测减label |
+|---|---:|---:|---:|
+| IL50 | 0.001359 | 0.024820 | +0.000043 |
+| RL3000 | 0.061147 | 0.191726 | -0.184281 |
+
+说明IL能够拟合已有teacher数据、final不再同样贴合该旧teacher目标。**不是独立测试误差，也不能单凭这张表判定遗忘、训练失败或80009根因。**
+
+覆盖检索规则先于residual检查冻结：robot特征归一化；最近5个有效actor的相对p/v/r、age/presence用Hungarian匹配；每个IL episode只取一个最近状态，再选8个不同episode。这个局部距离不含额外actor或完整历史，没有事后调“相似”阈值。
+
+| 被查输入 / 每组8个不同IL episode | 相邻MC target范围 | IL50相邻MSE / bias | final相邻MSE / bias |
+|---|---:|---:|---:|
+| root当前局部输入 | 0.724980至0.777821 | 0.000161 / -0.003569 | 0.081123 / -0.276702 |
+| action17执行命令-CV successor | 0.724980至0.770043 | 0.000432 / -0.006124 | 0.101899 / -0.297229 |
+| action9执行命令-CV successor | 0.703448至0.762343 | 0.000406 / -0.008996 | 0.103326 / -0.300016 |
+
+**已有相近局部几何，不能说IL完全没见过类似局面。** 但它们均是5人成功ORCA轨迹，不是80009的完整20人状态或同历史反事实；不能用最近邻标签直接替代该root的真实Q。
+
+### 4.2 在线MC证据的上限
+
+原3000回合日志包含2710成功、178碰撞、112超时。不能说在线从未见过失败。六个500回合块的成功/碰撞/超时依次为365/71/64、432/51/17、463/20/17、476/17/7、484/12/4、490/7/3；日志里的最后minibatch value loss均值由0.101689降至0.052675。
+
+**缺失证据：** 原RL replay、每步合法观测/动作编号/指令、每个MC target、minibatch索引、优化器状态及中间权重均没有保存。日志return是sum(rewards)，不是各状态的折扣MC label；最后一个batch loss不是全replay误差。因此无法核定是否访问80009相邻状态、17/9 successor类型，或具体哪些负target被采样训练。
+
+### 4.3 20人分布外问题单列
+
+| 输入统计量 | IL全部6245状态范围 | 80009 root | 能说明什么 |
+|---|---:|---:|---|
+| 当前有效actor数 | 2至5 | 14 | 明确超出IL人数/集合规模 |
+| 中心距离4m内actor数 | 0至5 | 9 | 明确超出局部4m密度范围 |
+| 中心距离3m内actor数 | 0至5 | 5；17/9查询为6 | root在边界，两个执行查询超出 |
+| 中心距离2m内actor数 | 0至5 | 2 | 未超出 |
+| 最小表面间距m | 0.011953至7.058117 | 1.086005 | 未超出 |
+| 最大age / 最大inverse-TTC | 0至2 / 0至1.722436 | 1.5 / 0.394614 | 未超出 |
+| robot速度 / goal距离 | 0至1.000100 / 0.301079至8.301580 | 0.469402 / 6.878537 | 未超出 |
+
+20个存储槽位不能单独当作网络读到了数字“20”；这里用presence统计实际有效actor，padding不算密度。CV查询的minimum age为0.25，而IL当前输入至少有一个age=0 actor；这是假想查询与真实观测的合同差异，未单独验证因果，observed查询标记本身也不能直接当作critic输入原因。
+
+只汇总原192条评估，不新增测试：5/10/20人circle分别31/32、32/32、31/32成功；square分别26/32、25/32、22/32成功。80009是原20人circle的唯一失败。**不能拿一个高密度错排，推成circle总体密度崩溃或确认OOD根因。**
+
+原cohort还缓存4个5人成功状态的selected-policy续跑回报，可读取V与该回报的差异，但没有同口径5人80动作Q表，也没有匹配失败状态。它们不足以比较5人和20人的排序误差，更不能补齐原RL覆盖。未新增5人rollout或处理20人square / 80005。
+
+## 5. 根因表与唯一下一步
+
+| 假设/事项 | 证据等级 | 本轮结论 |
+|---|---|---|
+| MC gamma、reward或state/label错位导致高估 | 已证实核对项 | IL重放与递推全部一致；没有发现此类错误。RL只能核源码，缺逐样本资产 |
+| grid评分/平滑执行不同 | 已证实缺口 | 可做局部合同修复；按执行命令对齐仍选17，不能解释主要高估 |
+| terminal候选仍加V | 已证实静态缺口 | 该root全部根动作非终止，不是此处原因 |
+| 严重17-9错排仅在RL后产生 | 已证实反例 | IL相对同一final参考已排反；final提升17名次但降低其绝对高估 |
+| 在线MC导致整体排序变化 | 已证实阶段变化；因果未知 | rho下降、argmax变化；没有中间权重/replay，不能定位哪次更新或目标导致 |
+| 成功ORCA teacher与测试策略回报不一致 | 已证实目标不同；机制可疑 | teacher数据全正、IL可拟合；final参考不同，不能断言teacher target错误 |
+| 20人集合规模/密度泛化造成80009偏差 | 有证据支持的可疑解释 | count/density确有OOD；其他统计仍在范围，circle总体SR没有下降。尚未验证根因 |
+| 原RL未覆盖17附近的负target | 无证据 | replay未保存；日志确实有失败，不能臆测访问和采样分布 |
+| 表示、temporal memory或value head本身有缺陷 | 无足够归因证据 | 未做表示/共同head干预；不能把标量输出差异定位到某层，更不能连接CC/KDA |
+| 合法历史能够修正CV419这次高估 | 无证据 | 本轮不做历史干预；V8 KDA自身结果不能解释CV419 |
+
+**唯一最小下一步：统一候选评分与实际执行命令的合同，做缓存80009回归。** 不训练、不改critic、reward、观测或历史。验证80个命令一一对应、无重复平滑、phase=train行为不变，并要求修后评分与既有executed-CV诊断逐项一致。该缓存证据已预示17仍会被选中，故这是正确性修复，不是拟议的新算法或预期挽救。
+
+本轮只读审计到此停止，不自行修科学核心或启动复现训练。修复后的高估仍需训练过程证据；目前不能诚实回答“17高估的唯一训练根因已经查明”。
+
+## 6. 可复现资产
+
+诊断脚本：experiments/cv419_value_contract.py。正确性测试：tests/test_cv419_value_contract.py。prepare先冻结规则、9个输入文件哈希及科学核心；evaluate只读取资产、重放原IL指令并评估固定权重。原80009的80条续跑和A线查询张量直接复用，没有新穷举。
+
+正式计算使用原4090 / Python3.10.19 / Torch2.9.1+cu128，耗时10.92s，不含源码核查、实现或传输。这不是控制推理延迟。final的全部原评分对旧A线误差<=1e-7。
+
+本地全套测试163 passed、3 skipped；远端新增5个测试全部通过。112个源码/输入/结果文件远近逐个SHA256一致；4个自动生成pytest cache文件不作为研究资产。远端本轮自建RAM目录归档后已删除，未下载大资产至系统盘。
+
+| 资产 | SHA256 |
+|---|---|
+| 科学核心，未修改 | ca46069a6d8f70e5881b8ac227be7fbd6a54f710620d000825ee7fd2a62b1671 |
+| IL50 checkpoint | 9574d3cb55ba237830b68ee10bd5d18226be3672ee612046a92c3845e5b7a7ea |
+| final checkpoint | 1f4c5d8f68a92276ccf5a3e2a4bbef86daa926645c8d89667107a11cd58bd8b1 |
+| 128条IL示范 | 2b8b7adfa38e34a4d53dbdcf8931c5270716a047b7bb2785d27449899bcd00ff |
+| 本轮protocol | 98c4305071604ce55ff5ad2b9c7da192c8ed67f7ae90a874b73a6f2e518843a0 |
+| 本轮结果 | 002f2679b1919e5dd5e3cf992e337e626bfbed21dbf35c74eb90fed93f7680af |
+
+完整证据目录：
+
+/home/abc/workspace/shixu/outputs/cv419_value_contract/
+
+protocol.json保存预设规则；result.json包含全部80动作分数、阶段统计、近邻、日志和分布；il_predictions.npz保存全部6245标签及两个权重预测；remote_hashes.json和archive_verified.json记录归档核验。权重/原轨迹留在本地，不推送大文件至Git。
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="stage-3"></a>
+
+## Source: repeatable-navigation-defect-audit.md
+
+Original full-source SHA-256: e26512a67096f6aa5850d25a9ddf520089d3fa60c29c13f1bf8c34c1871fa7f9
+
+<!-- BEGIN PRESERVED SOURCE -->
+# Repeatable Navigation Defect Audit
+
+日期：2026-10-05。状态：完成。1024个闭环episode、1040条首动作真实续跑，无训练或新模型。
+
+## 结论
+
+**重复的square低进度超时真实存在；发现集出现多个可首动作挽救的value-ranking案例，但唯一提名的跨人数错排候选没有通过独立确认。本轮没有问题进入新算法设计。**
+
+独立确认的4个root，320个首动作全部超时，且每root的80个原Q完全同分。不能把这些root说成已证实的首动作错排，也不能据此说整个episode不存在多步改善空间。停止本轮首动作错排候选，不改root、标签或consumer救结果。
+
+## 1. 问题与冻结合同
+
+只问：修正执行合同后的母体，是否在多个独立case中重复选择有真实代价、且首动作可挽救的控制？不预设时序、表示、价值学习、规划或后处理是答案。
+
+- 继承执行合同修正9c7c62a，在本普查分支对应354df94。successor、reward、clearance、risk/filter与执行命令共用一次平滑后的candidate；不再次平滑。
+- 固定既有fresh-CV的419/443/467/491权重，每个均为128条IL示范、50个IL epoch、3000个在线MC episode。权重、奖励、观测、历史、动作支持和评估器不变。
+- 发现集：80000–80031，5/10/20人，circle/square，四权重，共768个episode。原80009没有特殊准入或优先级。
+- 全部评估在同一3060、PyTorch2.1.0+cu121环境执行。并行仅分配独立episode/root，真实续跑仍调用原标量predict，不引入批量近似策略。
+- 健康合同指执行合同及回归检查通过，不意味着critic已经校准，也不证明训练覆盖充分。
+
+## 2. Failure Atlas：已完成事实
+
+768个完整闭环，共65,590个控制步。所有成功、碰撞、超时保留。不是重新训练后的SR比较，也不据此评价KDA。
+
+| 人数 | geometry | episode数 | 到达 | 碰撞 | 超时 |
+|---:|---|---:|---:|---:|---:|
+| 5 | circle | 128 | 123 | 0 | 5 |
+| 5 | square | 128 | 102 | 0 | 26 |
+| 10 | circle | 128 | 122 | 0 | 6 |
+| 10 | square | 128 | 99 | 1 | 28 |
+| 20 | circle | 128 | 121 | 2 | 5 |
+| 20 | square | 128 | 93 | 3 | 32 |
+| 合计 | | 768 | 660 | 6 | 102 |
+
+| checkpoint seed | 到达/192 | 碰撞 | 超时 |
+|---:|---:|---:|---:|
+| 419 | 163 | 1 | 28 |
+| 443 | 156 | 3 | 33 |
+| 467 | 183 | 0 | 9 |
+| 491 | 158 | 2 | 32 |
+
+记录字段包括case、seed、人数、geometry、终局、失败阶段、到目标距离、活跃/可见人数、局部密度、真实最小间距、grid编号、平滑前后命令，以及每步80动作的value、immediate reward、raw分数、filter mask、risk和final分数。排名可由保存分数稳定重建。压缩trace共约105.65MB。
+
+### 方法盲的行为标签
+
+1. Collision：原评估器判定碰撞。
+2. 持续低进度超时：最终超时，且t>=2秒后存在32控制步/8秒区间，到目标净进度<=0.8米，区间内距离目标始终>1米。
+3. 其他超时。
+
+低进度只是行为描述，不表示一定存在安全通路；朝目标净进度也没有被替换成新奖励。89个低进度超时、13个其他超时、6个碰撞。局部密度使用合法轨迹中表面距离<=2米的actor数除以半径2米圆面积，不能冒充真实未见人群密度。
+
+### 重复性
+
+| 行为/配置 | 失败episode | 独立case | 同case在至少2个seed重复 |
+|---|---:|---:|---:|
+| 低进度超时 / 20 square | 32 | 17 | 9 |
+| 低进度超时 / 5 square | 22 | 15 | 5 |
+| 低进度超时 / 10 square | 22 | 13 | 6 |
+
+这是最多的三个行为stratum，按冻结排序进入headroom。至少3个独立case是研发筛选门槛，不是显著性检验。seed不是独立场景。碰撞6次分散在不同配置；20-square虽有3个不同碰撞case，但不是本轮发生率最高的前三stratum，未追加碰撞穷举。
+
+**现在能够说：square低进度超时重复出现。不能说：它由高密度泛化、缺历史或错误critic造成。5人square也存在同类行为。**
+
+## 3. 冻结动作级headroom
+
+在任何新续跑结果前冻结：每个stratum取case编号最早的3个独立失败case，每case取最低的失败seed。
+
+| 配置 | case / seed | root时间 |
+|---|---|---:|
+| 20 square | 80000 / 491 | 2.00s |
+| 20 square | 80001 / 419 | 2.00s |
+| 20 square | 80002 / 443 | 2.00s |
+| 5 square | 80005 / 443 | 9.50s |
+| 5 square | 80007 / 419 | 7.50s |
+| 5 square | 80009 / 419 | 14.50s |
+| 10 square | 80004 / 419 | 2.00s |
+| 10 square | 80005 / 443 | 10.25s |
+| 10 square | 80009 / 419 | 3.75s |
+
+root规则：低进度取首个合格区间起点；其他失败取终局前10秒中首个t>=2秒、合法表面间距<=0.8米的状态，否则取该10秒区间起点。这些root不是按oracle收益或某方法是否获益挑选。
+
+每root的80个candidate均先转换为实际平滑命令，根动作只执行0.25秒，此后用同一checkpoint的修正母体、合法观测续跑到原终止。原奖励、gamma=0.99，得到Q^pi而不是Q*。baseline分支必须重现原终局、整段命令、折扣回报和时长。
+
+所有分支保留终局、Q、用时、最小间距。成功但最小间距<0.02米单列为fragile，不计为安全合格挽救；这是提前冻结的诊断筛选，不修改原奖励、碰撞判定或母体filter。
+
+### 定位合同
+
+- raw-top真实成功、final-top失败：直接支持后处理选错。
+- 同actor支持的真实一步successor只替换value查询后，选中实际成功动作：支持该successor/query接口有可恢复空间。
+- 存在安全合格成功首动作，raw排名>=10，真实一步查询仍未选择成功动作：记value-ranking residual。
+- 80动作没有成功：只说明这个root、这个共同续跑策略下没有单步挽救。
+- 其余情况：未定位。不得硬分类为时序或critic原因。
+
+value-ranking residual不是唯一训练原因。若成功动作同时被filter挡掉，必须并列记录，不能把混合问题写成纯critic缺陷。真实一步查询的负结果也只约束这个冻结consumer。
+
+### 完整发现块结果
+
+9个root的baseline分支全部复现归档命令，最大命令偏差0；终局、时长相同，折扣回报最大偏差2.78e-17。720条首动作续跑完成，没有只保留有利动作。
+
+| 人数 | case / seed | 原动作 | 到达动作数/80 | 最佳安全到达动作 | raw名次 | Q增量 | 最小间距 | 定位 |
+|---:|---|---:|---:|---:|---:|---:|---:|---|
+| 20 | 80000 / 491 | 44 | 1 | 56 | 21 | +0.378389 | 0.0941m | raw错排，同时filter挡掉 |
+| 20 | 80001 / 419 | 10 | 0 | NA | NA | NA | NA | 此root无单步挽救 |
+| 20 | 80002 / 443 | 4 | 0 | NA | NA | NA | NA | 此root无单步挽救 |
+| 5 | 80005 / 443 | 38 | 0 | NA | NA | NA | NA | 此root无单步挽救 |
+| 5 | 80007 / 419 | 70 | 48 | 34 | 69 | +0.671730 | 0.2519m | value-ranking residual |
+| 5 | 80009 / 419 | 77 | 0 | NA | NA | NA | NA | 此root无单步挽救 |
+| 10 | 80004 / 419 | 65 | 4 | 79 | 78 | +0.600884 | 0.1883m | value-ranking residual |
+| 10 | 80005 / 443 | 32 | 44 | 36 | 5 | +0.676084 | 0.1947m | 真一步查询选择可成功动作31 |
+| 10 | 80009 / 419 | 12 | 35 | 72 | 49 | +0.455578 | 0.1212m | value-ranking residual |
+
+全部原分支均超时。最佳安全到达动作按原Q选取，不是擅自按进度排序。上述Q为根状态起算的同一修正策略Q^pi；挽救数不是部署后的SR。
+
+5个root可以挽救，4个不能在该root靠首动作挽救。没有证据将四个负root说成整个episode没有多步改善空间。也没有出现“纯后处理足以纠正”的统一三个case。
+
+### Value误差到底是什么
+
+下面只列三个未被filter挡掉的value-ranking案例。预测是未过滤的r+gamma V；真实是实际执行首动作、共同续跑至终局的Q^pi。三个case的首步reward预测误差均为0，因此不能用首步reward误差解释分差。
+
+| 配置/case | 原动作预测Q | 原动作实际Q | 最佳安全到达动作预测Q | 该动作实际Q |
+|---|---:|---:|---:|---:|
+| 5 square / 80007 | +0.739417 | -0.090563 | +0.700105 | +0.581166 |
+| 10 square / 80004 | +0.360628 | -0.072598 | +0.336004 | +0.528285 |
+| 10 square / 80009 | +0.573102 | -0.098305 | +0.559764 | +0.357272 |
+
+这三例都高估了原失败动作。但好动作并非统一被低估：80004被低估，另外两个仍被高估，只是原失败动作高估更多。不能把新发现统一写成“好动作估低了”，也不能把同一续跑下的误差认作最优V*错误或唯一训练病因。
+
+## 4. Fresh确认与停止规则
+
+### 原始逐配置门槛：未通过，保留
+
+初始脚本额外要求一个人口/geometry stratum的3个root全部被挽救且同阶段。三个stratum均未满足，nominee.json保留key=null。该附加限制比用户提出的“至少3个独立case同类缺陷”更窄；它不能被解释为所有配置合并后也没有重复错排。
+
+### 探索性跨配置发现：单独标记，先冻结再确认
+
+排除20人中同时被filter阻挡的混合case后，仍有三个独立case满足：
+
+- 同为square低进度超时；分别5/10/10人，case80007/80004/80009。
+- 同一CV419权重，原raw-top就是最终选择，filter没有杀掉最佳成功动作。
+- 安全成功动作raw排名69/78/49；真一步同actor查询仍未选到成功动作。
+- 只替换首个0.25秒命令即可由超时变到达，原Q改善0.456–0.672。
+
+**这是跨case、跨人数的标量价值排序残差候选，但尚未证明跨训练seed稳定，更未定位训练覆盖/表示/学习目标的唯一原因。** 不能把三次CV419结果说成三个模型seed复现。
+
+因此没有改写原协议或原分组负结果。另存pooled-confirmation-protocol.json，在任何fresh运行前明确这属于发现后的探索性提名，不冒充原预注册逐配置门槛通过。
+
+独立确认只涉及该候选的square 5/10人、81000–81031及原四checkpoint，共256个episode；不借机扩到新场景、20人或其他机制。依旧先只跑parent，然后按人口5/10轮转、case编号升序、跨人口去重同case ID、最低失败seed，冻结最多4个低进度超时root。冻结后才做320条首动作续跑。
+
+至少2个不同fresh case继续满足**未被filter阻挡、raw-top=final-top、原value-ranking residual分类、安全合格挽救**，才确认这个局部问题候选。判据、root、真一步查询与安全screen不改；未通过即停止，不调整定义或追加case。
+
+### 独立确认结果：未通过
+
+先只跑parent，256个完整episode：5-square为96到达/32超时，10-square为104到达/24超时，没有碰撞。所有失败与成功保留。
+
+其中低进度超时在5人中有30个episode、18个独立case、7个跨seed重复case；10人中有24个episode、16个独立case、5个跨seed重复case。**行为的独立重复成立，未通过的是局部可挽救错排机制的独立确认。**
+
+| 人数 | case / seed | root时间 | 原动作 | 到达/80 | 碰撞/80 | 超时/80 | 80动作最大Q增量 |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 5 | 81000 / 491 | 7.25s | 34 | 0 | 0 | 80 | 0 |
+| 10 | 81001 / 419 | 8.25s | 22 | 0 | 0 | 80 | 0 |
+| 5 | 81003 / 419 | 2.00s | 60 | 0 | 0 | 80 | 0 |
+| 10 | 81006 / 443 | 11.25s | 28 | 0 | 0 | 80 | 0 |
+
+各root的80个原Q分别完全相等：81000=-0.089657842，81001=-0.093335638，81003=-0.072598453，81006=-0.105299223。不同根动作没有改变这些root的终局、剩余时长或原奖励回报；不能因为raw预测分数不同，就声称真实动作排序存在差异。最小间距存在变化，完整记录保留，但没有终局挽救或Q改善。
+
+4个native分支均通过整段回放parity。结果为0/4安全合格挽救、0/4同类局部缺陷；要求至少2个独立case的门槛未过。此结论也不依赖0.02米screen，因为到达分支本来就是0。
+
+原始逐配置门槛和探索性跨人数独立确认均未通过。后者严格沿用确认前冻结的规则，没有重选有利root或追加case。候选正式停止，不启动方法设计或训练。
+
+## 5. 已证实、推断、未知
+
+| 层级 | 结论 | 边界 |
+|---|---|---|
+| 已证实 | square低进度超时在多个case和checkpoint中重复 | 行为重复不等于已知同一病因 |
+| 已证实 | 发现集5/9 root可首动作挽救，其中三个未过滤的raw错排例来自CV419 | 不是跨seed稳定方法收益 |
+| 已证实 | 四个fresh root的80动作全部超时且Q完全同分 | 这些root没有首动作终局/Q headroom |
+| 有证据支持的资源判断 | 不应继续把本候选当成已确认、可局部纠正的value-ranking问题投入新模型 | 仅停止本轮候选，不否定value learning或全部square问题 |
+| 未知 | 超时是否由训练覆盖、表示、remaining horizon或更长动作序列造成 | 没有唯一原因证据；原在线MC replay仍缺失 |
+| 未知 | 强简单规则能否解决其他状态；新模型是否有方法增量 | 本轮未实现修复，不宣称复杂方法必要 |
+
+## 6. 唯一下一步
+
+**本轮不进入算法，停止首动作错排候选。** 只保留square低进度超时Failure Atlas作为尚未归因的行为证据。若下一轮继续这个行为，必须先验证多步干预是否有真实headroom；没有这项证据，不把它自动命名为planning问题，更不重启时序模型。当前没有已确认问题可以交给新算法。
+
+## 7. 工程、证据边界与资产
+
+首轮出现root日志列表与数组比较的TypeError，未涉及控制策略。implementation-correction.json记录原/修正脚本哈希；协议、核心源码、checkpoint与规则不变。已完成metadata不覆盖，孤立trace通过逐数组一致检查后补metadata。协议和负结果保留。
+
+测试：193 passed、3 skipped；三个legacy parity测试未设置原源码/checkpoint路径，未声称它们通过。
+
+发现与确认合计89,791个控制步。13个root、1040条不同首动作续跑全部保存；所有baseline命令回放偏差为0。校验协议、兼容性修正、核心源码、四权重与1024份trace哈希，没有覆盖冻结结果。逐配置负结果、探索性提名和独立确认分别存档，避免把探索性选择冒充原预注册主结果。
+
+完整性manifest SHA256：a85687a009ecd0c1ef9a782aa945294676ba1747bba9903e699b6ba621119acd。action-evidence.json包含13个root的80动作分数、真一步查询、原Q、终局、时长、最小间距及完整续跑命令哈希。图谱metadata、协议、summary及紧凑动作证据纳入Git；完整压缩trace和checkpoint保留本地，不声称单独clone仓库即可自包含复现。
+
+## 后续独立授权实验（2026-10-05）
+
+本报告的单步负结果不变。随后在用户新授权的有限多步实验中，同一4个fresh root各自出现了1秒或2秒连续原生控制后的合格到达序列，4/4通过预先冻结的多步headroom判据。该结果补上本报告“多步空间未知”一项，不改写单步错排确认失败，也不证明新算法成功。
+
+特别是持续原策略已选grid动作2秒就挽救3/4个root，复杂规划并非已证明必要。事后root时刻、在线触发、成功保护和简单持有之外的剩余方法空间仍未知。完整证据与边界另见：
+
+/home/abc/workspace/shixu/multistep-headroom-decision-test.md
+
+入口：experiments/repeatable_defect_audit.py。协议、运行环境、768条episode metadata、逐步trace、headroom选择和逐动作真实续跑记录保存在：
+
+/home/abc/workspace/shixu/outputs/repeatable_defect_audit/
+
+本轮没有新导航权重、KDA优化、奖励修改或新consumer。旧PaS、时序负结果和80009旧报告均未覆盖。
+
+<!-- END PRESERVED SOURCE -->
