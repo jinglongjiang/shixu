@@ -1,0 +1,1218 @@
+{
+  "format": 1,
+  "created": "2026-10-06T02:58:01.935Z",
+  "parent_commit": "23efb374db188e8b7d7f8c62cc99565545dada89",
+  "policy": "Only verified temporary worktrees and generated install artifacts are removed. Unique historical commits, source variants, patches, results and report text are preserved. No archived patch is applied to the active model.",
+  "worktrees": [
+    {
+      "source": "/home/abc/workspace/shixu_budget_design",
+      "expected": "dd5dcb9",
+      "tag": "archive/budget-design-20261004",
+      "commit": "dd5dcb9bae0e4a68bc981d7c5184292f89ff7c41",
+      "git_tree": "25d59eb13579d20c16cc48a21f9ebd0b389bb684",
+      "tracked_files": 67,
+      "preserved_by": "Annotated archive tag; restore with git worktree add <new-directory> <tag>"
+    },
+    {
+      "source": "/home/abc/workspace/shixu_compute_check",
+      "expected": "dbc720f",
+      "tag": "archive/compute-check-20261004",
+      "commit": "dbc720f72361cf0fa58acb33d7bcc4132926da1f",
+      "git_tree": "25b9a106bfd1077fdf2cb1ee4c703d4cdbf21d2a",
+      "tracked_files": 58,
+      "preserved_by": "Annotated archive tag; restore with git worktree add <new-directory> <tag>"
+    },
+    {
+      "source": "/home/abc/workspace/shixu_motion_design",
+      "expected": "54d19cc",
+      "tag": "archive/motion-design-20261004",
+      "commit": "54d19ccafb56823d75bf46860c90e308a718fa9c",
+      "git_tree": "be72e75e7c393f567e5fc4dc8d5fa7bd986a0b79",
+      "tracked_files": 64,
+      "preserved_by": "Annotated archive tag; restore with git worktree add <new-directory> <tag>"
+    },
+    {
+      "source": "/home/abc/workspace/shixu_query_design",
+      "expected": "36d1702",
+      "tag": "archive/query-design-20261004",
+      "commit": "36d1702852020e7b4e6bc50f718c003d1640a2d3",
+      "git_tree": "fbbb1e940edc8d12760cf2fb4fe6a3a74057f4f6",
+      "tracked_files": 66,
+      "preserved_by": "Annotated archive tag; restore with git worktree add <new-directory> <tag>"
+    }
+  ],
+  "archives": [
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005",
+      "target": "archives/cc-backstop-20261005.tar.gz",
+      "sha256": "b642ace965a5a78864ecb98b8f1d639ab3005fa586201ace4c2fb9cf5732258e",
+      "bytes": 352935,
+      "files": [
+        {
+          "member": "cc_backstop_20261005/CC_REPORT_20261005.md",
+          "bytes": 10849,
+          "sha256": "06621ce9d00e4313d8331567b4939782d0d5726203fa78817049669876a50089"
+        },
+        {
+          "member": "cc_backstop_20261005/docs/STEP1_NOHISTORY_ATTRIBUTION.md",
+          "bytes": 5036,
+          "sha256": "769b75d67fe6e1f6369b412fc348862872a7d1f30c6d6493c3685b7e37e9661b"
+        },
+        {
+          "member": "cc_backstop_20261005/docs/STEP2_HISTORY_ACTION_CONSEQUENCE.md",
+          "bytes": 8116,
+          "sha256": "4a268b11ef52d698e5d22494c713453b0743a94ff0815387de440550048aaf9f"
+        },
+        {
+          "member": "cc_backstop_20261005/docs/TOOL_PAST_WRITE_MASK_CLOSEOUT.md",
+          "bytes": 3218,
+          "sha256": "2a18c938f3db74b585dfda67764d338662999fbf4f49a4048e4979dcabf26330"
+        },
+        {
+          "member": "cc_backstop_20261005/past_write_mask.patch",
+          "bytes": 4492,
+          "sha256": "62ec71d63ff371933520e32a26b023d6928617faebea81b988a633f02da7da11"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/decision_loss_bayes.py",
+          "bytes": 6666,
+          "sha256": "b6520072a7cf10ed76f5c27890d2628cfaaca658751f47e8417c0b3c512e7338"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/smoke_branch.py",
+          "bytes": 3138,
+          "sha256": "4eb47d83da3996872d92962ddd3ccc9e5aba75c4a09b5789b84ce295ed1c31a5"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/step2_analyze.py",
+          "bytes": 3509,
+          "sha256": "9370f6c71eda124bfc6942833f482be2eacd9c26ad4a8a26a8ee5d78972fe531"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/step2_history_branch.py",
+          "bytes": 9967,
+          "sha256": "3f5ad58d39df7b54dc77e7559d80cc23c01f13af6bf3ee97f3085cc18df05874"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/step3_closeout.py",
+          "bytes": 6536,
+          "sha256": "a0d29a4bf8f13646477d8d9a167816e21045f0522339165d0b55e37e9a2e03f9"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/step3_switch_scope.py",
+          "bytes": 2711,
+          "sha256": "d393481b57817733c977272dfb4ac679b3580e40fee51c385dba191ce1d14437"
+        },
+        {
+          "member": "cc_backstop_20261005/proto/test_past_write_mask.py",
+          "bytes": 7945,
+          "sha256": "60af9160fe350e7dbb6b3083021ad8c4e619c50e4f3fd105e478ed9eb8310fda"
+        },
+        {
+          "member": "cc_backstop_20261005/results/decision_loss_bayes.json",
+          "bytes": 45118,
+          "sha256": "98917e65ad16959791055925e89ab507803a42823f6fcbad2db2eba22c26219c"
+        },
+        {
+          "member": "cc_backstop_20261005/results/grid_bayes.out",
+          "bytes": 2025,
+          "sha256": "699a01d20e08baad055afa9b8e2145e65d4bcd7a2bc9b547dc3b721b3e0e80f8"
+        },
+        {
+          "member": "cc_backstop_20261005/results/selfcheck_bayes.json",
+          "bytes": 24,
+          "sha256": "45f310039256cb27d544e7e2087fc34d5cc95ddda4590bf1099b830dc81a0588"
+        },
+        {
+          "member": "cc_backstop_20261005/results/smoke/step2_history_branch.json",
+          "bytes": 874,
+          "sha256": "405ca6a9885e556c14b3d0eb2a4167da97a5dd8d5c400da1fc926f34baef9a15"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s419/step2_history_branch.json",
+          "bytes": 27870,
+          "sha256": "4307a2e6a71cb6abe873b6fd11826035e12a3faeab6e42d5ad16c7a7874ee164"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s419.out",
+          "bytes": 9008,
+          "sha256": "8153568066ab98002316e0c8873ac2f215d52152214be3fa01812d3c2f705748"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s443/step2_history_branch.json",
+          "bytes": 27666,
+          "sha256": "a801f94b1d9412c154e5f92eafb9fa5127a1eb02d9f4080a22082b758d8064a5"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s443.out",
+          "bytes": 9058,
+          "sha256": "d844340b0940248be0334fb2410a8336da672c0f386ccd4dc5dd464e26c4ead5"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s467/step2_history_branch.json",
+          "bytes": 27895,
+          "sha256": "e84ddb85a58c77383d592143b3b2e7b28fc613b90c526f7db6bd55565b19d493"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s467.out",
+          "bytes": 9108,
+          "sha256": "6bd6ff4b0879d8ca2251a1bd313a20f2a01eda43a75f709e251377a6207197e7"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s491/step2_history_branch.json",
+          "bytes": 27854,
+          "sha256": "41f70c9710cbb46737c629f6a55aad7fbd88845184357f3cd59fa94ddcd62ff7"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step2/s491.out",
+          "bytes": 9132,
+          "sha256": "29045b0a242450d9c95cae59cfaeb6070928f1d763a16fcb1971ef2886355d61"
+        },
+        {
+          "member": "cc_backstop_20261005/results/step3_closeout.json",
+          "bytes": 94514,
+          "sha256": "52e64986bd67c15a5dab274600d656641a0ae4822c047049298ce4cd4dc8ffe3"
+        },
+        {
+          "member": "cc_backstop_20261005/results/unittest_past_write_mask_patched.json",
+          "bytes": 2264,
+          "sha256": "4000584ccd1b98f87c044d57f819c9b24f14cf1c6f68b1abfe759830fe699151"
+        },
+        {
+          "member": "cc_backstop_20261005/results/unittest_past_write_mask_pristine.json",
+          "bytes": 2171,
+          "sha256": "64a8747814b8cb0557b800e8eb75665ca9a464a515eb5b908c5a638a5130a68a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/.gitignore",
+          "bytes": 122,
+          "sha256": "d0eba6705f71948450941ef589ca2f65434721e2a2d8c712bc62758a55c34ce6"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/CIRCLE_HISTORY_CAUSAL_AUDIT.md",
+          "bytes": 19915,
+          "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/action_ranking_attribution.py",
+          "bytes": 15790,
+          "sha256": "de0941b516af9f04918c92efbc36b6192b364c4fde3d18719aad201eca5f9b4a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/circle_coupling_protocol.json",
+          "bytes": 2878,
+          "sha256": "1a4034d2fa886e403293053d7e71e4cf2b51d2eb7820b19b3e13c080e4b4a8a7"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/circle_coupling.py",
+          "bytes": 18472,
+          "sha256": "9bf465ec244aea96c069085591bd9a4379f31d1a232c1a86e1d83252193e1461"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/cv419_value_contract.py",
+          "bytes": 17468,
+          "sha256": "289da75cca98b07055bc84a4b94ba0d23fc2289b600b25ac33146bc0caab28c5"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/decision_state_results.py",
+          "bytes": 5587,
+          "sha256": "ad0daac81f19003d1c3cbfbcfc5fd4551d506da82625a8397b31ba64d5a0841e"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/decision_state.py",
+          "bytes": 16999,
+          "sha256": "65b82c9396cc3b92e69e3758950c1dda611b8bc99f1d01e32126207481ebbc82"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/failure_probe.py",
+          "bytes": 8203,
+          "sha256": "0983e1119196984d5c096a8ca2ea7ff42a18270ece8fc8610fde5e7bda727ca7"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/forecast_control_b_protocol.json",
+          "bytes": 4598,
+          "sha256": "cbbf9f397ea8effcfa1f868619d6c367a10754eab7b0b04c3f5267dd8b7f636a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/forecast_control_diagnostic.py",
+          "bytes": 17634,
+          "sha256": "cc843cf3858cf9c3992d674f392baba39d950f841b5a50e3a03a5138134c8cc2"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/forecast_control_protocol.json",
+          "bytes": 4764,
+          "sha256": "7c12cf45a721b0796223b9b503c489c37306c446645bbe90c0b2b615f0a3971c"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/forecast_control_results.py",
+          "bytes": 14000,
+          "sha256": "4fbda6391da0684be704083e3a8f0bb22dc4af5bf8ca548ffde3e02d69742067"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/forecast_control.py",
+          "bytes": 9581,
+          "sha256": "34cbcea5ee6857156d131ada15ac3a064c2d9580fd4e024f7cd2cee7979896f5"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/forecast_evidence.py",
+          "bytes": 33690,
+          "sha256": "e3798408795b5e46f910523294c394789df4df9b67b3d317a463f6dd058ff3a7"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/latent_decisions.py",
+          "bytes": 16375,
+          "sha256": "ee09e300bd42bc86e6a3e201e1b36ebe909a165696b1286332fc5e9cc9237645"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/latent_information_protocol.json",
+          "bytes": 1807,
+          "sha256": "edd66636764d5bcf54e131e38e60bac7b82f10fe9fdcd9a7db15557829f993e1"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/latent_information.py",
+          "bytes": 15425,
+          "sha256": "6ba1a77b23ae95860d34e78669b7b6fbe0b919dbdcd12a913093b812d5861e90"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/memory_runtime.py",
+          "bytes": 2048,
+          "sha256": "0b4a6351e731ed689724e49406c0ab14cd24d081424c846e5429d5bca9f59f8c"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/memory_spectrum.py",
+          "bytes": 4200,
+          "sha256": "a9c89465be67333ee5e49311c4cac31642f818741af73f7487bb554aee3c9fdf"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/motion_clock_probe.py",
+          "bytes": 17490,
+          "sha256": "2831724c2474980dd79736d6e11063509b238af93a4958060065d3ef896b5b67"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/multihorizon_control.py",
+          "bytes": 25143,
+          "sha256": "a042d99ac307e6bfb949a22a4bb407c5afe7737ad7a91015b6180ad03e61971a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/multihorizon_results.py",
+          "bytes": 6787,
+          "sha256": "17bd74767259b325b22eb403a2e70aa4a5efe84ea6fb8f75e1e70c50a1ca6dcc"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_address_protocol.json",
+          "bytes": 2412,
+          "sha256": "2a1890254d60b4578d9a7e848cfc42dfe130cfa8b9d678d05917763ee85ea703"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_branch_protocol.json",
+          "bytes": 3098,
+          "sha256": "d67ff62a22c0593f48713d3c77ecb9703ffd6fec6864a15547c4f9931bd59cb3"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_budget_protocol.json",
+          "bytes": 3234,
+          "sha256": "6d6d1a6725eceec81bc2a4ef705915c8c3c77f3f4fba1dc4469488124a87932f"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_context_events.py",
+          "bytes": 6268,
+          "sha256": "58d3ebcc9b3e7127be018e8340dc8c48f889b190cf0fa8ab0da1f51c4a28d9c6"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_context_protocol.json",
+          "bytes": 2105,
+          "sha256": "eba2521f943daf9146ea3cf42da026238b8aed4d0593fb4a7dc5f0819608c555"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_motion_protocol.json",
+          "bytes": 3690,
+          "sha256": "a93503697199cc7196034fa4ff5ab14e1858cf2062e386566c7439d52d47e7b6"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_observation_protocol.json",
+          "bytes": 2025,
+          "sha256": "1df3bbe0e99a269f71a753503212f80b217436aa22a75c26e410dfeafd0d2942"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_oracle.py",
+          "bytes": 4919,
+          "sha256": "7b34eed95fa8574143b89535afac05d2cd61bb7aac78296dce7090e556501f0b"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_protocol.json",
+          "bytes": 1831,
+          "sha256": "2345b27df30aa9659225b0feea49fc9f9a0cd8eab6f785527cd23c0e4b0bb081"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion_query_protocol.json",
+          "bytes": 4133,
+          "sha256": "9d51debec2aac7bfd0db8969fcb54961d76b61497bf6b7b376f171583085e466"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/occlusion.py",
+          "bytes": 39232,
+          "sha256": "9f34e2fa7e751c7cd8de0e1f1adbd24b2d4ec09ee34f230d220d824b1a6700e4"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/pas_temporal_probe.py",
+          "bytes": 14461,
+          "sha256": "dc41807b872b2b0831631531222526624bdf373d9ec333a7181220578bf6eb54"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/query_contract_probe.py",
+          "bytes": 6328,
+          "sha256": "31710a013740213909d24749b729c0b26d08fecf20fb1d87f93ca0325b9a66ba"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/ranking_audit.py",
+          "bytes": 15496,
+          "sha256": "af855ff28c0013abd09039db6dabe42398d3b854885bfaa239a6fc65c4337f51"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/read_amplitude.py",
+          "bytes": 2323,
+          "sha256": "5ab374cba51e41fef3c1f9e1f5d2cbeadd222beefb5c606a6c5686c2331432a6"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_collect.py",
+          "bytes": 2154,
+          "sha256": "1591c653f2bed5bb2be3143beea3cd725b7ecf63dc4cbbbf16aa5f092c11a51f"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_headroom.py",
+          "bytes": 7919,
+          "sha256": "1bce48ce4bcb82c9aef1463eff1f6b6a8774d0d0736b3d5af80f50cd195bf542"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_latency.py",
+          "bytes": 2799,
+          "sha256": "80e40549a9d83ed81d5b2f9e464bd28799758ce060ffc630d2f4f4bb578e36b2"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_memory_protocol.json",
+          "bytes": 2275,
+          "sha256": "d4e7bdf141ce649cc76d2b0f6391f702c85c760b21666c6a89b61eb28780550d"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_memory.py",
+          "bytes": 25094,
+          "sha256": "dd8fd12999fb56e36a09f9eeaf450a5fe2799f5f1d213850136015aa862f8d10"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_order.py",
+          "bytes": 9423,
+          "sha256": "5f38c7c850d3424954bc079ab7c5a2822b831d0058a8d27a33b7cc1181019594"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_problem_audit.py",
+          "bytes": 18094,
+          "sha256": "b24d1d0e2bd92a73efd7f7be2526adfe981906221906d52a68281895752f5219"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_protocol.json",
+          "bytes": 1181,
+          "sha256": "b56f5853c58e02a0b2696c61990797a09f69fbc15cf6bed6a7a838158813d497"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_rescue_protocol.json",
+          "bytes": 892,
+          "sha256": "8bde4712e11b7816141878bb710da1af7754e8c1d3666c760a4a3b332d95d15d"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_revision_shadow.py",
+          "bytes": 6472,
+          "sha256": "131280b1eafbe9507fe12b34a1dd3c9031c356d417b6b2f9ff7a1d19a1c96311"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/experiments/temporal_scale_protocol.json",
+          "bytes": 2734,
+          "sha256": "3fec89996ed3419cca3cb629f5bf021991fee9c1252ed5c4f215c167910a03a1"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/FORECAST_CONTROL_EXPERIMENT.md",
+          "bytes": 42594,
+          "sha256": "fdeecb188647d55887b698f99b41a120d5012ae9b677f7a388b217c1cf1b85e4"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/LATENT_TEMPORAL_INFORMATION_AUDIT.md",
+          "bytes": 13955,
+          "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/OCCLUSION_KDA_INTERIM_REPORT_20261004.md",
+          "bytes": 48091,
+          "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/pyproject.toml",
+          "bytes": 751,
+          "sha256": "d5c85caeef3ce944887176a009825ab57998edb7a0361ac653800655bdb9589e"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/README.md",
+          "bytes": 66480,
+          "sha256": "0f5332ec89c79e6ab9fc605bb8e502e3aca61323ac48851518db15cb3f732d9a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/__init__.py",
+          "bytes": 76,
+          "sha256": "3d72ff8e0d3b73faac9f8a50db5d02e9ff3f40e5fd798c490edc8cb49d34ce70"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/cli.py",
+          "bytes": 4456,
+          "sha256": "a6d679312978970526b3f52faf7cf74b2e29bd890137a90942746aa771a41410"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/default.ini",
+          "bytes": 1417,
+          "sha256": "9a1e13cf0812e8c33f9b1290592e38dd2f83637672558893bacce739023f7fd7"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/features.py",
+          "bytes": 7786,
+          "sha256": "d4d3f757483348f5c8335c55a6902fe71fd98dbf74ca31610b1cf35963f0e608"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/forecast.py",
+          "bytes": 13591,
+          "sha256": "b8067336d504e86780f9c8f9e442129788e314e02425936f742e23674f1fcd6e"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/model.py",
+          "bytes": 21043,
+          "sha256": "94befc7e3ea5ed5f87b6f82ab71ae77a493c0cfe40eb6a2f3dbeefc464ce4d4a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/motion.py",
+          "bytes": 11497,
+          "sha256": "24d85db898e6406277ed4b3511de83a283c151dce707d1c244c25fc567e17470"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/observations.py",
+          "bytes": 3258,
+          "sha256": "1831af18d03a76bfa2462f6b40c9c614a718a544edf14a390e768ef7cb267af6"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/policy.py",
+          "bytes": 9184,
+          "sha256": "22322da8addccbbed494ef4d3c229ea2c9abaf59141b5af2ddecadd0b4a8335a"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/replay.py",
+          "bytes": 1991,
+          "sha256": "8d50912b6527dfc9cfc8694adab0799104ae042d032e892466fd7347b6e9e31d"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/runner.py",
+          "bytes": 3261,
+          "sha256": "008e63bd3f533139fd7cf1782784a92a821cf1208a9badc9e63dbc215f1a8fbd"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/temporal.py",
+          "bytes": 8731,
+          "sha256": "d6e9c17b13390c1af3237c86dc4b3ba5c89d622d924eed0e903cd6c0d231129d"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/shixu/training.py",
+          "bytes": 4985,
+          "sha256": "efc428fa7111f67e5527491ce622c5a89fc504e8c49db29c2120e58e383d939e"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/TEMPORAL_DECISION_PROBLEM_AUDIT.md",
+          "bytes": 35358,
+          "sha256": "6f358e508906e15738e9bac81e333191e89342d4f088e5fa4816b4149916d014"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/TEMPORAL_DECISION_STATE_REBUILD.md",
+          "bytes": 19168,
+          "sha256": "7156a2c58d78024a8b8ce41d8ee6b742caf393737ff8b1738becec08e45068a9"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_action_ranking_attribution.py",
+          "bytes": 3101,
+          "sha256": "81796e922bae9f3402af571e4d6a6b5eb0d2e9649cfbd913128ef904a8e330bc"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_batch.py",
+          "bytes": 6781,
+          "sha256": "423a61202eb61c539ca5fe2bcdf94bb51c42c17bcdd295317b67568d2d2b7ae7"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_circle_coupling.py",
+          "bytes": 4146,
+          "sha256": "259e9da9cd244f6d52fd9048a1e2033a34f21a646cfafa3eb7635a5456edd8b9"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_core.py",
+          "bytes": 5615,
+          "sha256": "00588e12efd5ae27cb00f8686ad2b4f51eb62590e5ea5814ee0248cac94ae42f"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_cv419_value_contract.py",
+          "bytes": 2329,
+          "sha256": "b6e31b50af1e525c2f60e02a127240042835add40bea1c39f613a0198cb323fb"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_decision_state.py",
+          "bytes": 3820,
+          "sha256": "24f2c80468f6e54a19d2c86235f74c82f49b24591da4e07ce432f484654be153"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_events.py",
+          "bytes": 945,
+          "sha256": "233a6b2346ee164abb69cb5a78843010618873062c97d57341d2494c6ac336f8"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_forecast_bridge.py",
+          "bytes": 4590,
+          "sha256": "db2ba7fe7a5d622dbdeb84ed5e5dc276ec88b950f4ef165037860236f6d7b491"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_forecast_evidence.py",
+          "bytes": 2963,
+          "sha256": "86b8de9dc77adb1da5aac91fa03a32199705136d38724d00c5711b0965a9cd76"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_forecast.py",
+          "bytes": 8478,
+          "sha256": "5e7782edb8e99c3c85188a95688b519363f5072e7181a9910736f2637f7d4d99"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_identity.py",
+          "bytes": 1843,
+          "sha256": "f1b8edd674f1d4f82c8ee42d0511ce6841b3638f5b15e76e75ec9cc9dc3fbf09"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_latent_information.py",
+          "bytes": 6387,
+          "sha256": "79a63015096222667bf2c5f7470de1542f99894e21c3f9a25137723264349451"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_legacy_parity.py",
+          "bytes": 3199,
+          "sha256": "d49e75de012bbfa8dc98bd6b488f19242f93882fda8e6e15dec63aabbcd4952c"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_memory.py",
+          "bytes": 14670,
+          "sha256": "72d809b91d645b7d6c74e2f2136042efb31b44af0e79d311f7df65462c968bec"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_motion.py",
+          "bytes": 13576,
+          "sha256": "a8e536b9837657f6ad066ba34301bf6dec79b2fcb71129114118b4e65d873eef"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_multihorizon_control.py",
+          "bytes": 5340,
+          "sha256": "e661f2924323bcfb619401231851d1041b2e40d7ea263825b32e6c591047a5b5"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_occlusion.py",
+          "bytes": 22983,
+          "sha256": "e42a876ee264908ece507626e40f3d0152dba643268c427e1a391b115254a70d"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_order.py",
+          "bytes": 2811,
+          "sha256": "41eceaf9f927d488bc4fa20a38946a455cfac880caf9062b97481657cce7dcfe"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_pas_temporal_probe.py",
+          "bytes": 2562,
+          "sha256": "6cad82647de0c03f9d2e0ee079bc42368bb3e0dcb6e9d3913c3976ae74704b62"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_query_contract.py",
+          "bytes": 5975,
+          "sha256": "4d2ad11f9f26158aef645b0c1ee0a3859ac82c4ca9310e376b6ffb51bfe53a9c"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_ranking_audit.py",
+          "bytes": 2132,
+          "sha256": "7f493cdc42ba6a42b314e0d4099895eaef42315babfa9c8c9d036f8543d9b8a3"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/tests/test_temporal_problem_audit.py",
+          "bytes": 3758,
+          "sha256": "2494f12101faea8f17a72b27087a5be27abb148dbf5570e9768ea5b0c6128d90"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/__init__.py",
+          "bytes": 203,
+          "sha256": "d7c25e84bc3a8aa1f6b58d0e87430117d8c2a8f9c8e2d92af1229118e0a7e6c4"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/__init__.py",
+          "bytes": 32,
+          "sha256": "7ce4d6b62cc05f8cbf7b5d2b7d43b61c637d2ee32fe60d8d43dc044ccf004917"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/crowd_sim.py",
+          "bytes": 27778,
+          "sha256": "115aac6e660d0c7fff4425e448f5b9c97683159fe2cb8f9d43ecbfb07a3554dc"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/policy/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/policy/linear.py",
+          "bytes": 659,
+          "sha256": "e5e55833c45ce64cafee3c5f6a50fdaae7c2664b663935800f98d4da5fa937b4"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/policy/orca.py",
+          "bytes": 7616,
+          "sha256": "3d4eab21a556a8767f0fcfc962b444652385c21d29b2ea22a38b711d6df50967"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/policy/policy_factory.py",
+          "bytes": 1845,
+          "sha256": "851a07050076a1348c3814b5a52a748847ed31e21fa1fec8d3286bdf0749f0e5"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/policy/policy.py",
+          "bytes": 1544,
+          "sha256": "d73f0fca7ad2ad3cbb6c6a9324ea0d600d8b9e68c46b363c5ecfe5f92720ecdf"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/action.py",
+          "bytes": 132,
+          "sha256": "643a2ebf410f503e8d667baa154d12254eaa9efcbbb45cd1ab265fb31887ed5b"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/agent.py",
+          "bytes": 7142,
+          "sha256": "3861156a22ea9012e8b73109d871e72d13b234264d6bbc12535e7c988bb87be2"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/human.py",
+          "bytes": 860,
+          "sha256": "ed51807d9511a677026360029c4528c6305e010a1f83be55b9da17c7ab01832b"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/info.py",
+          "bytes": 589,
+          "sha256": "af1928ae2c266689b655741630d9bcf65213a486e9557b7a1003ba1762c4c7ec"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/robot.py",
+          "bytes": 3257,
+          "sha256": "cd55b59f5ef5833542d2a03fa07d4ab43f85fede824fb854df225270bd8f0d63"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/state.py",
+          "bytes": 3308,
+          "sha256": "4d187c7c55809ad028d247d47252642e4b0ede99e5f2e4d60732b9700fc62e48"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/crowd_sim/envs/utils/utils.py",
+          "bytes": 586,
+          "sha256": "fbee6ffc321abbfed833d906b8c5e40a9f4d829f993edcb0ed1e6f9cb8ee7d77"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/CROWDNAV_LICENSE",
+          "bytes": 1073,
+          "sha256": "7cdb8444870153776a3ca245a717e662353afca4e8f7e2166d551b90fe86170d"
+        },
+        {
+          "member": "cc_backstop_20261005/shixu_patched/vendor/FLA_LICENSE",
+          "bytes": 1096,
+          "sha256": "41a83c8187efc1e3ccc21909e806a9e52338e69448554d9754706c3d1cd610e7"
+        },
+        {
+          "member": "cc_backstop_20261005/test_past_write_mask.py",
+          "bytes": 7945,
+          "sha256": "60af9160fe350e7dbb6b3083021ad8c4e619c50e4f3fd105e478ed9eb8310fda"
+        }
+      ],
+      "note": "Exact non-cache files preserved; not applied to the active code"
+    },
+    {
+      "source": "/home/abc/workspace/shixu/outputs/forecast_control_remote_backup_20261004",
+      "target": "archives/remote-source-20261004.tar.gz",
+      "sha256": "77ca1e73b64f504e8b5b123de3749c74703fc7f09b79d2b910ac093edbae7a3c",
+      "bytes": 138625,
+      "files": [
+        {
+          "member": "experiments/circle_coupling_protocol.json",
+          "bytes": 2878,
+          "sha256": "1a4034d2fa886e403293053d7e71e4cf2b51d2eb7820b19b3e13c080e4b4a8a7"
+        },
+        {
+          "member": "experiments/circle_coupling.py",
+          "bytes": 18472,
+          "sha256": "9bf465ec244aea96c069085591bd9a4379f31d1a232c1a86e1d83252193e1461"
+        },
+        {
+          "member": "experiments/failure_probe.py",
+          "bytes": 8203,
+          "sha256": "0983e1119196984d5c096a8ca2ea7ff42a18270ece8fc8610fde5e7bda727ca7"
+        },
+        {
+          "member": "experiments/forecast_control_b_protocol.json",
+          "bytes": 4598,
+          "sha256": "cbbf9f397ea8effcfa1f868619d6c367a10754eab7b0b04c3f5267dd8b7f636a"
+        },
+        {
+          "member": "experiments/forecast_control_diagnostic.py",
+          "bytes": 17631,
+          "sha256": "a7b6f90e085dd12210f377def1850905ff3ba67d9bab4297a34178bde530f665"
+        },
+        {
+          "member": "experiments/forecast_control_protocol.json",
+          "bytes": 4764,
+          "sha256": "7c12cf45a721b0796223b9b503c489c37306c446645bbe90c0b2b615f0a3971c"
+        },
+        {
+          "member": "experiments/forecast_control_results.py",
+          "bytes": 12574,
+          "sha256": "ec4e6c20debee140a8746c04ea2b28228d8349261ad5dff6439650918d978f95"
+        },
+        {
+          "member": "experiments/forecast_control.py",
+          "bytes": 9581,
+          "sha256": "34cbcea5ee6857156d131ada15ac3a064c2d9580fd4e024f7cd2cee7979896f5"
+        },
+        {
+          "member": "experiments/latent_decisions.py",
+          "bytes": 16375,
+          "sha256": "ee09e300bd42bc86e6a3e201e1b36ebe909a165696b1286332fc5e9cc9237645"
+        },
+        {
+          "member": "experiments/latent_information_protocol.json",
+          "bytes": 1807,
+          "sha256": "edd66636764d5bcf54e131e38e60bac7b82f10fe9fdcd9a7db15557829f993e1"
+        },
+        {
+          "member": "experiments/latent_information.py",
+          "bytes": 15425,
+          "sha256": "6ba1a77b23ae95860d34e78669b7b6fbe0b919dbdcd12a913093b812d5861e90"
+        },
+        {
+          "member": "experiments/memory_runtime.py",
+          "bytes": 2048,
+          "sha256": "0b4a6351e731ed689724e49406c0ab14cd24d081424c846e5429d5bca9f59f8c"
+        },
+        {
+          "member": "experiments/memory_spectrum.py",
+          "bytes": 4200,
+          "sha256": "a9c89465be67333ee5e49311c4cac31642f818741af73f7487bb554aee3c9fdf"
+        },
+        {
+          "member": "experiments/motion_clock_probe.py",
+          "bytes": 17490,
+          "sha256": "2831724c2474980dd79736d6e11063509b238af93a4958060065d3ef896b5b67"
+        },
+        {
+          "member": "experiments/occlusion_address_protocol.json",
+          "bytes": 2412,
+          "sha256": "2a1890254d60b4578d9a7e848cfc42dfe130cfa8b9d678d05917763ee85ea703"
+        },
+        {
+          "member": "experiments/occlusion_branch_protocol.json",
+          "bytes": 3098,
+          "sha256": "d67ff62a22c0593f48713d3c77ecb9703ffd6fec6864a15547c4f9931bd59cb3"
+        },
+        {
+          "member": "experiments/occlusion_budget_protocol.json",
+          "bytes": 3234,
+          "sha256": "6d6d1a6725eceec81bc2a4ef705915c8c3c77f3f4fba1dc4469488124a87932f"
+        },
+        {
+          "member": "experiments/occlusion_context_events.py",
+          "bytes": 6268,
+          "sha256": "58d3ebcc9b3e7127be018e8340dc8c48f889b190cf0fa8ab0da1f51c4a28d9c6"
+        },
+        {
+          "member": "experiments/occlusion_context_protocol.json",
+          "bytes": 2105,
+          "sha256": "eba2521f943daf9146ea3cf42da026238b8aed4d0593fb4a7dc5f0819608c555"
+        },
+        {
+          "member": "experiments/occlusion_motion_protocol.json",
+          "bytes": 3690,
+          "sha256": "a93503697199cc7196034fa4ff5ab14e1858cf2062e386566c7439d52d47e7b6"
+        },
+        {
+          "member": "experiments/occlusion_observation_protocol.json",
+          "bytes": 2025,
+          "sha256": "1df3bbe0e99a269f71a753503212f80b217436aa22a75c26e410dfeafd0d2942"
+        },
+        {
+          "member": "experiments/occlusion_oracle.py",
+          "bytes": 4919,
+          "sha256": "7b34eed95fa8574143b89535afac05d2cd61bb7aac78296dce7090e556501f0b"
+        },
+        {
+          "member": "experiments/occlusion_protocol.json",
+          "bytes": 1831,
+          "sha256": "2345b27df30aa9659225b0feea49fc9f9a0cd8eab6f785527cd23c0e4b0bb081"
+        },
+        {
+          "member": "experiments/occlusion_query_protocol.json",
+          "bytes": 4133,
+          "sha256": "9d51debec2aac7bfd0db8969fcb54961d76b61497bf6b7b376f171583085e466"
+        },
+        {
+          "member": "experiments/occlusion.py",
+          "bytes": 39232,
+          "sha256": "9f34e2fa7e751c7cd8de0e1f1adbd24b2d4ec09ee34f230d220d824b1a6700e4"
+        },
+        {
+          "member": "experiments/query_contract_probe.py",
+          "bytes": 6328,
+          "sha256": "31710a013740213909d24749b729c0b26d08fecf20fb1d87f93ca0325b9a66ba"
+        },
+        {
+          "member": "experiments/ranking_audit.py",
+          "bytes": 15496,
+          "sha256": "af855ff28c0013abd09039db6dabe42398d3b854885bfaa239a6fc65c4337f51"
+        },
+        {
+          "member": "experiments/read_amplitude.py",
+          "bytes": 2323,
+          "sha256": "5ab374cba51e41fef3c1f9e1f5d2cbeadd222beefb5c606a6c5686c2331432a6"
+        },
+        {
+          "member": "experiments/temporal_collect.py",
+          "bytes": 2154,
+          "sha256": "1591c653f2bed5bb2be3143beea3cd725b7ecf63dc4cbbbf16aa5f092c11a51f"
+        },
+        {
+          "member": "experiments/temporal_headroom.py",
+          "bytes": 7919,
+          "sha256": "1bce48ce4bcb82c9aef1463eff1f6b6a8774d0d0736b3d5af80f50cd195bf542"
+        },
+        {
+          "member": "experiments/temporal_latency.py",
+          "bytes": 2799,
+          "sha256": "80e40549a9d83ed81d5b2f9e464bd28799758ce060ffc630d2f4f4bb578e36b2"
+        },
+        {
+          "member": "experiments/temporal_memory_protocol.json",
+          "bytes": 2275,
+          "sha256": "d4e7bdf141ce649cc76d2b0f6391f702c85c760b21666c6a89b61eb28780550d"
+        },
+        {
+          "member": "experiments/temporal_memory.py",
+          "bytes": 25094,
+          "sha256": "dd8fd12999fb56e36a09f9eeaf450a5fe2799f5f1d213850136015aa862f8d10"
+        },
+        {
+          "member": "experiments/temporal_order.py",
+          "bytes": 9423,
+          "sha256": "5f38c7c850d3424954bc079ab7c5a2822b831d0058a8d27a33b7cc1181019594"
+        },
+        {
+          "member": "experiments/temporal_protocol.json",
+          "bytes": 1181,
+          "sha256": "b56f5853c58e02a0b2696c61990797a09f69fbc15cf6bed6a7a838158813d497"
+        },
+        {
+          "member": "experiments/temporal_rescue_protocol.json",
+          "bytes": 892,
+          "sha256": "8bde4712e11b7816141878bb710da1af7754e8c1d3666c760a4a3b332d95d15d"
+        },
+        {
+          "member": "experiments/temporal_revision_shadow.py",
+          "bytes": 6472,
+          "sha256": "131280b1eafbe9507fe12b34a1dd3c9031c356d417b6b2f9ff7a1d19a1c96311"
+        },
+        {
+          "member": "experiments/temporal_scale_protocol.json",
+          "bytes": 2734,
+          "sha256": "3fec89996ed3419cca3cb629f5bf021991fee9c1252ed5c4f215c167910a03a1"
+        },
+        {
+          "member": "shixu/__init__.py",
+          "bytes": 76,
+          "sha256": "3d72ff8e0d3b73faac9f8a50db5d02e9ff3f40e5fd798c490edc8cb49d34ce70"
+        },
+        {
+          "member": "shixu/cli.py",
+          "bytes": 4456,
+          "sha256": "a6d679312978970526b3f52faf7cf74b2e29bd890137a90942746aa771a41410"
+        },
+        {
+          "member": "shixu/default.ini",
+          "bytes": 1417,
+          "sha256": "9a1e13cf0812e8c33f9b1290592e38dd2f83637672558893bacce739023f7fd7"
+        },
+        {
+          "member": "shixu/features.py",
+          "bytes": 7786,
+          "sha256": "d4d3f757483348f5c8335c55a6902fe71fd98dbf74ca31610b1cf35963f0e608"
+        },
+        {
+          "member": "shixu/forecast.py",
+          "bytes": 13591,
+          "sha256": "b8067336d504e86780f9c8f9e442129788e314e02425936f742e23674f1fcd6e"
+        },
+        {
+          "member": "shixu/model.py",
+          "bytes": 19802,
+          "sha256": "96cccfed1779db7e3fda931a8cb7a08dbb03a64caef75d8cd786b6f06dddcb40"
+        },
+        {
+          "member": "shixu/motion.py",
+          "bytes": 11254,
+          "sha256": "d9ab508be132b62374ac140bc05f6e31512296d462773f4a62986b1a3923ccd9"
+        },
+        {
+          "member": "shixu/observations.py",
+          "bytes": 3258,
+          "sha256": "1831af18d03a76bfa2462f6b40c9c614a718a544edf14a390e768ef7cb267af6"
+        },
+        {
+          "member": "shixu/policy.py",
+          "bytes": 9184,
+          "sha256": "22322da8addccbbed494ef4d3c229ea2c9abaf59141b5af2ddecadd0b4a8335a"
+        },
+        {
+          "member": "shixu/replay.py",
+          "bytes": 1991,
+          "sha256": "8d50912b6527dfc9cfc8694adab0799104ae042d032e892466fd7347b6e9e31d"
+        },
+        {
+          "member": "shixu/runner.py",
+          "bytes": 3261,
+          "sha256": "008e63bd3f533139fd7cf1782784a92a821cf1208a9badc9e63dbc215f1a8fbd"
+        },
+        {
+          "member": "shixu/temporal.py",
+          "bytes": 8731,
+          "sha256": "d6e9c17b13390c1af3237c86dc4b3ba5c89d622d924eed0e903cd6c0d231129d"
+        },
+        {
+          "member": "shixu/training.py",
+          "bytes": 4985,
+          "sha256": "efc428fa7111f67e5527491ce622c5a89fc504e8c49db29c2120e58e383d939e"
+        },
+        {
+          "member": "tests/test_batch.py",
+          "bytes": 6781,
+          "sha256": "423a61202eb61c539ca5fe2bcdf94bb51c42c17bcdd295317b67568d2d2b7ae7"
+        },
+        {
+          "member": "tests/test_circle_coupling.py",
+          "bytes": 4146,
+          "sha256": "259e9da9cd244f6d52fd9048a1e2033a34f21a646cfafa3eb7635a5456edd8b9"
+        },
+        {
+          "member": "tests/test_core.py",
+          "bytes": 5615,
+          "sha256": "00588e12efd5ae27cb00f8686ad2b4f51eb62590e5ea5814ee0248cac94ae42f"
+        },
+        {
+          "member": "tests/test_events.py",
+          "bytes": 945,
+          "sha256": "233a6b2346ee164abb69cb5a78843010618873062c97d57341d2494c6ac336f8"
+        },
+        {
+          "member": "tests/test_forecast_bridge.py",
+          "bytes": 4590,
+          "sha256": "db2ba7fe7a5d622dbdeb84ed5e5dc276ec88b950f4ef165037860236f6d7b491"
+        },
+        {
+          "member": "tests/test_forecast.py",
+          "bytes": 8478,
+          "sha256": "5e7782edb8e99c3c85188a95688b519363f5072e7181a9910736f2637f7d4d99"
+        },
+        {
+          "member": "tests/test_identity.py",
+          "bytes": 1843,
+          "sha256": "f1b8edd674f1d4f82c8ee42d0511ce6841b3638f5b15e76e75ec9cc9dc3fbf09"
+        },
+        {
+          "member": "tests/test_latent_information.py",
+          "bytes": 6387,
+          "sha256": "79a63015096222667bf2c5f7470de1542f99894e21c3f9a25137723264349451"
+        },
+        {
+          "member": "tests/test_legacy_parity.py",
+          "bytes": 3199,
+          "sha256": "d49e75de012bbfa8dc98bd6b488f19242f93882fda8e6e15dec63aabbcd4952c"
+        },
+        {
+          "member": "tests/test_memory.py",
+          "bytes": 14670,
+          "sha256": "72d809b91d645b7d6c74e2f2136042efb31b44af0e79d311f7df65462c968bec"
+        },
+        {
+          "member": "tests/test_motion.py",
+          "bytes": 13576,
+          "sha256": "a8e536b9837657f6ad066ba34301bf6dec79b2fcb71129114118b4e65d873eef"
+        },
+        {
+          "member": "tests/test_occlusion.py",
+          "bytes": 22983,
+          "sha256": "e42a876ee264908ece507626e40f3d0152dba643268c427e1a391b115254a70d"
+        },
+        {
+          "member": "tests/test_order.py",
+          "bytes": 2811,
+          "sha256": "41eceaf9f927d488bc4fa20a38946a455cfac880caf9062b97481657cce7dcfe"
+        },
+        {
+          "member": "tests/test_query_contract.py",
+          "bytes": 5975,
+          "sha256": "4d2ad11f9f26158aef645b0c1ee0a3859ac82c4ca9310e376b6ffb51bfe53a9c"
+        },
+        {
+          "member": "tests/test_ranking_audit.py",
+          "bytes": 2132,
+          "sha256": "7f493cdc42ba6a42b314e0d4099895eaef42315babfa9c8c9d036f8543d9b8a3"
+        },
+        {
+          "member": "vendor/crowd_sim/__init__.py",
+          "bytes": 203,
+          "sha256": "d7c25e84bc3a8aa1f6b58d0e87430117d8c2a8f9c8e2d92af1229118e0a7e6c4"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/__init__.py",
+          "bytes": 32,
+          "sha256": "7ce4d6b62cc05f8cbf7b5d2b7d43b61c637d2ee32fe60d8d43dc044ccf004917"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/crowd_sim.py",
+          "bytes": 27778,
+          "sha256": "115aac6e660d0c7fff4425e448f5b9c97683159fe2cb8f9d43ecbfb07a3554dc"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/policy/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/policy/linear.py",
+          "bytes": 659,
+          "sha256": "e5e55833c45ce64cafee3c5f6a50fdaae7c2664b663935800f98d4da5fa937b4"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/policy/orca.py",
+          "bytes": 7616,
+          "sha256": "3d4eab21a556a8767f0fcfc962b444652385c21d29b2ea22a38b711d6df50967"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/policy/policy_factory.py",
+          "bytes": 1845,
+          "sha256": "851a07050076a1348c3814b5a52a748847ed31e21fa1fec8d3286bdf0749f0e5"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/policy/policy.py",
+          "bytes": 1544,
+          "sha256": "d73f0fca7ad2ad3cbb6c6a9324ea0d600d8b9e68c46b363c5ecfe5f92720ecdf"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/action.py",
+          "bytes": 132,
+          "sha256": "643a2ebf410f503e8d667baa154d12254eaa9efcbbb45cd1ab265fb31887ed5b"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/agent.py",
+          "bytes": 7142,
+          "sha256": "3861156a22ea9012e8b73109d871e72d13b234264d6bbc12535e7c988bb87be2"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/human.py",
+          "bytes": 860,
+          "sha256": "ed51807d9511a677026360029c4528c6305e010a1f83be55b9da17c7ab01832b"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/info.py",
+          "bytes": 589,
+          "sha256": "af1928ae2c266689b655741630d9bcf65213a486e9557b7a1003ba1762c4c7ec"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/robot.py",
+          "bytes": 3257,
+          "sha256": "cd55b59f5ef5833542d2a03fa07d4ab43f85fede824fb854df225270bd8f0d63"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/state.py",
+          "bytes": 3308,
+          "sha256": "4d187c7c55809ad028d247d47252642e4b0ede99e5f2e4d60732b9700fc62e48"
+        },
+        {
+          "member": "vendor/crowd_sim/envs/utils/utils.py",
+          "bytes": 586,
+          "sha256": "fbee6ffc321abbfed833d906b8c5e40a9f4d829f993edcb0ed1e6f9cb8ee7d77"
+        },
+        {
+          "member": "vendor/CROWDNAV_LICENSE",
+          "bytes": 1073,
+          "sha256": "7cdb8444870153776a3ca245a717e662353afca4e8f7e2166d551b90fe86170d"
+        },
+        {
+          "member": "vendor/FLA_LICENSE",
+          "bytes": 1096,
+          "sha256": "41a83c8187efc1e3ccc21909e806a9e52338e69448554d9754706c3d1cd610e7"
+        },
+        {
+          "member": "pyproject.toml",
+          "bytes": 751,
+          "sha256": "d5c85caeef3ce944887176a009825ab57998edb7a0361ac653800655bdb9589e"
+        },
+        {
+          "member": ".gitignore",
+          "bytes": 122,
+          "sha256": "d0eba6705f71948450941ef589ca2f65434721e2a2d8c712bc62758a55c34ce6"
+        }
+      ],
+      "note": "Exact non-cache files preserved; not applied to the active code"
+    }
+  ],
+  "generated_artifacts": [
+    {
+      "source": "/home/abc/workspace/il_x_rl_candidates_20261003/runs/package_check/shixu-0.1.0-py3-none-any.whl",
+      "sha256": "97f1eb8eddfc3228d8761b9a9664cd1b60452c6b12ab18e45037b9b77b31f79b",
+      "reason": "Regenerable initial package wheel; all 25 package files match archived Git commit e011c0e",
+      "matched_source_files": 25
+    },
+    {
+      "source": "/home/abc/workspace/il_x_rl_candidates_20261003/runs/package_install_check",
+      "reason": "Verified unmodified generated wheel installation, including pip metadata and bytecode"
+    }
+  ],
+  "report_sources": [
+    "/home/abc/workspace/shixu_budget_design/README.md",
+    "/home/abc/workspace/shixu_compute_check/README.md",
+    "/home/abc/workspace/shixu_motion_design/README.md",
+    "/home/abc/workspace/shixu_query_design/README.md",
+    "/home/abc/temp/cc_backstop_20261005/CC_REPORT_20261005.md",
+    "/home/abc/temp/cc_backstop_20261005/docs/STEP1_NOHISTORY_ATTRIBUTION.md",
+    "/home/abc/temp/cc_backstop_20261005/docs/STEP2_HISTORY_ACTION_CONSEQUENCE.md",
+    "/home/abc/temp/cc_backstop_20261005/docs/TOOL_PAST_WRITE_MASK_CLOSEOUT.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/CIRCLE_HISTORY_CAUSAL_AUDIT.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/FORECAST_CONTROL_EXPERIMENT.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/LATENT_TEMPORAL_INFORMATION_AUDIT.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/OCCLUSION_KDA_INTERIM_REPORT_20261004.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/README.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/TEMPORAL_DECISION_PROBLEM_AUDIT.md",
+    "/home/abc/temp/cc_backstop_20261005/shixu_patched/TEMPORAL_DECISION_STATE_REBUILD.md"
+  ],
+  "verification": {
+    "reconstructable_report_sources": 38,
+    "protected_files": 43252,
+    "protected_bytes": 2908427926,
+    "unit_tests_run": 231,
+    "unit_tests_passed": 228,
+    "unit_tests_skipped": 3,
+    "skip_reason": "Legacy parity tests require explicit CAMRL_PARENT and CAMRL_CHECKPOINT",
+    "training_started": false
+  }
+}

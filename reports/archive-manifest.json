@@ -350,6 +350,225 @@
           "sha256": "4de326ac7d7c5c6c2de218970cfa640e5d68242810857fddb49f4fda2bf65556"
         }
       ]
+    },
+    {
+      "source": "/home/abc/workspace/shixu_budget_design/README.md",
+      "bytes": 49800,
+      "sha256": "4e0893f2c978c12b8835bea65d8c73355589e8e9a3c1b6d4c140c812166ea89c",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 164800,
+          "bytes": 49800,
+          "sha256": "4e0893f2c978c12b8835bea65d8c73355589e8e9a3c1b6d4c140c812166ea89c"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/workspace/shixu_compute_check/README.md",
+      "bytes": 37500,
+      "sha256": "ce2218554ab41d359fe8c8ba1fbf33f3dba6a5c4847152be7e35fd2633342aee",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 214978,
+          "bytes": 37500,
+          "sha256": "ce2218554ab41d359fe8c8ba1fbf33f3dba6a5c4847152be7e35fd2633342aee"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/workspace/shixu_motion_design/README.md",
+      "bytes": 42458,
+      "sha256": "f1377e63438e1a2acf4e44b46a37d46395eb6c2568bfdd6be50f5501c03c2137",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 252856,
+          "bytes": 42458,
+          "sha256": "f1377e63438e1a2acf4e44b46a37d46395eb6c2568bfdd6be50f5501c03c2137"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/workspace/shixu_query_design/README.md",
+      "bytes": 43074,
+      "sha256": "34b2eba9f7dc04b951d495a0ab5e7c12fe51ad30e5640403a61ede2486494b07",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 295691,
+          "bytes": 43074,
+          "sha256": "34b2eba9f7dc04b951d495a0ab5e7c12fe51ad30e5640403a61ede2486494b07"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/CC_REPORT_20261005.md",
+      "bytes": 10849,
+      "sha256": "06621ce9d00e4313d8331567b4939782d0d5726203fa78817049669876a50089",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 339151,
+          "bytes": 10849,
+          "sha256": "06621ce9d00e4313d8331567b4939782d0d5726203fa78817049669876a50089"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/docs/STEP1_NOHISTORY_ATTRIBUTION.md",
+      "bytes": 5036,
+      "sha256": "769b75d67fe6e1f6369b412fc348862872a7d1f30c6d6493c3685b7e37e9661b",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 350400,
+          "bytes": 5036,
+          "sha256": "769b75d67fe6e1f6369b412fc348862872a7d1f30c6d6493c3685b7e37e9661b"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/docs/STEP2_HISTORY_ACTION_CONSEQUENCE.md",
+      "bytes": 8116,
+      "sha256": "4a268b11ef52d698e5d22494c713453b0743a94ff0815387de440550048aaf9f",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 355841,
+          "bytes": 8116,
+          "sha256": "4a268b11ef52d698e5d22494c713453b0743a94ff0815387de440550048aaf9f"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/docs/TOOL_PAST_WRITE_MASK_CLOSEOUT.md",
+      "bytes": 3218,
+      "sha256": "2a18c938f3db74b585dfda67764d338662999fbf4f49a4048e4979dcabf26330",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 364359,
+          "bytes": 3218,
+          "sha256": "2a18c938f3db74b585dfda67764d338662999fbf4f49a4048e4979dcabf26330"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/CIRCLE_HISTORY_CAUSAL_AUDIT.md",
+      "bytes": 19915,
+      "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8",
+      "parts": [
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 15412,
+          "bytes": 19915,
+          "sha256": "f198ac02a713a1076c20b6f4a6b846ab6e62ec13ca3f665d8abbc88898e259b8"
+        }
+      ],
+      "duplicate_of": "outputs/forecast_control_remote_backup_20261004/CIRCLE_HISTORY_CAUSAL_AUDIT.md"
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/FORECAST_CONTROL_EXPERIMENT.md",
+      "bytes": 42594,
+      "sha256": "fdeecb188647d55887b698f99b41a120d5012ae9b677f7a388b217c1cf1b85e4",
+      "parts": [
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 1205,
+          "bytes": 42594,
+          "sha256": "fdeecb188647d55887b698f99b41a120d5012ae9b677f7a388b217c1cf1b85e4"
+        }
+      ],
+      "duplicate_of": "FORECAST_CONTROL_EXPERIMENT.md"
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/LATENT_TEMPORAL_INFORMATION_AUDIT.md",
+      "bytes": 13955,
+      "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291",
+      "parts": [
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 1226,
+          "bytes": 13955,
+          "sha256": "dc1038b0320b89d3ed691651a77a528b0c3c9d9816fc5405fe49513441bff291"
+        }
+      ],
+      "duplicate_of": "outputs/forecast_control_remote_backup_20261004/LATENT_TEMPORAL_INFORMATION_AUDIT.md"
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/OCCLUSION_KDA_INTERIM_REPORT_20261004.md",
+      "bytes": 48091,
+      "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 1037,
+          "bytes": 48091,
+          "sha256": "dbe1de6a13ae2f3aec1132287d3752cbe760bd6d581b6dc86ed00546cb5d4313"
+        }
+      ],
+      "duplicate_of": "outputs/forecast_control_remote_backup_20261004/OCCLUSION_KDA_INTERIM_REPORT_20261004.md"
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/README.md",
+      "bytes": 66480,
+      "sha256": "0f5332ec89c79e6ab9fc605bb8e502e3aca61323ac48851518db15cb3f732d9a",
+      "parts": [
+        {
+          "target": "reports/kda-temporal-experiments.md",
+          "offset": 49368,
+          "bytes": 57383,
+          "sha256": "bab5edaf25ef7c428a05e7f8797c561dc63ba5426465b4bbee8c12d823f57caa"
+        },
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 35567,
+          "bytes": 2641,
+          "sha256": "f9a66d54a9742ca5a6aafb30dca133f8401d42244d3a62d1d3881a54f481700e"
+        },
+        {
+          "target": "reports/latent-history-information.md",
+          "offset": 38448,
+          "bytes": 2114,
+          "sha256": "8b7960de25b2c7802a6b232d266e6ff49e99c2130d70b1634cf56ca414ae0da4"
+        },
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 63442,
+          "bytes": 4342,
+          "sha256": "58ae9b39e1367d198723219f18fdd8c259cfc328b8d68216bd9c418ad90e5b03"
+        }
+      ],
+      "duplicate_of": "README.md"
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/TEMPORAL_DECISION_PROBLEM_AUDIT.md",
+      "bytes": 35358,
+      "sha256": "6f358e508906e15738e9bac81e333191e89342d4f088e5fa4816b4149916d014",
+      "parts": [
+        {
+          "target": "reports/value-and-defect-audits.md",
+          "offset": 68981,
+          "bytes": 35358,
+          "sha256": "6f358e508906e15738e9bac81e333191e89342d4f088e5fa4816b4149916d014"
+        }
+      ]
+    },
+    {
+      "source": "/home/abc/temp/cc_backstop_20261005/shixu_patched/TEMPORAL_DECISION_STATE_REBUILD.md",
+      "bytes": 19168,
+      "sha256": "7156a2c58d78024a8b8ce41d8ee6b742caf393737ff8b1738becec08e45068a9",
+      "parts": [
+        {
+          "target": "reports/forecast-control-and-state.md",
+          "offset": 44034,
+          "bytes": 19168,
+          "sha256": "7156a2c58d78024a8b8ce41d8ee6b742caf393737ff8b1738becec08e45068a9"
+        }
+      ],
+      "duplicate_of": "TEMPORAL_DECISION_STATE_REBUILD.md"
     }
   ],
   "cleanup": [
@@ -503,5 +722,10 @@
       "bytes": 34715,
       "files": 1
     }
-  ]
+  ],
+  "variant_cleanup": {
+    "created": "2026-10-06T02:58:01.935Z",
+    "inventory": "reports/variant-cleanup-manifest.json",
+    "note": "Original source ranges are unchanged. Additional variant reports are appended or exactly deduplicated. Historical temporary trees are restored via archive tags or compressed snapshots."
+  }
 }

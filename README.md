@@ -35,6 +35,7 @@ separate research paths, not components that must all be stacked together.
 | tests/ | Correctness, contract and reproducibility checks |
 | vendor/crowd_sim/ | Local simulator dependency |
 | outputs/ | Local checkpoints, datasets, logs, traces and evaluation evidence |
+| archives/ | Compressed historical source/patch snapshots, not active models |
 | reports/ | Six consolidated report categories and an integrity manifest |
 
 ## Report Index
@@ -99,3 +100,35 @@ deleted as disposable artifacts. Individual Markdown sources were removed
 only after exact archive reconstruction passed. Core code, tests, frozen
 protocols, checkpoints, datasets, raw trajectories and learning logs were
 preserved, including negative experiments and unfinished historical runs.
+
+## Historical Copies
+
+There is now one active project checkout. Four clean, detached development
+worktrees were removed after their exact commits were pinned with annotated
+archive tags. Two of those commits were not ancestors of the active checkout;
+their independent code changes remain available through these tags.
+
+| Removed Temporary Worktree | Recoverable Git Tag |
+| --- | --- |
+| shixu_budget_design | archive/budget-design-20261004 |
+| shixu_compute_check | archive/compute-check-20261004 |
+| shixu_motion_design | archive/motion-design-20261004 |
+| shixu_query_design | archive/query-design-20261004 |
+
+The isolated CC backstop, including its unmerged patch, scripts, results and
+source tree, is preserved in archives/cc-backstop-20261005.tar.gz. The older
+remote source tree is preserved in archives/remote-source-20261004.tar.gz;
+its datasets, weights and evaluation evidence remain in their original
+outputs location. Neither archive was applied to the current model.
+
+Variant Markdown reports were exactly deduplicated or appended to the six
+existing category reports. No additional standalone stage reports were made.
+The old package-check wheel and installation tree were deleted only after
+verifying their package contents against the wheel and initial Git revision.
+They contained no unique source changes.
+
+[The variant inventory](reports/variant-cleanup-manifest.json) records original
+locations, Git commits, archive member hashes and report provenance. Historical
+paths appearing in preserved report bodies are provenance, not active entry
+points. The package directory shixu/ inside this project is required Python
+source, not another project copy.

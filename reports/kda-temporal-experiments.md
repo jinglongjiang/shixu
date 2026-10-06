@@ -2645,3 +2645,3730 @@ three optional legacy-asset skips. Main frozen scientific sources are unchanged.
 
 
 <!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-4e0893f2c978c12b"></a>
+
+## Historical Variant Source: /home/abc/workspace/shixu_budget_design/README.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: 4e0893f2c978c12b8835bea65d8c73355589e8e9a3c1b6d4c140c812166ea89c
+
+<!-- BEGIN PRESERVED SOURCE -->
+# shixu
+
+A small temporal crowd-navigation research framework extracted from the user's
+local camrl Mamba-VL project. It contains the cleaned parent and explicit
+temporal architecture experiments, not an established new-method claim.
+
+## One Main Path
+
+```text
+legal observations -> frame encoder -> temporal encoder -> scalar value
+                    -> original candidate successor/value lookahead -> action
+
+ORCA demonstrations -> Monte Carlo value initialization -> online MC refinement
+```
+
+GRU is the default temporal baseline. Mamba is optional and retained only for
+legacy comparison. There are no Double-Q/PPO/SAC branches, auxiliary prediction
+heads, Bayesian modules, teacher networks at deployment, or fallback backbones.
+
+The explicit actor-first alternative moves temporal encoding before crowd pooling:
+
+```text
+identity-bound human histories -> shared temporal encoder -> crowd pooling
+                              -> scalar value -> unchanged lookahead
+```
+
+The processing-order prototype now compares scene-first and actor-first GRU
+using identical aligned observations and exactly the same parameters. Every
+human uses the same GRU weights, with independent histories. That trial adds no
+dual-memory system, contradiction detector or additional prediction head.
+That processing-order experiment remains a baseline, not a selective-revision method.
+
+The observation-only contract consumes robot raw state9 and human observed
+motion9 plus presence. It removes redundant legacy relation features rather
+than adding a predictor or another memory. The explicit legacy feature contract
+remains only for reproducing the first trial and loading its checkpoints.
+
+## Layout
+
+| File | Responsibility |
+| --- | --- |
+| shixu/features.py | Legacy observation contract and history windows |
+| shixu/observations.py | Episode-local observed association keys, never numeric ID features |
+| shixu/model.py | Frame encoder, replaceable temporal encoder, value head |
+| shixu/temporal.py | Compact GRU/KDA/GDN2 actor memories; real-write/candidate-read interface |
+| shixu/policy.py | Original action support and successor-value evaluation |
+| shixu/replay.py | Episode-safe windows and MC targets; no duplicated window archive |
+| shixu/runner.py | One runner for collection, training and evaluation |
+| shixu/training.py | ORCA value initialization and online MC refinement |
+| shixu/cli.py | Explicit collection/evaluation/training commands |
+| vendor/crowd_sim | Frozen local simulator dependency |
+| experiments/ | Frozen protocol, immutable ORCA collection and paired processing-order trial |
+
+## Occlusion Development Loop
+
+The new `occlusion` architecture removes the five-person input cap. It uses
+episode-local identity slots, actual-measurement write masks and a separate
+retained-track read mask. A previously observed actor can remain relevant while
+occluded; an actor that has never been seen cannot enter the model. Missing
+positions use the last legally measured velocity for at most two seconds.
+Predicted positions and candidate successors are read-only queries, not new
+measurements. There is one shared actor memory and no external memory gate,
+auxiliary predictor, dual-memory branch or changed reward.
+
+```text
+body-occluded observations -> legal track histories -> shared KDA memory
+                          -> retained-track candidate reads -> scalar value
+                          -> inherited 80-action value lookahead
+```
+
+This is a functional research prototype, not an established novelty or
+performance claim. The common retention interface is also used by the
+current-state and recurrent comparisons. Previously reported full-observation
+results are not occlusion results.
+
+```bash
+# Pin the vendored simulator when another CrowdNav is installed locally.
+export PYTHONPATH=vendor:.
+python -m unittest discover -s tests -v
+python -m experiments.occlusion collect \
+  --data outputs/occlusion_v1/demonstrations.pt
+python -m experiments.occlusion queue \
+  --root outputs/occlusion_v1 --data outputs/occlusion_v1/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize --root outputs/occlusion_v1
+```
+
+`experiments/occlusion_protocol.json` freezes shared demonstrations, four
+paired development seeds, 50 IL epochs, 1,000 online MC-RL episodes and
+5/10/20-person evaluation. Every reported model is reconstructed and loaded
+from its final saved checkpoint before evaluation. Development cases guide
+diagnosis; fresh seeds and separate confirmation cases remain reserved until
+an architecture is selected. A negative version is diagnosed, not relabeled
+as a failed research family. Raw weights, logs and episodes remain local.
+
+The second frozen version, `occlusion_observation_protocol.json`, changes only
+the read clock. Memory is read from the latest legal history frame once per
+actor, then shared by all candidate actions. Candidate geometry remains in the
+spatial value encoder, but it no longer changes the actor's temporal read vector.
+The weights and parameter count are unchanged by this switch. Both versions
+receive byte-identical episode observations and rewards. The current-track
+reference is reused because it has no learned temporal read; the temporal
+arms are retrained through the complete IL/MC-RL schedule.
+
+```bash
+python -m experiments.occlusion collect \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --data outputs/occlusion_v2/demonstrations.pt
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2 --data outputs/occlusion_v2/demonstrations.pt \
+  --arms gru kda --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2
+```
+
+The observation-clock design is a hypothesis under test, not a correctness
+repair. Both versions leave the stored matrix state unchanged during candidate
+evaluation. Action-conditioned reads can legitimately retrieve different
+information for different decisions even when humans do not react to the
+robot. The new bias separates a shared temporal read vector from
+candidate-conditioned geometry evaluation and avoids replicating each actor's
+matrix memory 80 times. Frozen-weight read ablations are diagnostic, not
+substitutes for retraining or proof of better navigation.
+
+The first full four-seed occlusion trial is complete (384 held-out development
+episodes per arm, not the earlier full-observation trial):
+
+| Model | Overall SR | CR | Timeout | 10/20-person SR |
+|---|---:|---:|---:|---:|
+| CV-track current-value | 81.77% | 4.95% | 13.28% | 79.30% |
+| Actor-GRU | 77.34% | 6.25% | 16.41% | 75.78% |
+| Actor-KDA, candidate read | 78.39% | 11.20% | 10.42% | 75.78% |
+
+KDA does not pass: primary SR is unchanged against GRU, while primary collision
+increases by 5.86 percentage points. A frozen-weight switch to observation-clock
+reads also worsens seed 443 overall SR from 70.83% to 56.25%; this is a
+distribution-shifting diagnostic, not a trained comparison. The second version
+must therefore earn its own result through matched IL and RL.
+
+Completed final-IL checkpoints may be moved to a faster host using `--il-root`.
+The experiment verifies seed/configuration and all IL log epochs, restores the
+replay sampling stream, then starts a fresh, full-budget RL run. Interrupted RL
+work is archived and charged separately; it is not used for checkpoint selection.
+An exact CPU pipeline test checks identical full-run versus final-IL-reuse RL
+updates. Different GPU/software environments can still introduce numerical
+differences and are recorded with each run.
+
+The complete observation-read trial is negative: overall SR is 63.54% for
+KDA versus 79.43% for GRU; primary 10/20-person SR is 64.45% versus 76.56%.
+KDA loses primary SR in all four paired seeds. Fewer collisions come with
+substantially more timeouts (30.47% overall), so this version is not retained
+as the candidate architecture. Shared observation reads are not an established
+correction to the original action-dependent read design.
+
+The next structural test, `occlusion_context_protocol.json`, returns to the
+original candidate clock and moves the existing attention before actor memory:
+
+```text
+real actor observations -> attention (actor outputs, no scene pooling)
+                        -> shared, measurement-masked KDA writes
+candidate geometry     -> same attention -> read each actor memory
+                        -> masked max -> scalar value -> original lookahead
+```
+
+There is still one attention and one temporal operator. The parameter counts
+are unchanged. Prefix attention keys use actual measurements; hidden tracks
+cannot supply fresh write evidence. Query attention can use legally retained
+CV tracks. The non-temporal current-value arm is mathematically unchanged;
+its existing saved weights reproduce every executed action and terminal outcome
+in all 96 seed-419 development episodes after the helper refactor.
+
+This tests whether historical neighbour context is useful. The old actor
+memory is exactly insensitive to another actor's past when its own history is
+fixed. The replacement removes that insensitivity in a fixture, but this is
+not proof of navigation headroom or novelty. A separate episode-disjoint
+linear probe of 887 natural re-entries does not improve average velocity
+prediction over CV, so richer context is not presumed useful in every task.
+Archived collision replays also show visible colliders and no margin-safe
+action at the final step; they do not establish that occlusion caused the
+earlier poor decisions. DS-RNN and [PaS](https://github.com/yejimun/PaS_CrowdNav)
+already study temporal/social inference. Moving attention is an experimental
+representation choice, not a standalone new-method claim.
+
+The complete context-write trial is negative for KDA: overall SR/CR/timeout
+are 62.76/12.24/25.00%, versus 85.94/5.99/8.07% for GRU. Primary 10/20-person
+SR is 60.16% versus 85.55%, with KDA losses in all four paired seeds.
+On 836 uniformly sampled demonstration windows, seed-443 final KDA keys have
+mean inter-actor cosine 0.99926 in this version versus 0.77600 in V1.
+Separate per-actor matrices do not prevent homogenization when their inputs
+are almost identical. High cosine is a representation diagnostic, not a proof
+that it causes all observed navigation losses.
+
+The next test, `occlusion_address_protocol.json`, preserves local features:
+
+```text
+actor feature u_i -> u_i + attention(u, measured actors) -> memory content
+actor feature u_i -------------------------------------> KDA q/k (custom)
+candidate feature + same attention -> retained-memory read -> max -> value
+```
+
+All four arms share the residual spatial path. Current-value, contextual GRU,
+ordinary residual KDA and actor-addressed KDA are retrained; the old current
+reference is not reused because its query representation changes too. The
+two KDA arms have exactly the same parameters and initialization. Only q/k
+source differs; values, decay and write strength consume contextual content.
+At deeper layers both streams receive the same recurrent output. There is
+one attention, one shared actor memory and no additional loss or output head.
+Existing read/write versions remain available for their archived checkpoints.
+
+This is a mechanism test, not an established new method. Separate-source
+delta memory already appears in [DRAM](https://arxiv.org/abs/2609.32453), and
+retrieval design is studied in
+[Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610).
+The hypothesis here is narrower: retaining actor-local addresses while
+remembering observed social context helps legal hidden-track action evaluation.
+That claim still needs navigation gains and an occlusion-specific analysis.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4 --data outputs/occlusion_v4/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4
+```
+
+Demonstrations are the same saved observations/rewards as V1, with protocol
+metadata retargeted for the matched run; there is no extra training data.
+Final IL and RL weights, all failed versions, raw episode controls and consumed
+compute are retained. Fresh seeds and unseen confirmation cases are not used
+to develop this version.
+
+The complete V4 result is negative. Overall SR/CR/timeout are 68.75/11.72/19.53%
+for actor-addressed KDA, 72.40/10.94/16.67% for vanilla residual KDA and
+77.08/5.47/17.45% for residual GRU. Primary SR falls by 11.72 pp against GRU;
+actor-local addresses do not rescue this version. The final seed-443 address
+probe does recover distinct keys (mean inter-actor cosine 0.8144), so loss of
+actor addresses alone is not an adequate explanation of the navigation failure.
+
+`occlusion_branch_protocol.json` tests the inherited successor-value interface,
+not a new gate or a claim that private branches are novel:
+
+```text
+actual measured actor frames -> shared KDA -> real-history matrix
+candidate CV successor      -> private one-step KDA calculation
+                            -> existing attention/max/value -> original lookahead
+```
+
+Candidate computations never commit into real history. The single-step read
+is algebraically identical to an explicit private matrix update, but avoids
+80 replicated matrices. Its paired control additionally accepts legally
+propagated CV tracks as history pseudomeasurements; it receives no hidden truth.
+Both new arms retain identical parameters, initialization and IL/RL budgets.
+The unchanged V1 current-value and read-only KDA references and the stronger V3
+context-GRU reference remain controls, with configuration and action-parity
+checks before reuse. Any positive development result still requires new seeds
+and unseen cases, with all confirmation arms trained anew.
+
+Engineering optimizations share matrix reads across candidates and pack measured
+GRU frames without changing their recurrence. An exclusive laptop CPU read-only
+benchmark falls from 5.91 to 2.37 ms for five actors and 27.67 to 9.90 ms for
+twenty actors; these are not full-controller latency or navigation gains.
+Frozen checkpoint actions and gradient/recurrence tests validate the changes.
+
+## Installation
+
+Install a PyTorch build appropriate for your machine first. Then:
+
+```bash
+git clone https://github.com/jinglongjiang/shixu.git
+cd shixu
+python -m pip install -e .
+python -m pip install 'git+https://github.com/sybrenstuvel/Python-RVO2.git'
+```
+
+Python-RVO2 needs its normal native build prerequisites. The GRU path does not
+require Mamba, Transformers or custom CUDA kernels. Legacy Mamba checkpoints
+require the optional mamba-ssm 1.2.0 dependency and a matching CUDA/PyTorch wheel;
+do not silently substitute another network if it fails to import.
+
+## Commands
+
+```bash
+# Interface checks only; this is not a trained policy result.
+python -m shixu.cli smoke --output outputs/smoke.json
+python -m unittest discover -s tests -v
+
+# Collect legal, identity-tagged observations and ORCA returns without training.
+python -m shixu.cli collect --cases 0 1 --output data/orca.json
+
+# Trained-checkpoint evaluation. Weights are intentionally not uploaded.
+python -m shixu.cli evaluate --backbone mamba --device cuda \
+  --weights /path/to/rl_model_ep10000_T24.pth --cases 0 1
+
+# Explicitly opt into training.
+python -m shixu.cli train --il-episodes 5 --rl-episodes 10 \
+  --device cuda --output weights/gru.pt
+```
+
+Models must use the same config when comparing them. The optional local-source
+regression tests use environment variables CAMRL_PARENT and CAMRL_CHECKPOINT;
+they check features, value outputs, actions and history against the original
+source. They skip explicitly when those local assets are unavailable.
+New checkpoints include their model/observation configuration; evaluation uses
+it automatically unless an explicit --config override is supplied.
+
+The matched trial is driven by experiments/temporal_protocol.json, not test
+results: four paired seeds, a shared 128-episode successful ORCA dataset,
+50 IL epochs, 1,000 MC-RL episodes per arm, and fixed circle/square cases at
+5/10/20 humans. The initial legacy contract has 302,337 parameters per arm;
+the observation-only contract has 300,417 at the same width 128 and depth 2.
+Only the final-budget checkpoint is evaluated. Processing-order prototype
+results cannot be represented as a new algorithm or proof of selective memory.
+
+```bash
+python experiments/temporal_collect.py --output data/demonstrations.pt
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --data data/demonstrations.pt --root outputs/temporal_v1 --device cuda
+python experiments/temporal_order.py summarize --root outputs/temporal_v1
+
+# One shared interface rescue: same data/budget, subtract legacy derived inputs.
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --feature-contract observed --data data/demonstrations.pt \
+  --root outputs/temporal_v2 --device cuda
+```
+
+Run the other seeds in the protocol before requesting the paired summary.
+Native experiments assume perfect observed association and retain the original
+five-human neural input cap even when the simulator contains 10/20 humans.
+Missing observation masks preserve actor state; association errors and
+real-world re-identification are not solved by this interface.
+
+## Initial Matched Result
+
+Four paired seeds completed 50 IL epochs + 1,000 online MC-RL episodes per arm,
+followed by 96 fixed native evaluations each (768 total).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 9.90% | 14.58% | 302,337 |
+| Actor-first GRU | 78.39% | 8.33% | 13.28% | 302,337 |
+
+The +2.86 pp mean SR change has only 2/4 positive seed pairs and does not meet
+the frozen +3 pp / 3-of-4 direction gate: NO_STABLE_GAIN. Pooled square gains
+and smaller actor seed dispersion are exploratory, not a new-method claim.
+Same-device RTX 3060 scoring medians are 3.110 / 4.418 ms for scene / actor;
+actor-first is not a computation-saving result. No GDN/KDA/revision cell is
+claimed successful on the strength of these mixed outcomes.
+
+```bash
+python -m experiments.temporal_latency --root outputs/temporal_v1 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v1 --seed 17
+```
+
+The shadow uses arrived motion evidence and native scene replay. A masked-prefix
+intervention is an offline diagnostic, not a trained or deployable revision
+policy. Full results/checkpoints stay local under outputs; weights and data are
+not committed. The unchanged fresh follow-up used seeds 103/137: SR changes
+were +7.29 / -12.50 pp, so the initial seed-dispersion signal did not replicate.
+The common observation-only rescue is frozen separately in
+experiments/temporal_rescue_protocol.json; its results must not be pooled with
+the legacy-contract cohort.
+
+## Completed Observation-Only Rescue
+
+The one permitted rescue subtracts the inherited redundant/incorrect derived
+inputs for **both** arms, without changing data, reward, budget or network size.
+Four paired seeds again completed 50 IL epochs, 1,000 MC-RL episodes and 96
+fixed evaluations per arm (768 evaluations).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 11.20% | 13.28% | 300,417 |
+| Actor-first GRU | 75.00% | 6.25% | 18.75% | 300,417 |
+
+SR differences are +3.13, +5.21, -5.21 and -5.21 pp across seeds
+17/29/43/71. The mean is -0.52 pp with 2/4 positive pairs:
+**NO_STABLE_GAIN** under the unchanged gate. Collision decreases in all four
+pairs, but timeout increases; this is a safety-progress operating-point signal,
+not proof of better navigation. Pooled 20-human gains also remain only 2/4
+seed-positive. Same-device scoring medians are 3.012 / 4.163 ms (scene / actor),
+so actor-first is about 38% more expensive in this workload.
+
+The legal observed-change shadow finds four first events in 12 native
+episodes: targeted actor-history truncation changes no root rankings and gives
+no safe progress gain >=0.05 m. Selective-revision headroom remains unproven;
+the small masked-prefix intervention does not reject the research family.
+Attention and pooling both move relative to recurrence, so this comparison
+does not isolate identity continuity alone.
+
+Reserved fresh rescue seeds 191/223 were not run within that study because the
+primary gate failed. That study added no GDN/KDA, new reward or extra teacher.
+Across the separate initial, fresh and rescue cohorts, 20 models and 1,920
+matched evaluation episodes are retained locally. None is relabeled as a new
+method. All 38 local tests pass with the original comparison assets configured;
+the laptop passes 35 tests with three explicit original-asset skips.
+
+```bash
+python experiments/temporal_order.py summarize --root outputs/temporal_v2
+python -m experiments.temporal_latency --root outputs/temporal_v2 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v2 --seed 17
+python -m shixu.cli evaluate --weights outputs/temporal_v2/17/actor/model.pt \
+  --device cuda --cases 0 1
+```
+
+## Baseline Boundary
+
+The source baseline comes from the user's
+CrowdNav(20260511_last_version_mamba_vl).zip, not the later Bayesian-replaced
+active camrl directory. The simulator preserves that archive's behavior;
+only trailing whitespace is cleaned.
+Its CrowdNav foundation is attributed in vendor/CROWDNAV_LICENSE.
+
+The inherited deterministic baseline uses 80 moving actions, dt=0.25 s,
+24-frame history, and r+0.99V lookahead. The archive's evaluation settings also
+include clearance filtering, a risk penalty and action smoothing. They are
+retained explicitly in shixu/default.ini; this is not a reproduction of paper
+statistics based on a few episodes.
+
+Legacy metadata indices and spatial relational-coordinate conventions are
+preserved for checkpoint parity. Their audit is separate from method novelty;
+changing them together with a new memory would confound that comparison.
+
+The new training runner preserves the IL-to-MC-value-learning formulation, not
+every historical launcher's behavior: observations are recorded even during
+exploratory controls, teacher state is cleared between episodes, and test-case
+scheduling is explicit. All new training arms must share this runner. Legacy
+training numbers cannot be attributed to this cleanup without matched reruns.
+
+Simulator IDs are association keys attached to observed states, not neural
+features. Human goals/future states are not written into deployable inputs.
+Weights, data, videos, credentials and old experiment artifacts are excluded
+from version control.
+
+## Explicit Memory Architecture Pilot
+
+A separately authorized pilot compares two mechanisms without assuming the
+newer operator is better:
+
+```text
+observed actor prefix -> one shared GRU/KDA/GDN2 -> per-actor state
+candidate successor  -> query that state       -> current feature + memory
+                     -> original attention/max pool -> scalar value/lookahead
+```
+
+Training uses the first T-1 observed-history slots as the prefix and the last
+real frame as the query. Episode starts inherit first-frame replication padding.
+In inference, the query is an analytic candidate successor. It
+never changes the persistent observation history. All 80 queries share one
+prefix encoding. The full-window control updates a disposable state copy with
+the query; it also never persists hypothetical observations.
+
+KDA evidence fusion compares `f + gate(f,m,e)*m` with the same-capacity generic
+gate using zero evidence. GDN2 evidence revision supplies `e` to the existing
+channel-wise erase/write projections, compared with zero evidence at exactly
+the same parameter count. Here `e` is causal observed velocity innovation,
+signed speed change and a validity bit, computed only from real prefix frames.
+It is not a hidden intent, goal change timestamp or future truth.
+
+There is one actor memory, not separate motion/context networks. Channel-wise
+gates do not guarantee semantic motion/context separation or safe forgetting;
+that is a hypothesis to test, not an architectural property already proved.
+
+The compact cells implement the exact MIT FLA reference recurrence and omit
+language-model convolutions, hybrid attention and large decoders. They do not
+claim to reproduce the full Kimi Linear or GDN2 language-model architecture.
+They need no additional CUDA package. Credit/license: vendor/FLA_LICENSE;
+reference commit 9f38d24980c46d46bd38614e743cdacd21906578.
+
+| Arm | Temporal/read interface | Parameters |
+| --- | --- | ---: |
+| actor_gru | Original actor-first GRU | 300,417 |
+| gru_evidence | GRU prefix/read and evidence fusion | 366,593 |
+| kda_full | Compact KDA with disposable query write | 268,177 |
+| kda_read | KDA read-only query, current residual | 268,177 |
+| kda_gate | KDA generic gated residual | 301,585 |
+| kda_evidence | KDA evidence-gated residual | 301,585 |
+| gdn2_read | GDN2 read, zero evidence at write gates | 335,241 |
+| gdn2_revision | GDN2 evidence-conditioned write gates | 335,241 |
+
+The two evidence-specific contrasts are parameter matched; comparisons between
+different substrates are not. GRU evidence fusion is the strong cheap control.
+Matrix-state capacity is also different: at these dimensions KDA/GDN2 store
+40,960 floats versus the original GRU's 1,280, not a matched state-size control.
+The frozen protocol uses seeds 191/223, the same immutable 128-episode ORCA
+dataset, 50 IL epochs, 1,000 online MC episodes, four updates/episode, width128,
+depth2, T24, reward/actions/simulator and 96 development cases/model. These
+seeds are a new architecture pilot, not fresh confirmation of earlier trials.
+Two seeds and reused cases cannot establish METHOD_ENTRY_FOUND.
+
+```bash
+python -m experiments.temporal_memory queue --data data/demonstrations.pt \
+  --root outputs/memory_pilot --device cuda
+python -m experiments.temporal_memory summarize --root outputs/memory_pilot
+python -m experiments.temporal_memory latency --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+python -m experiments.temporal_memory events --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+```
+
+Tests compare recurrence and gradients, official reference equations, causal
+evidence, masks/re-entry, read-only candidate queries, shared-prefix versus
+full-window values/gradients, and native candidate scores. Operator provenance
+is not novelty: actor memory, separate current/history consumption and generic
+gating have close priors, including ReCAT (https://intuitive-robots.github.io/ReCAT/).
+TRACER (https://arxiv.org/html/2609.18776v1) also separates executed evidence
+updates from candidate-trajectory queries in social navigation. That principle
+is not a novel claim of this implementation.
+Navigation results and evidence-specific ablations must justify any narrower
+claim before the architecture is selected as a paper method.
+
+The latency replay also measures the original trained actor GRU with a shared
+prefix computation, preserving its value function. This prevents attributing
+generic prefix reuse to a new memory operator. Natural-event shadow comparisons
+use common roots from the first legal near-motion event in each pre-fixed parent
+episode, not the best events for a new arm. They remain exploratory supporting
+evidence, not a replacement for a negative paired SR result.
+
+## Completed Memory Pilot
+
+All eight arms finished both paired seeds (191/223): 16 final checkpoints,
+50 IL epochs and 1,000 online MC episodes each, with 1,536 fixed evaluation
+episodes in total. This cohort is separate from the older processing-order
+experiments. No reward, action support, demonstration data or training budget
+was changed after observing outcomes.
+
+| Arm | SR | Collision | Timeout | Successful time (s) | RTX 4090 score (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| actor_gru | 82.81% | 6.25% | 10.94% | 18.20 | 3.013 |
+| gru_evidence | 78.12% | 7.29% | 14.58% | 17.56 | 3.839 |
+| kda_full | 74.48% | 15.62% | 9.90% | 19.51 | 11.678 |
+| kda_read | 80.21% | 6.77% | 13.02% | 22.56 | 9.590 |
+| kda_gate | 84.90% | 7.81% | 7.29% | 20.56 | 9.726 |
+| kda_evidence | 75.52% | 6.25% | 18.23% | 23.47 | 9.716 |
+| gdn2_read | 77.08% | 8.85% | 14.06% | 20.46 | 9.788 |
+| gdn2_revision | 75.00% | 7.29% | 17.71% | 22.70 | 9.799 |
+
+The parameter-matched mechanism tests are negative in both seeds:
+
+- KDA evidence versus generic gate: SR -8.33 / -10.42 pp; mean -9.38 pp,
+  timeout +10.94 pp. Adding motion evidence does not justify this gate.
+- GDN2 evidence revision versus zero-evidence update: SR -1.04 / -3.13 pp;
+  mean -2.08 pp, timeout +3.65 pp.
+- Against the original actor GRU, the custom KDA/GDN2 arms lose 7.29 / 7.81 pp
+  mean SR. Neither beats the GRU evidence control either.
+
+Generic KDA gating has the highest mean SR, but its gain over actor GRU is only
++2.08 pp with one positive seed and one tie. Successful-episode time rises
+about 13%; different success sets make this a descriptive, not causal, time
+comparison. Its pooled 20-human SR is 76.56% versus 65.63% for actor GRU, but
+this secondary reused-case slice does not rescue the failed primary gate or
+establish a social-specific mechanism.
+
+Every frozen contrast returns NO_CONSISTENT_PILOT_GAIN. This is
+**VERSION_NEGATIVE, not FAMILY_NEGATIVE**; two seeds cannot establish permanent
+dominance or a paper-ready method. No extra fresh training was launched.
+
+### Cost and Validation
+
+The timing table measures the complete 80-action score on an otherwise idle
+RTX 4090, PyTorch 2.9.1+cu128, one CPU thread, 20 warmups and 100 synchronized
+samples. The output-equivalent cached actor GRU takes 3.373 ms, so generic
+prefix reuse is not a GPU speedup in this workload. KDA/GDN2 are roughly three
+times slower than the original GRU here. These compact PyTorch cells are not
+optimized official FLA kernels; this result does not benchmark those kernels.
+
+On the i7-1165G7 laptop (PyTorch 2.4.1, one thread), actor GRU / cached GRU
+take 64.032 / 5.530 ms. KDA evidence / GDN2 revision take 11.403 / 11.276 ms.
+Thus the CPU caching benefit is already available without a new operator.
+The local RTX 3060 replay is supplemental only: an unrelated RustDesk compute
+process was active, so it is not an idle-device performance claim. Timings
+across different devices/PyTorch versions are not pooled.
+
+Training wall times per model are 573-778 s for the GRU arms and 1,446-2,063 s
+for the matrix-memory arms. Varying concurrent worker counts and episode lengths
+make these descriptive resource records, not matched throughput estimates.
+Peak allocated memory is 692-724 MiB / 1,889-1,980 MiB respectively.
+
+The common-root shadow covers 12 native parent episodes, 4,365 person-frames
+and six first legal near-motion events. Over three-second continuations,
+KDA evidence versus generic gate has three progress wins and three losses;
+GDN2 revision versus its matched control has zero wins and four losses
+(>=0.05 m). All branches are collision-free. Changed root actions therefore
+do not establish recovery value or selective motion/context retention.
+
+All 16 artifacts were checked for finite weights/losses, 50 IL epochs,
+1,000 RL episodes, identical case sets and the shared data checksum. Source
+and result/checkpoint/log hashes were compared with the training host. Normal
+CLI loading was also checked for both custom checkpoints, not used as extra
+performance evidence. The final local suite passes 50 tests, including legacy
+Mamba parity and the NumPy-to-JSON shadow-export regression. The laptop runs
+50 tests with 46 passing and four explicit optional-asset skips. All remote
+artifacts were retrieved and checksum-verified before this run's temporary
+4090 workspace was removed; existing environments were left untouched.
+
+Full checkpoints and records remain local in outputs/memory_pilot, excluded
+from Git. The existing strategy report contains the detailed paired contrasts.
+The useful delivered result is a tested, compact architecture and reproducible
+negative mechanism comparison, not a successful new navigation algorithm.
+
+## Frozen KDA Gate Diagnostic
+
+```bash
+python -m experiments.temporal_memory gate-diagnostic \
+  --root outputs/memory_pilot --device cuda
+```
+
+No new training: 38 common roots from 12 fixed native parent episodes, using
+uniform ticks plus six first arrived near-motion events; both trained seeds.
+KDA gating changes memory **readout**, not erase/write. The GDN2 update
+mechanism is not tested by this read-gate diagnostic.
+
+Removing only explicit motion evidence changes 0/76 candidate selections;
+removing motion and validity changes 1/76. The direct mean gate change from
+motion is about 0.00063. This does not support attributing the 9.38 pp SR gap
+to harmful runtime motion gating on these states. Entire trained models differ,
+and online MC refinement collects policy-dependent trajectories.
+
+In the generic model, constant per-channel gates change 7/76 selections, a
+uniform 0.5 gate changes 18/76, and no attenuation changes 35/76. Its mean gate
+is 0.56, without broad saturation. This suggests readout scale calibration,
+not demonstrated semantic stale-motion erasure. Constants use this same root
+cohort; interventions are potentially out of distribution, final rankings
+include the inherited safety filter, and no closed-loop improvement is claimed.
+Raw diagnostics remain in outputs/memory_pilot/gate_diagnostic.json. A new
+read-only intervention/restoration regression brings the local suite to 51
+passing tests.
+
+## Frozen Static-versus-Dynamic Follow-up
+
+This follow-up trains read-only KDA with coefficient1, 128 learned
+state-independent sigmoid channel scales, or the existing generic dynamic
+gate. Actor GRU remains an external reference. Static scales initialize at0.5;
+all shared KDA weights have identical initialization for a paired seed.
+Parameters: 268,177 / 268,305 / 301,585; actor GRU has300,417. Capacity
+differences are reported, not hidden using unused new parameters.
+
+The separate frozen protocol uses four new seeds307/331/359/383 and cases
+400-415 in circle/square with5/10/20 humans. Data, reward, actions,
+50 IL epochs and1,000 MC-RL episodes are unchanged. Diagnostic IL50/RL500
+snapshots are retained, but only the final checkpoint is eligible for the
+primary comparison. Online trajectories still depend on the learned policy.
+
+```bash
+python -m experiments.temporal_memory queue \
+  --protocol experiments/temporal_scale_protocol.json \
+  --data data/demonstrations.pt --root outputs/scale_followup --device cuda
+python -m experiments.temporal_memory summarize \
+  --protocol experiments/temporal_scale_protocol.json --root outputs/scale_followup
+```
+
+Dynamic versus static is the primary contrast. A meaningful gain is at least
+3 pp SR with3/4 positive seed pairs and the unchanged safety/progress limits.
+Practical equivalence requires the paired90% t interval inside +/-3 pp for
+aggregate SR only; failure to find a gain is not equivalence. The protocol was
+frozen before any outcomes were inspected. Ordinary dynamic gating is not
+automatically a new social-navigation mechanism.
+
+### Four-seed Results (4 October 2026)
+
+All16 models completed the frozen budget and1,536 evaluations. Only final
+checkpoints are compared; neither intermediate snapshots nor the earlier
+two-seed pilot are pooled into these results.
+
+| Readout/reference | SR % | CR % | Timeout % | Successful time s | Successful path m |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Actor GRU | 79.17 | 10.16 | 10.68 | 16.62 | 11.69 |
+| KDA read, coefficient1 | 76.82 | 11.72 | 11.46 | 22.21 | 16.12 |
+| KDA static channel scale | 79.43 | 9.64 | 10.94 | 20.96 | 14.98 |
+| KDA dynamic gate | 79.69 | 10.94 | 9.38 | 19.43 | 14.56 |
+
+The primary dynamic-minus-static SR differences for307/331/359/383 are
+-1.04 /0.00 /-7.29 /+9.38 pp. Mean +0.26 pp; paired90% interval
+[-7.83,+8.35] pp. Only one positive pair, two negative and one tie:
+**NO_CONSISTENT_PILOT_GAIN**, and practical SR equivalence is **not** established.
+All five pre-fixed contrasts fail the pilot-gain rule. Dynamic-minus-GRU is
+only +0.52 pp with one positive pair and16.90% longer successful time;
+static-minus-GRU is +0.26 pp with26.09% longer successful time. Successful
+time/path averages concern different surviving episode sets, not paired
+progress equivalence. Six-cell supporting results remain in the raw summary.
+
+| Complete80-action score | Idle4090 median ms | Laptop CPU median ms |
+| --- | ---: | ---: |
+| Actor GRU, original batched implementation | 3.02 | 56.43 |
+| Actor GRU, mathematically equivalent prefix reuse | 3.37 | 5.38 |
+| KDA read | 9.65 | 11.00 |
+| KDA static | 9.65 | 11.07 |
+| KDA dynamic | 9.74 | 11.47 |
+
+These are100 repetitions after20 warmups, one pre-fixed five-human root,
+T24 and no simulator/smoothing time. Server timing starts after all training
+processes exit; CPU timing uses the laptop. KDA's apparent CPU advantage over
+the unreused GRU is absorbed by prefix reuse; no efficiency advantage is found
+over the stronger compute control. This compact recurrence is not the optimized
+FLA kernel. KDA actor state is160 KiB versus5 KiB for GRU at this configuration.
+
+Actual process training time is11.77-15.15 min for GRU,34.80-39.29 for KDA
+read,30.06-36.32 for static and28.30-41.77 for dynamic. Concurrent load varies
+from six to eight jobs; these are recorded costs, not isolated throughput
+benchmarks. Summed overlapping training/evaluation times are7.94/0.79 process
+hours, not GPU-hours. Peak allocated memory per training process is724 MiB
+for GRU and1,890 MiB for KDA.
+
+All48 checkpoints reload with exact configuration/parameter counts and finite
+weights. Each log contains50 IL epochs and1,000 RL episodes; every model has
+the same96 expected cases. The learned static coefficients finish near0.501,
+with the full four-seed range0.4982-0.5051, so this control is close to uniform
+attenuation rather than a strongly differentiated channel calibration.
+
+**Interpretation:** the old two-seed dynamic-gate advantage does not replicate
+as a stable gain here. This neither proves static/dynamic equivalence nor
+rejects temporal navigation, actor memory or KDA as a family. It does not
+support selective motion-evidence revision or a new method claim. Keep GRU
+as the health/reference baseline. The next justified diagnosis is to locate
+the divergence using retained IL50/RL500 snapshots under the same evaluator,
+then test one identified replay/readout-contract issue; do not search hundreds
+of outcome-selected gate variants or rescue a favorable seed.
+
+Scientific source is frozen at6dde31e. Local results are in
+/home/abc/workspace/shixu/outputs/scale_followup, including the protocol/source
+manifest, paired summary, full episode records, learning logs, three checkpoints
+per model and GPU/CPU latency arrays. Code is versioned; weights are not added
+to Git. All98 remote raw artifacts and nine scientific source files match
+local SHA256 checksums; laptop timing also matches its original checksum.
+The server-only temporary workspace is removed after verification, with the
+installed environment left intact. No additional training or architecture
+is started by this analysis.
+
+## Occlusion Research Loop
+
+The occlusion experiments use legal measured/retained tracks, five-person
+ORCA IL and online MC refinement, followed by reloaded-final-weight tests on
+5/10/20 people in circle and square. The frozen primary endpoint is equally
+weighted 10/20-person success, with collision, timeout and progress checks.
+Both the ORCA teacher and the student receive legal measured/CV-retained
+tracks from the same observation interface; never-seen pedestrians are excluded.
+Temporary server outputs are copied locally before deletion. Development
+results are not final evidence: a promising mechanism needs unseen seeds and
+cases, with all controls retrained on the same host.
+
+The V5 private-successor comparison completed all four seeds419/443/467/491.
+Overall SR/CR/timeout are75.00/10.16/14.84% for measured-only KDA branches,
+77.34/10.68/11.98% for CV-pseudowrite branches, and85.94/5.99/8.07% for the
+strongest completed context-GRU reference. Their primary SRs are71.48/74.61/
+85.55%. Measured-only branching loses to that reference in4/4 pairs. Neither
+private branching nor excluding legal CV writes establishes a navigation gain.
+Results remain in outputs/occlusion_v5; this is a version-level negative result.
+
+A separate frozen-consumer shadow replaces only currently retained hidden
+positions/velocities with current simulator truth, without introducing unseen
+people or modifying tracker memory. Four-seed primary gain is only0.39 pp
+(one positive, two negative, one tie). This is not a full-future upper bound:
+it shows no large demonstrated hidden-state accuracy headroom for that frozen
+consumer, not that temporal reasoning or occlusion handling is unnecessary.
+Records remain in outputs/occlusion_v1/*/current/truth_retained.json.
+
+V6 tests physical actor memory before current candidate geometry/goal fusion.
+It uses the official-shaped KDA no-short-convolution mixer, verified against
+the pinned FLA layer, rather than claiming that mixer or its output gate as new.
+All motion-family models receive the same physical features and legal elapsed
+interval input. Only the custom elapsed-clock arm scales channel log-decay by
+the real interval; vanilla KDA uses unit decay per measurement. Controls include
+same-placement GRU, CV pseudowrites, identical-capacity zero motion history,
+current-only and the strong completed context-GRU. There is no extra loss or
+prediction model. The clock mechanism is a hypothesis, not a demonstrated win.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_motion_protocol.json \
+  --root outputs/occlusion_v6 --data outputs/occlusion_v6/demonstrations.pt \
+  --arms motion_gru motion_kda motion_elapsed motion_imputed motion_nohistory \
+  --device cuda --workers 2
+```
+
+Generic time-aware recurrence already exists in GRU-D and time-aware LSTM;
+actor memory and delta-rule erase/write are also existing mechanisms. The
+remaining question is whether legal observation-time semantics and this
+physical/current fusion improve closed-loop navigation beyond those controls.
+No novelty or safety guarantee is earned by passing numerical tests.
+
+V6 scientific source is frozen at54d19cc. The 4090 runs PyTorch2.9.1/cu128,
+and the3060 runs2.1.0/cu121; development comparisons retain this host boundary.
+The CUDA packed-GRU test on2.9.1 differed from explicit stepping by2.36e-4
+with default cuDNN TF32, and3.86e-6 with TF32 disabled. Float64 validates the
+recurrence separately; production float32 kernels are not bitwise identical.
+The archived optimized seed419 GRU replay changes controls in9/96 episodes
+but changes no terminal outcomes. These checks cannot justify universal action
+parity. Fresh confirmation must use one frozen implementation on one host.
+
+### Physical-memory Results and the Next Readout Test
+
+All20 V6 models completed50 IL epochs,1,000 online MC episodes and96
+reloaded-final-weight evaluations each. Source, data, finite weights and the
+complete episode keys are checked; all77 server artifacts match local checksums
+before the temporary V6 workspace is removed.
+
+| Model | Overall SR % | CR % | Timeout % | Primary10/20 SR % |
+| --- | ---: | ---: | ---: | ---: |
+| Current legal CV-track reference | 81.77 | 4.95 | 13.28 | 79.30 |
+| Context-GRU reference | 85.94 | 5.99 | 8.07 | 85.55 |
+| Physical-memory GRU | 87.50 | 4.43 | 8.07 | 83.59 |
+| Physical KDA, unit observation clock | 80.99 | 3.65 | 15.36 | 76.56 |
+| Physical KDA, elapsed clock | 80.99 | 2.86 | 16.15 | 76.95 |
+| Physical KDA, CV pseudo-writes | 83.07 | 5.47 | 11.46 | 78.13 |
+| KDA capacity control, zero committed history | 86.72 | 6.51 | 6.77 | 83.59 |
+
+Elapsed-minus-unit primary differences are-9.38/+4.69/+7.81/-1.56 pp:
+mean+0.39 pp, two positive and two negative. Elapsed-minus-physical-GRU is
+-6.64 pp, with two losses and two ties. Fewer collisions are accompanied by
+more timeouts, so this version does not meet the fixed success/progress rule.
+The zero-history arm still receives legal interval/age input. These are
+development results, not a family rejection or evidence that history is useless.
+
+On836 uniformly sampled demonstration windows per checkpoint, first-layer
+cross-actor key cosine averages0.297-0.327 across the four trained unit-clock
+KDA models. Thus the earlier near-identical-address symptom is no longer
+observed here; this statistic does not certify useful retrieval. Removing all
+committed memory changes scalar values substantially, including hidden-track
+windows, but value sensitivity does not establish better action ranking.
+
+A separate frozen action diagnostic replays12 pre-fixed current-reference
+episodes per seed and samples every eighth control step. Across626 states,
+338 contain retained hidden actors. Zeroing only those actors' committed memory
+changes79/338 actions (23.37%); zeroing all committed memory changes344/626
+(54.95%). The value shift is mostly common across candidates, but the smaller
+action-dependent component often changes the winner. This rules out a purely
+common-offset explanation; it does not show that the changed actions are better.
+The query geometry, age inputs, reward, action support and trained weights stay
+fixed. All replayed terminal outcomes match the archived current-reference
+episodes. Raw records are in outputs/occlusion_v6/action_content_*.json.
+
+The corresponding frozen closed-loop shadow uses those first two cases per
+cell (12 episodes per seed,48 total), without selecting strong interactions.
+Original SR/CR/timeout are83.33/6.25/10.42%; masking only hidden-actor memory
+gives79.17/2.08/18.75%, and masking all memory gives54.17/6.25/39.58%.
+Hidden-memory removal reduces SR in two seeds, improves it in one and ties in
+one. Memory matters to this trained model, with a safety/progress trade-off;
+this intervention can be out of distribution and does not establish superiority
+over a separately trained no-history model. Raw continuations and matched parent
+records remain in outputs/occlusion_v6/closed_content_*_kda.json.
+
+A separate four-seed CPU shadow checks the fixed2-second retention deadline.
+Only previously seen expired actors still inside the legal history horizon
+are eligible: current truth adds0.39 pp primary SR, while extending ordinary
+CV retention adds0.78 pp. Of602 expired person-frames with a last measurement
+still inside the legal prefix,31 are within2 m of the robot. This demonstrates
+a lifecycle limitation but no large frozen-consumer headroom or residual beyond
+the simple CV control. It does not justify another expiration architecture.
+Raw records are in outputs/occlusion_v6/expiry_shadow.
+
+V7 therefore replaces the readout interface, not another gate. Measured physical
+actor streams write the same KDA memory; existing current robot/human fusion
+moves before access and creates a different query for each candidate action.
+The read-only arm contracts that query with the pre-existing matrix. It never
+treats a hypothetical successor as a new measurement. A private-update KDA
+control uses exactly the same fusion placement and parameters; a same-placement
+GRU and a zero-committed-history control are also trained. No extra network,
+prediction target, reward or data is introduced. Physical V6 references preserve
+their original readout and budgets.
+
+The mechanism hypothesis is that action-relevant retrieval can improve the
+use of physical history beyond a candidate-independent actor summary. It is
+not presumed true. The proposed read-before-write primitive is already present
+in [DRAM](https://arxiv.org/abs/2609.32453), and task-conditioned retrieval is
+not new. [Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610)
+retrieves recurrent navigation experiences across episodes, unlike this bounded
+per-actor measured stream. [Kimi Linear](https://arxiv.org/abs/2510.26692)
+provides the mixer. A possible paper claim must concern the candidate-query/
+occluded-actor interface and validated navigation benefit, not qS, KDA, actor
+identity or generic read/write separation alone. Novelty remains unearned.
+
+V7 is frozen at36d1702 with the same128 demonstrations, four paired seeds,
+5-person training and5/10/20-person evaluation. Its pre-outcome protocol is
+experiments/occlusion_query_protocol.json; results are in outputs/occlusion_v7.
+All controls must remain in the comparison. Fresh seeds/cases remain untouched
+until an eligible development winner is chosen.
+
+These budgets complete the IL-to-online-MC pipeline, not the original camrl
+training schedule:50 IL epochs use128 successful demonstrations, followed by
+1,000 online episodes. At the final episode epsilon is still approximately
+0.1335 on its1,500-episode decay schedule. They do not establish convergence.
+If readout placement fails, a justified next test is one pre-fixed longer RL
+budget for all competing arms, with the same demonstrations and architecture;
+changing data volume and training budget together would not isolate the cause.
+
+The pre-outcome budget protocol is experiments/occlusion_budget_protocol.json.
+It fixes3,000 MC episodes for physical KDA, contextual GRU, same-placement GRU
+and the original zero-committed-history KDA capacity control, keeping128 IL
+demonstrations and50 IL epochs. No architecture changes are bundled with this
+test. It will run after V7 finishes; neither this budget nor the old1,000-episode
+budget is described as converged. Fresh confirmation remains reserved.
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-ce2218554ab41d35"></a>
+
+## Historical Variant Source: /home/abc/workspace/shixu_compute_check/README.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: ce2218554ab41d359fe8c8ba1fbf33f3dba6a5c4847152be7e35fd2633342aee
+
+<!-- BEGIN PRESERVED SOURCE -->
+# shixu
+
+A small temporal crowd-navigation research framework extracted from the user's
+local camrl Mamba-VL project. It contains the cleaned parent and explicit
+temporal architecture experiments, not an established new-method claim.
+
+## One Main Path
+
+```text
+legal observations -> frame encoder -> temporal encoder -> scalar value
+                    -> original candidate successor/value lookahead -> action
+
+ORCA demonstrations -> Monte Carlo value initialization -> online MC refinement
+```
+
+GRU is the default temporal baseline. Mamba is optional and retained only for
+legacy comparison. There are no Double-Q/PPO/SAC branches, auxiliary prediction
+heads, Bayesian modules, teacher networks at deployment, or fallback backbones.
+
+The explicit actor-first alternative moves temporal encoding before crowd pooling:
+
+```text
+identity-bound human histories -> shared temporal encoder -> crowd pooling
+                              -> scalar value -> unchanged lookahead
+```
+
+The processing-order prototype now compares scene-first and actor-first GRU
+using identical aligned observations and exactly the same parameters. Every
+human uses the same GRU weights, with independent histories. That trial adds no
+dual-memory system, contradiction detector or additional prediction head.
+That processing-order experiment remains a baseline, not a selective-revision method.
+
+The observation-only contract consumes robot raw state9 and human observed
+motion9 plus presence. It removes redundant legacy relation features rather
+than adding a predictor or another memory. The explicit legacy feature contract
+remains only for reproducing the first trial and loading its checkpoints.
+
+## Layout
+
+| File | Responsibility |
+| --- | --- |
+| shixu/features.py | Legacy observation contract and history windows |
+| shixu/observations.py | Episode-local observed association keys, never numeric ID features |
+| shixu/model.py | Frame encoder, replaceable temporal encoder, value head |
+| shixu/temporal.py | Compact GRU/KDA/GDN2 actor memories; real-write/candidate-read interface |
+| shixu/policy.py | Original action support and successor-value evaluation |
+| shixu/replay.py | Episode-safe windows and MC targets; no duplicated window archive |
+| shixu/runner.py | One runner for collection, training and evaluation |
+| shixu/training.py | ORCA value initialization and online MC refinement |
+| shixu/cli.py | Explicit collection/evaluation/training commands |
+| vendor/crowd_sim | Frozen local simulator dependency |
+| experiments/ | Frozen protocol, immutable ORCA collection and paired processing-order trial |
+
+## Occlusion Development Loop
+
+The new `occlusion` architecture removes the five-person input cap. It uses
+episode-local identity slots, actual-measurement write masks and a separate
+retained-track read mask. A previously observed actor can remain relevant while
+occluded; an actor that has never been seen cannot enter the model. Missing
+positions use the last legally measured velocity for at most two seconds.
+Predicted positions and candidate successors are read-only queries, not new
+measurements. There is one shared actor memory and no external memory gate,
+auxiliary predictor, dual-memory branch or changed reward.
+
+```text
+body-occluded observations -> legal track histories -> shared KDA memory
+                          -> retained-track candidate reads -> scalar value
+                          -> inherited 80-action value lookahead
+```
+
+This is a functional research prototype, not an established novelty or
+performance claim. The common retention interface is also used by the
+current-state and recurrent comparisons. Previously reported full-observation
+results are not occlusion results.
+
+```bash
+# Pin the vendored simulator when another CrowdNav is installed locally.
+export PYTHONPATH=vendor:.
+python -m unittest discover -s tests -v
+python -m experiments.occlusion collect \
+  --data outputs/occlusion_v1/demonstrations.pt
+python -m experiments.occlusion queue \
+  --root outputs/occlusion_v1 --data outputs/occlusion_v1/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize --root outputs/occlusion_v1
+```
+
+`experiments/occlusion_protocol.json` freezes shared demonstrations, four
+paired development seeds, 50 IL epochs, 1,000 online MC-RL episodes and
+5/10/20-person evaluation. Every reported model is reconstructed and loaded
+from its final saved checkpoint before evaluation. Development cases guide
+diagnosis; fresh seeds and separate confirmation cases remain reserved until
+an architecture is selected. A negative version is diagnosed, not relabeled
+as a failed research family. Raw weights, logs and episodes remain local.
+
+The second frozen version, `occlusion_observation_protocol.json`, changes only
+the read clock. Memory is read from the latest legal history frame once per
+actor, then shared by all candidate actions. Candidate geometry remains in the
+spatial value encoder, but it no longer changes the actor's temporal read vector.
+The weights and parameter count are unchanged by this switch. Both versions
+receive byte-identical episode observations and rewards. The current-track
+reference is reused because it has no learned temporal read; the temporal
+arms are retrained through the complete IL/MC-RL schedule.
+
+```bash
+python -m experiments.occlusion collect \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --data outputs/occlusion_v2/demonstrations.pt
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2 --data outputs/occlusion_v2/demonstrations.pt \
+  --arms gru kda --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2
+```
+
+The observation-clock design is a hypothesis under test, not a correctness
+repair. Both versions leave the stored matrix state unchanged during candidate
+evaluation. Action-conditioned reads can legitimately retrieve different
+information for different decisions even when humans do not react to the
+robot. The new bias separates a shared temporal read vector from
+candidate-conditioned geometry evaluation and avoids replicating each actor's
+matrix memory 80 times. Frozen-weight read ablations are diagnostic, not
+substitutes for retraining or proof of better navigation.
+
+The first full four-seed occlusion trial is complete (384 held-out development
+episodes per arm, not the earlier full-observation trial):
+
+| Model | Overall SR | CR | Timeout | 10/20-person SR |
+|---|---:|---:|---:|---:|
+| CV-track current-value | 81.77% | 4.95% | 13.28% | 79.30% |
+| Actor-GRU | 77.34% | 6.25% | 16.41% | 75.78% |
+| Actor-KDA, candidate read | 78.39% | 11.20% | 10.42% | 75.78% |
+
+KDA does not pass: primary SR is unchanged against GRU, while primary collision
+increases by 5.86 percentage points. A frozen-weight switch to observation-clock
+reads also worsens seed 443 overall SR from 70.83% to 56.25%; this is a
+distribution-shifting diagnostic, not a trained comparison. The second version
+must therefore earn its own result through matched IL and RL.
+
+Completed final-IL checkpoints may be moved to a faster host using `--il-root`.
+The experiment verifies seed/configuration and all IL log epochs, restores the
+replay sampling stream, then starts a fresh, full-budget RL run. Interrupted RL
+work is archived and charged separately; it is not used for checkpoint selection.
+An exact CPU pipeline test checks identical full-run versus final-IL-reuse RL
+updates. Different GPU/software environments can still introduce numerical
+differences and are recorded with each run.
+
+The complete observation-read trial is negative: overall SR is 63.54% for
+KDA versus 79.43% for GRU; primary 10/20-person SR is 64.45% versus 76.56%.
+KDA loses primary SR in all four paired seeds. Fewer collisions come with
+substantially more timeouts (30.47% overall), so this version is not retained
+as the candidate architecture. Shared observation reads are not an established
+correction to the original action-dependent read design.
+
+The next structural test, `occlusion_context_protocol.json`, returns to the
+original candidate clock and moves the existing attention before actor memory:
+
+```text
+real actor observations -> attention (actor outputs, no scene pooling)
+                        -> shared, measurement-masked KDA writes
+candidate geometry     -> same attention -> read each actor memory
+                        -> masked max -> scalar value -> original lookahead
+```
+
+There is still one attention and one temporal operator. The parameter counts
+are unchanged. Prefix attention keys use actual measurements; hidden tracks
+cannot supply fresh write evidence. Query attention can use legally retained
+CV tracks. The non-temporal current-value arm is mathematically unchanged;
+its existing saved weights reproduce every executed action and terminal outcome
+in all 96 seed-419 development episodes after the helper refactor.
+
+This tests whether historical neighbour context is useful. The old actor
+memory is exactly insensitive to another actor's past when its own history is
+fixed. The replacement removes that insensitivity in a fixture, but this is
+not proof of navigation headroom or novelty. A separate episode-disjoint
+linear probe of 887 natural re-entries does not improve average velocity
+prediction over CV, so richer context is not presumed useful in every task.
+Archived collision replays also show visible colliders and no margin-safe
+action at the final step; they do not establish that occlusion caused the
+earlier poor decisions. DS-RNN and [PaS](https://github.com/yejimun/PaS_CrowdNav)
+already study temporal/social inference. Moving attention is an experimental
+representation choice, not a standalone new-method claim.
+
+The complete context-write trial is negative for KDA: overall SR/CR/timeout
+are 62.76/12.24/25.00%, versus 85.94/5.99/8.07% for GRU. Primary 10/20-person
+SR is 60.16% versus 85.55%, with KDA losses in all four paired seeds.
+On 836 uniformly sampled demonstration windows, seed-443 final KDA keys have
+mean inter-actor cosine 0.99926 in this version versus 0.77600 in V1.
+Separate per-actor matrices do not prevent homogenization when their inputs
+are almost identical. High cosine is a representation diagnostic, not a proof
+that it causes all observed navigation losses.
+
+The next test, `occlusion_address_protocol.json`, preserves local features:
+
+```text
+actor feature u_i -> u_i + attention(u, measured actors) -> memory content
+actor feature u_i -------------------------------------> KDA q/k (custom)
+candidate feature + same attention -> retained-memory read -> max -> value
+```
+
+All four arms share the residual spatial path. Current-value, contextual GRU,
+ordinary residual KDA and actor-addressed KDA are retrained; the old current
+reference is not reused because its query representation changes too. The
+two KDA arms have exactly the same parameters and initialization. Only q/k
+source differs; values, decay and write strength consume contextual content.
+At deeper layers both streams receive the same recurrent output. There is
+one attention, one shared actor memory and no additional loss or output head.
+Existing read/write versions remain available for their archived checkpoints.
+
+This is a mechanism test, not an established new method. Separate-source
+delta memory already appears in [DRAM](https://arxiv.org/abs/2609.32453), and
+retrieval design is studied in
+[Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610).
+The hypothesis here is narrower: retaining actor-local addresses while
+remembering observed social context helps legal hidden-track action evaluation.
+That claim still needs navigation gains and an occlusion-specific analysis.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4 --data outputs/occlusion_v4/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4
+```
+
+Demonstrations are the same saved observations/rewards as V1, with protocol
+metadata retargeted for the matched run; there is no extra training data.
+Final IL and RL weights, all failed versions, raw episode controls and consumed
+compute are retained. Fresh seeds and unseen confirmation cases are not used
+to develop this version.
+
+## Installation
+
+Install a PyTorch build appropriate for your machine first. Then:
+
+```bash
+git clone https://github.com/jinglongjiang/shixu.git
+cd shixu
+python -m pip install -e .
+python -m pip install 'git+https://github.com/sybrenstuvel/Python-RVO2.git'
+```
+
+Python-RVO2 needs its normal native build prerequisites. The GRU path does not
+require Mamba, Transformers or custom CUDA kernels. Legacy Mamba checkpoints
+require the optional mamba-ssm 1.2.0 dependency and a matching CUDA/PyTorch wheel;
+do not silently substitute another network if it fails to import.
+
+## Commands
+
+```bash
+# Interface checks only; this is not a trained policy result.
+python -m shixu.cli smoke --output outputs/smoke.json
+python -m unittest discover -s tests -v
+
+# Collect legal, identity-tagged observations and ORCA returns without training.
+python -m shixu.cli collect --cases 0 1 --output data/orca.json
+
+# Trained-checkpoint evaluation. Weights are intentionally not uploaded.
+python -m shixu.cli evaluate --backbone mamba --device cuda \
+  --weights /path/to/rl_model_ep10000_T24.pth --cases 0 1
+
+# Explicitly opt into training.
+python -m shixu.cli train --il-episodes 5 --rl-episodes 10 \
+  --device cuda --output weights/gru.pt
+```
+
+Models must use the same config when comparing them. The optional local-source
+regression tests use environment variables CAMRL_PARENT and CAMRL_CHECKPOINT;
+they check features, value outputs, actions and history against the original
+source. They skip explicitly when those local assets are unavailable.
+New checkpoints include their model/observation configuration; evaluation uses
+it automatically unless an explicit --config override is supplied.
+
+The matched trial is driven by experiments/temporal_protocol.json, not test
+results: four paired seeds, a shared 128-episode successful ORCA dataset,
+50 IL epochs, 1,000 MC-RL episodes per arm, and fixed circle/square cases at
+5/10/20 humans. The initial legacy contract has 302,337 parameters per arm;
+the observation-only contract has 300,417 at the same width 128 and depth 2.
+Only the final-budget checkpoint is evaluated. Processing-order prototype
+results cannot be represented as a new algorithm or proof of selective memory.
+
+```bash
+python experiments/temporal_collect.py --output data/demonstrations.pt
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --data data/demonstrations.pt --root outputs/temporal_v1 --device cuda
+python experiments/temporal_order.py summarize --root outputs/temporal_v1
+
+# One shared interface rescue: same data/budget, subtract legacy derived inputs.
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --feature-contract observed --data data/demonstrations.pt \
+  --root outputs/temporal_v2 --device cuda
+```
+
+Run the other seeds in the protocol before requesting the paired summary.
+Native experiments assume perfect observed association and retain the original
+five-human neural input cap even when the simulator contains 10/20 humans.
+Missing observation masks preserve actor state; association errors and
+real-world re-identification are not solved by this interface.
+
+## Initial Matched Result
+
+Four paired seeds completed 50 IL epochs + 1,000 online MC-RL episodes per arm,
+followed by 96 fixed native evaluations each (768 total).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 9.90% | 14.58% | 302,337 |
+| Actor-first GRU | 78.39% | 8.33% | 13.28% | 302,337 |
+
+The +2.86 pp mean SR change has only 2/4 positive seed pairs and does not meet
+the frozen +3 pp / 3-of-4 direction gate: NO_STABLE_GAIN. Pooled square gains
+and smaller actor seed dispersion are exploratory, not a new-method claim.
+Same-device RTX 3060 scoring medians are 3.110 / 4.418 ms for scene / actor;
+actor-first is not a computation-saving result. No GDN/KDA/revision cell is
+claimed successful on the strength of these mixed outcomes.
+
+```bash
+python -m experiments.temporal_latency --root outputs/temporal_v1 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v1 --seed 17
+```
+
+The shadow uses arrived motion evidence and native scene replay. A masked-prefix
+intervention is an offline diagnostic, not a trained or deployable revision
+policy. Full results/checkpoints stay local under outputs; weights and data are
+not committed. The unchanged fresh follow-up used seeds 103/137: SR changes
+were +7.29 / -12.50 pp, so the initial seed-dispersion signal did not replicate.
+The common observation-only rescue is frozen separately in
+experiments/temporal_rescue_protocol.json; its results must not be pooled with
+the legacy-contract cohort.
+
+## Completed Observation-Only Rescue
+
+The one permitted rescue subtracts the inherited redundant/incorrect derived
+inputs for **both** arms, without changing data, reward, budget or network size.
+Four paired seeds again completed 50 IL epochs, 1,000 MC-RL episodes and 96
+fixed evaluations per arm (768 evaluations).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 11.20% | 13.28% | 300,417 |
+| Actor-first GRU | 75.00% | 6.25% | 18.75% | 300,417 |
+
+SR differences are +3.13, +5.21, -5.21 and -5.21 pp across seeds
+17/29/43/71. The mean is -0.52 pp with 2/4 positive pairs:
+**NO_STABLE_GAIN** under the unchanged gate. Collision decreases in all four
+pairs, but timeout increases; this is a safety-progress operating-point signal,
+not proof of better navigation. Pooled 20-human gains also remain only 2/4
+seed-positive. Same-device scoring medians are 3.012 / 4.163 ms (scene / actor),
+so actor-first is about 38% more expensive in this workload.
+
+The legal observed-change shadow finds four first events in 12 native
+episodes: targeted actor-history truncation changes no root rankings and gives
+no safe progress gain >=0.05 m. Selective-revision headroom remains unproven;
+the small masked-prefix intervention does not reject the research family.
+Attention and pooling both move relative to recurrence, so this comparison
+does not isolate identity continuity alone.
+
+Reserved fresh rescue seeds 191/223 were not run within that study because the
+primary gate failed. That study added no GDN/KDA, new reward or extra teacher.
+Across the separate initial, fresh and rescue cohorts, 20 models and 1,920
+matched evaluation episodes are retained locally. None is relabeled as a new
+method. All 38 local tests pass with the original comparison assets configured;
+the laptop passes 35 tests with three explicit original-asset skips.
+
+```bash
+python experiments/temporal_order.py summarize --root outputs/temporal_v2
+python -m experiments.temporal_latency --root outputs/temporal_v2 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v2 --seed 17
+python -m shixu.cli evaluate --weights outputs/temporal_v2/17/actor/model.pt \
+  --device cuda --cases 0 1
+```
+
+## Baseline Boundary
+
+The source baseline comes from the user's
+CrowdNav(20260511_last_version_mamba_vl).zip, not the later Bayesian-replaced
+active camrl directory. The simulator preserves that archive's behavior;
+only trailing whitespace is cleaned.
+Its CrowdNav foundation is attributed in vendor/CROWDNAV_LICENSE.
+
+The inherited deterministic baseline uses 80 moving actions, dt=0.25 s,
+24-frame history, and r+0.99V lookahead. The archive's evaluation settings also
+include clearance filtering, a risk penalty and action smoothing. They are
+retained explicitly in shixu/default.ini; this is not a reproduction of paper
+statistics based on a few episodes.
+
+Legacy metadata indices and spatial relational-coordinate conventions are
+preserved for checkpoint parity. Their audit is separate from method novelty;
+changing them together with a new memory would confound that comparison.
+
+The new training runner preserves the IL-to-MC-value-learning formulation, not
+every historical launcher's behavior: observations are recorded even during
+exploratory controls, teacher state is cleared between episodes, and test-case
+scheduling is explicit. All new training arms must share this runner. Legacy
+training numbers cannot be attributed to this cleanup without matched reruns.
+
+Simulator IDs are association keys attached to observed states, not neural
+features. Human goals/future states are not written into deployable inputs.
+Weights, data, videos, credentials and old experiment artifacts are excluded
+from version control.
+
+## Explicit Memory Architecture Pilot
+
+A separately authorized pilot compares two mechanisms without assuming the
+newer operator is better:
+
+```text
+observed actor prefix -> one shared GRU/KDA/GDN2 -> per-actor state
+candidate successor  -> query that state       -> current feature + memory
+                     -> original attention/max pool -> scalar value/lookahead
+```
+
+Training uses the first T-1 observed-history slots as the prefix and the last
+real frame as the query. Episode starts inherit first-frame replication padding.
+In inference, the query is an analytic candidate successor. It
+never changes the persistent observation history. All 80 queries share one
+prefix encoding. The full-window control updates a disposable state copy with
+the query; it also never persists hypothetical observations.
+
+KDA evidence fusion compares `f + gate(f,m,e)*m` with the same-capacity generic
+gate using zero evidence. GDN2 evidence revision supplies `e` to the existing
+channel-wise erase/write projections, compared with zero evidence at exactly
+the same parameter count. Here `e` is causal observed velocity innovation,
+signed speed change and a validity bit, computed only from real prefix frames.
+It is not a hidden intent, goal change timestamp or future truth.
+
+There is one actor memory, not separate motion/context networks. Channel-wise
+gates do not guarantee semantic motion/context separation or safe forgetting;
+that is a hypothesis to test, not an architectural property already proved.
+
+The compact cells implement the exact MIT FLA reference recurrence and omit
+language-model convolutions, hybrid attention and large decoders. They do not
+claim to reproduce the full Kimi Linear or GDN2 language-model architecture.
+They need no additional CUDA package. Credit/license: vendor/FLA_LICENSE;
+reference commit 9f38d24980c46d46bd38614e743cdacd21906578.
+
+| Arm | Temporal/read interface | Parameters |
+| --- | --- | ---: |
+| actor_gru | Original actor-first GRU | 300,417 |
+| gru_evidence | GRU prefix/read and evidence fusion | 366,593 |
+| kda_full | Compact KDA with disposable query write | 268,177 |
+| kda_read | KDA read-only query, current residual | 268,177 |
+| kda_gate | KDA generic gated residual | 301,585 |
+| kda_evidence | KDA evidence-gated residual | 301,585 |
+| gdn2_read | GDN2 read, zero evidence at write gates | 335,241 |
+| gdn2_revision | GDN2 evidence-conditioned write gates | 335,241 |
+
+The two evidence-specific contrasts are parameter matched; comparisons between
+different substrates are not. GRU evidence fusion is the strong cheap control.
+Matrix-state capacity is also different: at these dimensions KDA/GDN2 store
+40,960 floats versus the original GRU's 1,280, not a matched state-size control.
+The frozen protocol uses seeds 191/223, the same immutable 128-episode ORCA
+dataset, 50 IL epochs, 1,000 online MC episodes, four updates/episode, width128,
+depth2, T24, reward/actions/simulator and 96 development cases/model. These
+seeds are a new architecture pilot, not fresh confirmation of earlier trials.
+Two seeds and reused cases cannot establish METHOD_ENTRY_FOUND.
+
+```bash
+python -m experiments.temporal_memory queue --data data/demonstrations.pt \
+  --root outputs/memory_pilot --device cuda
+python -m experiments.temporal_memory summarize --root outputs/memory_pilot
+python -m experiments.temporal_memory latency --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+python -m experiments.temporal_memory events --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+```
+
+Tests compare recurrence and gradients, official reference equations, causal
+evidence, masks/re-entry, read-only candidate queries, shared-prefix versus
+full-window values/gradients, and native candidate scores. Operator provenance
+is not novelty: actor memory, separate current/history consumption and generic
+gating have close priors, including ReCAT (https://intuitive-robots.github.io/ReCAT/).
+TRACER (https://arxiv.org/html/2609.18776v1) also separates executed evidence
+updates from candidate-trajectory queries in social navigation. That principle
+is not a novel claim of this implementation.
+Navigation results and evidence-specific ablations must justify any narrower
+claim before the architecture is selected as a paper method.
+
+The latency replay also measures the original trained actor GRU with a shared
+prefix computation, preserving its value function. This prevents attributing
+generic prefix reuse to a new memory operator. Natural-event shadow comparisons
+use common roots from the first legal near-motion event in each pre-fixed parent
+episode, not the best events for a new arm. They remain exploratory supporting
+evidence, not a replacement for a negative paired SR result.
+
+## Completed Memory Pilot
+
+All eight arms finished both paired seeds (191/223): 16 final checkpoints,
+50 IL epochs and 1,000 online MC episodes each, with 1,536 fixed evaluation
+episodes in total. This cohort is separate from the older processing-order
+experiments. No reward, action support, demonstration data or training budget
+was changed after observing outcomes.
+
+| Arm | SR | Collision | Timeout | Successful time (s) | RTX 4090 score (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| actor_gru | 82.81% | 6.25% | 10.94% | 18.20 | 3.013 |
+| gru_evidence | 78.12% | 7.29% | 14.58% | 17.56 | 3.839 |
+| kda_full | 74.48% | 15.62% | 9.90% | 19.51 | 11.678 |
+| kda_read | 80.21% | 6.77% | 13.02% | 22.56 | 9.590 |
+| kda_gate | 84.90% | 7.81% | 7.29% | 20.56 | 9.726 |
+| kda_evidence | 75.52% | 6.25% | 18.23% | 23.47 | 9.716 |
+| gdn2_read | 77.08% | 8.85% | 14.06% | 20.46 | 9.788 |
+| gdn2_revision | 75.00% | 7.29% | 17.71% | 22.70 | 9.799 |
+
+The parameter-matched mechanism tests are negative in both seeds:
+
+- KDA evidence versus generic gate: SR -8.33 / -10.42 pp; mean -9.38 pp,
+  timeout +10.94 pp. Adding motion evidence does not justify this gate.
+- GDN2 evidence revision versus zero-evidence update: SR -1.04 / -3.13 pp;
+  mean -2.08 pp, timeout +3.65 pp.
+- Against the original actor GRU, the custom KDA/GDN2 arms lose 7.29 / 7.81 pp
+  mean SR. Neither beats the GRU evidence control either.
+
+Generic KDA gating has the highest mean SR, but its gain over actor GRU is only
++2.08 pp with one positive seed and one tie. Successful-episode time rises
+about 13%; different success sets make this a descriptive, not causal, time
+comparison. Its pooled 20-human SR is 76.56% versus 65.63% for actor GRU, but
+this secondary reused-case slice does not rescue the failed primary gate or
+establish a social-specific mechanism.
+
+Every frozen contrast returns NO_CONSISTENT_PILOT_GAIN. This is
+**VERSION_NEGATIVE, not FAMILY_NEGATIVE**; two seeds cannot establish permanent
+dominance or a paper-ready method. No extra fresh training was launched.
+
+### Cost and Validation
+
+The timing table measures the complete 80-action score on an otherwise idle
+RTX 4090, PyTorch 2.9.1+cu128, one CPU thread, 20 warmups and 100 synchronized
+samples. The output-equivalent cached actor GRU takes 3.373 ms, so generic
+prefix reuse is not a GPU speedup in this workload. KDA/GDN2 are roughly three
+times slower than the original GRU here. These compact PyTorch cells are not
+optimized official FLA kernels; this result does not benchmark those kernels.
+
+On the i7-1165G7 laptop (PyTorch 2.4.1, one thread), actor GRU / cached GRU
+take 64.032 / 5.530 ms. KDA evidence / GDN2 revision take 11.403 / 11.276 ms.
+Thus the CPU caching benefit is already available without a new operator.
+The local RTX 3060 replay is supplemental only: an unrelated RustDesk compute
+process was active, so it is not an idle-device performance claim. Timings
+across different devices/PyTorch versions are not pooled.
+
+Training wall times per model are 573-778 s for the GRU arms and 1,446-2,063 s
+for the matrix-memory arms. Varying concurrent worker counts and episode lengths
+make these descriptive resource records, not matched throughput estimates.
+Peak allocated memory is 692-724 MiB / 1,889-1,980 MiB respectively.
+
+The common-root shadow covers 12 native parent episodes, 4,365 person-frames
+and six first legal near-motion events. Over three-second continuations,
+KDA evidence versus generic gate has three progress wins and three losses;
+GDN2 revision versus its matched control has zero wins and four losses
+(>=0.05 m). All branches are collision-free. Changed root actions therefore
+do not establish recovery value or selective motion/context retention.
+
+All 16 artifacts were checked for finite weights/losses, 50 IL epochs,
+1,000 RL episodes, identical case sets and the shared data checksum. Source
+and result/checkpoint/log hashes were compared with the training host. Normal
+CLI loading was also checked for both custom checkpoints, not used as extra
+performance evidence. The final local suite passes 50 tests, including legacy
+Mamba parity and the NumPy-to-JSON shadow-export regression. The laptop runs
+50 tests with 46 passing and four explicit optional-asset skips. All remote
+artifacts were retrieved and checksum-verified before this run's temporary
+4090 workspace was removed; existing environments were left untouched.
+
+Full checkpoints and records remain local in outputs/memory_pilot, excluded
+from Git. The existing strategy report contains the detailed paired contrasts.
+The useful delivered result is a tested, compact architecture and reproducible
+negative mechanism comparison, not a successful new navigation algorithm.
+
+## Frozen KDA Gate Diagnostic
+
+```bash
+python -m experiments.temporal_memory gate-diagnostic \
+  --root outputs/memory_pilot --device cuda
+```
+
+No new training: 38 common roots from 12 fixed native parent episodes, using
+uniform ticks plus six first arrived near-motion events; both trained seeds.
+KDA gating changes memory **readout**, not erase/write. The GDN2 update
+mechanism is not tested by this read-gate diagnostic.
+
+Removing only explicit motion evidence changes 0/76 candidate selections;
+removing motion and validity changes 1/76. The direct mean gate change from
+motion is about 0.00063. This does not support attributing the 9.38 pp SR gap
+to harmful runtime motion gating on these states. Entire trained models differ,
+and online MC refinement collects policy-dependent trajectories.
+
+In the generic model, constant per-channel gates change 7/76 selections, a
+uniform 0.5 gate changes 18/76, and no attenuation changes 35/76. Its mean gate
+is 0.56, without broad saturation. This suggests readout scale calibration,
+not demonstrated semantic stale-motion erasure. Constants use this same root
+cohort; interventions are potentially out of distribution, final rankings
+include the inherited safety filter, and no closed-loop improvement is claimed.
+Raw diagnostics remain in outputs/memory_pilot/gate_diagnostic.json. A new
+read-only intervention/restoration regression brings the local suite to 51
+passing tests.
+
+## Frozen Static-versus-Dynamic Follow-up
+
+This follow-up trains read-only KDA with coefficient1, 128 learned
+state-independent sigmoid channel scales, or the existing generic dynamic
+gate. Actor GRU remains an external reference. Static scales initialize at0.5;
+all shared KDA weights have identical initialization for a paired seed.
+Parameters: 268,177 / 268,305 / 301,585; actor GRU has300,417. Capacity
+differences are reported, not hidden using unused new parameters.
+
+The separate frozen protocol uses four new seeds307/331/359/383 and cases
+400-415 in circle/square with5/10/20 humans. Data, reward, actions,
+50 IL epochs and1,000 MC-RL episodes are unchanged. Diagnostic IL50/RL500
+snapshots are retained, but only the final checkpoint is eligible for the
+primary comparison. Online trajectories still depend on the learned policy.
+
+```bash
+python -m experiments.temporal_memory queue \
+  --protocol experiments/temporal_scale_protocol.json \
+  --data data/demonstrations.pt --root outputs/scale_followup --device cuda
+python -m experiments.temporal_memory summarize \
+  --protocol experiments/temporal_scale_protocol.json --root outputs/scale_followup
+```
+
+Dynamic versus static is the primary contrast. A meaningful gain is at least
+3 pp SR with3/4 positive seed pairs and the unchanged safety/progress limits.
+Practical equivalence requires the paired90% t interval inside +/-3 pp for
+aggregate SR only; failure to find a gain is not equivalence. The protocol was
+frozen before any outcomes were inspected. Ordinary dynamic gating is not
+automatically a new social-navigation mechanism.
+
+### Four-seed Results (4 October 2026)
+
+All16 models completed the frozen budget and1,536 evaluations. Only final
+checkpoints are compared; neither intermediate snapshots nor the earlier
+two-seed pilot are pooled into these results.
+
+| Readout/reference | SR % | CR % | Timeout % | Successful time s | Successful path m |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Actor GRU | 79.17 | 10.16 | 10.68 | 16.62 | 11.69 |
+| KDA read, coefficient1 | 76.82 | 11.72 | 11.46 | 22.21 | 16.12 |
+| KDA static channel scale | 79.43 | 9.64 | 10.94 | 20.96 | 14.98 |
+| KDA dynamic gate | 79.69 | 10.94 | 9.38 | 19.43 | 14.56 |
+
+The primary dynamic-minus-static SR differences for307/331/359/383 are
+-1.04 /0.00 /-7.29 /+9.38 pp. Mean +0.26 pp; paired90% interval
+[-7.83,+8.35] pp. Only one positive pair, two negative and one tie:
+**NO_CONSISTENT_PILOT_GAIN**, and practical SR equivalence is **not** established.
+All five pre-fixed contrasts fail the pilot-gain rule. Dynamic-minus-GRU is
+only +0.52 pp with one positive pair and16.90% longer successful time;
+static-minus-GRU is +0.26 pp with26.09% longer successful time. Successful
+time/path averages concern different surviving episode sets, not paired
+progress equivalence. Six-cell supporting results remain in the raw summary.
+
+| Complete80-action score | Idle4090 median ms | Laptop CPU median ms |
+| --- | ---: | ---: |
+| Actor GRU, original batched implementation | 3.02 | 56.43 |
+| Actor GRU, mathematically equivalent prefix reuse | 3.37 | 5.38 |
+| KDA read | 9.65 | 11.00 |
+| KDA static | 9.65 | 11.07 |
+| KDA dynamic | 9.74 | 11.47 |
+
+These are100 repetitions after20 warmups, one pre-fixed five-human root,
+T24 and no simulator/smoothing time. Server timing starts after all training
+processes exit; CPU timing uses the laptop. KDA's apparent CPU advantage over
+the unreused GRU is absorbed by prefix reuse; no efficiency advantage is found
+over the stronger compute control. This compact recurrence is not the optimized
+FLA kernel. KDA actor state is160 KiB versus5 KiB for GRU at this configuration.
+
+Actual process training time is11.77-15.15 min for GRU,34.80-39.29 for KDA
+read,30.06-36.32 for static and28.30-41.77 for dynamic. Concurrent load varies
+from six to eight jobs; these are recorded costs, not isolated throughput
+benchmarks. Summed overlapping training/evaluation times are7.94/0.79 process
+hours, not GPU-hours. Peak allocated memory per training process is724 MiB
+for GRU and1,890 MiB for KDA.
+
+All48 checkpoints reload with exact configuration/parameter counts and finite
+weights. Each log contains50 IL epochs and1,000 RL episodes; every model has
+the same96 expected cases. The learned static coefficients finish near0.501,
+with the full four-seed range0.4982-0.5051, so this control is close to uniform
+attenuation rather than a strongly differentiated channel calibration.
+
+**Interpretation:** the old two-seed dynamic-gate advantage does not replicate
+as a stable gain here. This neither proves static/dynamic equivalence nor
+rejects temporal navigation, actor memory or KDA as a family. It does not
+support selective motion-evidence revision or a new method claim. Keep GRU
+as the health/reference baseline. The next justified diagnosis is to locate
+the divergence using retained IL50/RL500 snapshots under the same evaluator,
+then test one identified replay/readout-contract issue; do not search hundreds
+of outcome-selected gate variants or rescue a favorable seed.
+
+Scientific source is frozen at6dde31e. Local results are in
+/home/abc/workspace/shixu/outputs/scale_followup, including the protocol/source
+manifest, paired summary, full episode records, learning logs, three checkpoints
+per model and GPU/CPU latency arrays. Code is versioned; weights are not added
+to Git. All98 remote raw artifacts and nine scientific source files match
+local SHA256 checksums; laptop timing also matches its original checksum.
+The server-only temporary workspace is removed after verification, with the
+installed environment left intact. No additional training or architecture
+is started by this analysis.
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-f1377e63438e1a2a"></a>
+
+## Historical Variant Source: /home/abc/workspace/shixu_motion_design/README.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: f1377e63438e1a2acf4e44b46a37d46395eb6c2568bfdd6be50f5501c03c2137
+
+<!-- BEGIN PRESERVED SOURCE -->
+# shixu
+
+A small temporal crowd-navigation research framework extracted from the user's
+local camrl Mamba-VL project. It contains the cleaned parent and explicit
+temporal architecture experiments, not an established new-method claim.
+
+## One Main Path
+
+```text
+legal observations -> frame encoder -> temporal encoder -> scalar value
+                    -> original candidate successor/value lookahead -> action
+
+ORCA demonstrations -> Monte Carlo value initialization -> online MC refinement
+```
+
+GRU is the default temporal baseline. Mamba is optional and retained only for
+legacy comparison. There are no Double-Q/PPO/SAC branches, auxiliary prediction
+heads, Bayesian modules, teacher networks at deployment, or fallback backbones.
+
+The explicit actor-first alternative moves temporal encoding before crowd pooling:
+
+```text
+identity-bound human histories -> shared temporal encoder -> crowd pooling
+                              -> scalar value -> unchanged lookahead
+```
+
+The processing-order prototype now compares scene-first and actor-first GRU
+using identical aligned observations and exactly the same parameters. Every
+human uses the same GRU weights, with independent histories. That trial adds no
+dual-memory system, contradiction detector or additional prediction head.
+That processing-order experiment remains a baseline, not a selective-revision method.
+
+The observation-only contract consumes robot raw state9 and human observed
+motion9 plus presence. It removes redundant legacy relation features rather
+than adding a predictor or another memory. The explicit legacy feature contract
+remains only for reproducing the first trial and loading its checkpoints.
+
+## Layout
+
+| File | Responsibility |
+| --- | --- |
+| shixu/features.py | Legacy observation contract and history windows |
+| shixu/observations.py | Episode-local observed association keys, never numeric ID features |
+| shixu/model.py | Frame encoder, replaceable temporal encoder, value head |
+| shixu/temporal.py | Compact GRU/KDA/GDN2 actor memories; real-write/candidate-read interface |
+| shixu/policy.py | Original action support and successor-value evaluation |
+| shixu/replay.py | Episode-safe windows and MC targets; no duplicated window archive |
+| shixu/runner.py | One runner for collection, training and evaluation |
+| shixu/training.py | ORCA value initialization and online MC refinement |
+| shixu/cli.py | Explicit collection/evaluation/training commands |
+| vendor/crowd_sim | Frozen local simulator dependency |
+| experiments/ | Frozen protocol, immutable ORCA collection and paired processing-order trial |
+
+## Occlusion Development Loop
+
+The new `occlusion` architecture removes the five-person input cap. It uses
+episode-local identity slots, actual-measurement write masks and a separate
+retained-track read mask. A previously observed actor can remain relevant while
+occluded; an actor that has never been seen cannot enter the model. Missing
+positions use the last legally measured velocity for at most two seconds.
+Predicted positions and candidate successors are read-only queries, not new
+measurements. There is one shared actor memory and no external memory gate,
+auxiliary predictor, dual-memory branch or changed reward.
+
+```text
+body-occluded observations -> legal track histories -> shared KDA memory
+                          -> retained-track candidate reads -> scalar value
+                          -> inherited 80-action value lookahead
+```
+
+This is a functional research prototype, not an established novelty or
+performance claim. The common retention interface is also used by the
+current-state and recurrent comparisons. Previously reported full-observation
+results are not occlusion results.
+
+```bash
+# Pin the vendored simulator when another CrowdNav is installed locally.
+export PYTHONPATH=vendor:.
+python -m unittest discover -s tests -v
+python -m experiments.occlusion collect \
+  --data outputs/occlusion_v1/demonstrations.pt
+python -m experiments.occlusion queue \
+  --root outputs/occlusion_v1 --data outputs/occlusion_v1/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize --root outputs/occlusion_v1
+```
+
+`experiments/occlusion_protocol.json` freezes shared demonstrations, four
+paired development seeds, 50 IL epochs, 1,000 online MC-RL episodes and
+5/10/20-person evaluation. Every reported model is reconstructed and loaded
+from its final saved checkpoint before evaluation. Development cases guide
+diagnosis; fresh seeds and separate confirmation cases remain reserved until
+an architecture is selected. A negative version is diagnosed, not relabeled
+as a failed research family. Raw weights, logs and episodes remain local.
+
+The second frozen version, `occlusion_observation_protocol.json`, changes only
+the read clock. Memory is read from the latest legal history frame once per
+actor, then shared by all candidate actions. Candidate geometry remains in the
+spatial value encoder, but it no longer changes the actor's temporal read vector.
+The weights and parameter count are unchanged by this switch. Both versions
+receive byte-identical episode observations and rewards. The current-track
+reference is reused because it has no learned temporal read; the temporal
+arms are retrained through the complete IL/MC-RL schedule.
+
+```bash
+python -m experiments.occlusion collect \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --data outputs/occlusion_v2/demonstrations.pt
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2 --data outputs/occlusion_v2/demonstrations.pt \
+  --arms gru kda --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2
+```
+
+The observation-clock design is a hypothesis under test, not a correctness
+repair. Both versions leave the stored matrix state unchanged during candidate
+evaluation. Action-conditioned reads can legitimately retrieve different
+information for different decisions even when humans do not react to the
+robot. The new bias separates a shared temporal read vector from
+candidate-conditioned geometry evaluation and avoids replicating each actor's
+matrix memory 80 times. Frozen-weight read ablations are diagnostic, not
+substitutes for retraining or proof of better navigation.
+
+The first full four-seed occlusion trial is complete (384 held-out development
+episodes per arm, not the earlier full-observation trial):
+
+| Model | Overall SR | CR | Timeout | 10/20-person SR |
+|---|---:|---:|---:|---:|
+| CV-track current-value | 81.77% | 4.95% | 13.28% | 79.30% |
+| Actor-GRU | 77.34% | 6.25% | 16.41% | 75.78% |
+| Actor-KDA, candidate read | 78.39% | 11.20% | 10.42% | 75.78% |
+
+KDA does not pass: primary SR is unchanged against GRU, while primary collision
+increases by 5.86 percentage points. A frozen-weight switch to observation-clock
+reads also worsens seed 443 overall SR from 70.83% to 56.25%; this is a
+distribution-shifting diagnostic, not a trained comparison. The second version
+must therefore earn its own result through matched IL and RL.
+
+Completed final-IL checkpoints may be moved to a faster host using `--il-root`.
+The experiment verifies seed/configuration and all IL log epochs, restores the
+replay sampling stream, then starts a fresh, full-budget RL run. Interrupted RL
+work is archived and charged separately; it is not used for checkpoint selection.
+An exact CPU pipeline test checks identical full-run versus final-IL-reuse RL
+updates. Different GPU/software environments can still introduce numerical
+differences and are recorded with each run.
+
+The complete observation-read trial is negative: overall SR is 63.54% for
+KDA versus 79.43% for GRU; primary 10/20-person SR is 64.45% versus 76.56%.
+KDA loses primary SR in all four paired seeds. Fewer collisions come with
+substantially more timeouts (30.47% overall), so this version is not retained
+as the candidate architecture. Shared observation reads are not an established
+correction to the original action-dependent read design.
+
+The next structural test, `occlusion_context_protocol.json`, returns to the
+original candidate clock and moves the existing attention before actor memory:
+
+```text
+real actor observations -> attention (actor outputs, no scene pooling)
+                        -> shared, measurement-masked KDA writes
+candidate geometry     -> same attention -> read each actor memory
+                        -> masked max -> scalar value -> original lookahead
+```
+
+There is still one attention and one temporal operator. The parameter counts
+are unchanged. Prefix attention keys use actual measurements; hidden tracks
+cannot supply fresh write evidence. Query attention can use legally retained
+CV tracks. The non-temporal current-value arm is mathematically unchanged;
+its existing saved weights reproduce every executed action and terminal outcome
+in all 96 seed-419 development episodes after the helper refactor.
+
+This tests whether historical neighbour context is useful. The old actor
+memory is exactly insensitive to another actor's past when its own history is
+fixed. The replacement removes that insensitivity in a fixture, but this is
+not proof of navigation headroom or novelty. A separate episode-disjoint
+linear probe of 887 natural re-entries does not improve average velocity
+prediction over CV, so richer context is not presumed useful in every task.
+Archived collision replays also show visible colliders and no margin-safe
+action at the final step; they do not establish that occlusion caused the
+earlier poor decisions. DS-RNN and [PaS](https://github.com/yejimun/PaS_CrowdNav)
+already study temporal/social inference. Moving attention is an experimental
+representation choice, not a standalone new-method claim.
+
+The complete context-write trial is negative for KDA: overall SR/CR/timeout
+are 62.76/12.24/25.00%, versus 85.94/5.99/8.07% for GRU. Primary 10/20-person
+SR is 60.16% versus 85.55%, with KDA losses in all four paired seeds.
+On 836 uniformly sampled demonstration windows, seed-443 final KDA keys have
+mean inter-actor cosine 0.99926 in this version versus 0.77600 in V1.
+Separate per-actor matrices do not prevent homogenization when their inputs
+are almost identical. High cosine is a representation diagnostic, not a proof
+that it causes all observed navigation losses.
+
+The next test, `occlusion_address_protocol.json`, preserves local features:
+
+```text
+actor feature u_i -> u_i + attention(u, measured actors) -> memory content
+actor feature u_i -------------------------------------> KDA q/k (custom)
+candidate feature + same attention -> retained-memory read -> max -> value
+```
+
+All four arms share the residual spatial path. Current-value, contextual GRU,
+ordinary residual KDA and actor-addressed KDA are retrained; the old current
+reference is not reused because its query representation changes too. The
+two KDA arms have exactly the same parameters and initialization. Only q/k
+source differs; values, decay and write strength consume contextual content.
+At deeper layers both streams receive the same recurrent output. There is
+one attention, one shared actor memory and no additional loss or output head.
+Existing read/write versions remain available for their archived checkpoints.
+
+This is a mechanism test, not an established new method. Separate-source
+delta memory already appears in [DRAM](https://arxiv.org/abs/2609.32453), and
+retrieval design is studied in
+[Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610).
+The hypothesis here is narrower: retaining actor-local addresses while
+remembering observed social context helps legal hidden-track action evaluation.
+That claim still needs navigation gains and an occlusion-specific analysis.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4 --data outputs/occlusion_v4/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4
+```
+
+Demonstrations are the same saved observations/rewards as V1, with protocol
+metadata retargeted for the matched run; there is no extra training data.
+Final IL and RL weights, all failed versions, raw episode controls and consumed
+compute are retained. Fresh seeds and unseen confirmation cases are not used
+to develop this version.
+
+The complete V4 result is negative. Overall SR/CR/timeout are 68.75/11.72/19.53%
+for actor-addressed KDA, 72.40/10.94/16.67% for vanilla residual KDA and
+77.08/5.47/17.45% for residual GRU. Primary SR falls by 11.72 pp against GRU;
+actor-local addresses do not rescue this version. The final seed-443 address
+probe does recover distinct keys (mean inter-actor cosine 0.8144), so loss of
+actor addresses alone is not an adequate explanation of the navigation failure.
+
+`occlusion_branch_protocol.json` tests the inherited successor-value interface,
+not a new gate or a claim that private branches are novel:
+
+```text
+actual measured actor frames -> shared KDA -> real-history matrix
+candidate CV successor      -> private one-step KDA calculation
+                            -> existing attention/max/value -> original lookahead
+```
+
+Candidate computations never commit into real history. The single-step read
+is algebraically identical to an explicit private matrix update, but avoids
+80 replicated matrices. Its paired control additionally accepts legally
+propagated CV tracks as history pseudomeasurements; it receives no hidden truth.
+Both new arms retain identical parameters, initialization and IL/RL budgets.
+The unchanged V1 current-value and read-only KDA references and the stronger V3
+context-GRU reference remain controls, with configuration and action-parity
+checks before reuse. Any positive development result still requires new seeds
+and unseen cases, with all confirmation arms trained anew.
+
+Engineering optimizations share matrix reads across candidates and pack measured
+GRU frames without changing their recurrence. An exclusive laptop CPU read-only
+benchmark falls from 5.91 to 2.37 ms for five actors and 27.67 to 9.90 ms for
+twenty actors; these are not full-controller latency or navigation gains.
+Frozen checkpoint actions and gradient/recurrence tests validate the changes.
+
+## Installation
+
+Install a PyTorch build appropriate for your machine first. Then:
+
+```bash
+git clone https://github.com/jinglongjiang/shixu.git
+cd shixu
+python -m pip install -e .
+python -m pip install 'git+https://github.com/sybrenstuvel/Python-RVO2.git'
+```
+
+Python-RVO2 needs its normal native build prerequisites. The GRU path does not
+require Mamba, Transformers or custom CUDA kernels. Legacy Mamba checkpoints
+require the optional mamba-ssm 1.2.0 dependency and a matching CUDA/PyTorch wheel;
+do not silently substitute another network if it fails to import.
+
+## Commands
+
+```bash
+# Interface checks only; this is not a trained policy result.
+python -m shixu.cli smoke --output outputs/smoke.json
+python -m unittest discover -s tests -v
+
+# Collect legal, identity-tagged observations and ORCA returns without training.
+python -m shixu.cli collect --cases 0 1 --output data/orca.json
+
+# Trained-checkpoint evaluation. Weights are intentionally not uploaded.
+python -m shixu.cli evaluate --backbone mamba --device cuda \
+  --weights /path/to/rl_model_ep10000_T24.pth --cases 0 1
+
+# Explicitly opt into training.
+python -m shixu.cli train --il-episodes 5 --rl-episodes 10 \
+  --device cuda --output weights/gru.pt
+```
+
+Models must use the same config when comparing them. The optional local-source
+regression tests use environment variables CAMRL_PARENT and CAMRL_CHECKPOINT;
+they check features, value outputs, actions and history against the original
+source. They skip explicitly when those local assets are unavailable.
+New checkpoints include their model/observation configuration; evaluation uses
+it automatically unless an explicit --config override is supplied.
+
+The matched trial is driven by experiments/temporal_protocol.json, not test
+results: four paired seeds, a shared 128-episode successful ORCA dataset,
+50 IL epochs, 1,000 MC-RL episodes per arm, and fixed circle/square cases at
+5/10/20 humans. The initial legacy contract has 302,337 parameters per arm;
+the observation-only contract has 300,417 at the same width 128 and depth 2.
+Only the final-budget checkpoint is evaluated. Processing-order prototype
+results cannot be represented as a new algorithm or proof of selective memory.
+
+```bash
+python experiments/temporal_collect.py --output data/demonstrations.pt
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --data data/demonstrations.pt --root outputs/temporal_v1 --device cuda
+python experiments/temporal_order.py summarize --root outputs/temporal_v1
+
+# One shared interface rescue: same data/budget, subtract legacy derived inputs.
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --feature-contract observed --data data/demonstrations.pt \
+  --root outputs/temporal_v2 --device cuda
+```
+
+Run the other seeds in the protocol before requesting the paired summary.
+Native experiments assume perfect observed association and retain the original
+five-human neural input cap even when the simulator contains 10/20 humans.
+Missing observation masks preserve actor state; association errors and
+real-world re-identification are not solved by this interface.
+
+## Initial Matched Result
+
+Four paired seeds completed 50 IL epochs + 1,000 online MC-RL episodes per arm,
+followed by 96 fixed native evaluations each (768 total).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 9.90% | 14.58% | 302,337 |
+| Actor-first GRU | 78.39% | 8.33% | 13.28% | 302,337 |
+
+The +2.86 pp mean SR change has only 2/4 positive seed pairs and does not meet
+the frozen +3 pp / 3-of-4 direction gate: NO_STABLE_GAIN. Pooled square gains
+and smaller actor seed dispersion are exploratory, not a new-method claim.
+Same-device RTX 3060 scoring medians are 3.110 / 4.418 ms for scene / actor;
+actor-first is not a computation-saving result. No GDN/KDA/revision cell is
+claimed successful on the strength of these mixed outcomes.
+
+```bash
+python -m experiments.temporal_latency --root outputs/temporal_v1 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v1 --seed 17
+```
+
+The shadow uses arrived motion evidence and native scene replay. A masked-prefix
+intervention is an offline diagnostic, not a trained or deployable revision
+policy. Full results/checkpoints stay local under outputs; weights and data are
+not committed. The unchanged fresh follow-up used seeds 103/137: SR changes
+were +7.29 / -12.50 pp, so the initial seed-dispersion signal did not replicate.
+The common observation-only rescue is frozen separately in
+experiments/temporal_rescue_protocol.json; its results must not be pooled with
+the legacy-contract cohort.
+
+## Completed Observation-Only Rescue
+
+The one permitted rescue subtracts the inherited redundant/incorrect derived
+inputs for **both** arms, without changing data, reward, budget or network size.
+Four paired seeds again completed 50 IL epochs, 1,000 MC-RL episodes and 96
+fixed evaluations per arm (768 evaluations).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 11.20% | 13.28% | 300,417 |
+| Actor-first GRU | 75.00% | 6.25% | 18.75% | 300,417 |
+
+SR differences are +3.13, +5.21, -5.21 and -5.21 pp across seeds
+17/29/43/71. The mean is -0.52 pp with 2/4 positive pairs:
+**NO_STABLE_GAIN** under the unchanged gate. Collision decreases in all four
+pairs, but timeout increases; this is a safety-progress operating-point signal,
+not proof of better navigation. Pooled 20-human gains also remain only 2/4
+seed-positive. Same-device scoring medians are 3.012 / 4.163 ms (scene / actor),
+so actor-first is about 38% more expensive in this workload.
+
+The legal observed-change shadow finds four first events in 12 native
+episodes: targeted actor-history truncation changes no root rankings and gives
+no safe progress gain >=0.05 m. Selective-revision headroom remains unproven;
+the small masked-prefix intervention does not reject the research family.
+Attention and pooling both move relative to recurrence, so this comparison
+does not isolate identity continuity alone.
+
+Reserved fresh rescue seeds 191/223 were not run within that study because the
+primary gate failed. That study added no GDN/KDA, new reward or extra teacher.
+Across the separate initial, fresh and rescue cohorts, 20 models and 1,920
+matched evaluation episodes are retained locally. None is relabeled as a new
+method. All 38 local tests pass with the original comparison assets configured;
+the laptop passes 35 tests with three explicit original-asset skips.
+
+```bash
+python experiments/temporal_order.py summarize --root outputs/temporal_v2
+python -m experiments.temporal_latency --root outputs/temporal_v2 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v2 --seed 17
+python -m shixu.cli evaluate --weights outputs/temporal_v2/17/actor/model.pt \
+  --device cuda --cases 0 1
+```
+
+## Baseline Boundary
+
+The source baseline comes from the user's
+CrowdNav(20260511_last_version_mamba_vl).zip, not the later Bayesian-replaced
+active camrl directory. The simulator preserves that archive's behavior;
+only trailing whitespace is cleaned.
+Its CrowdNav foundation is attributed in vendor/CROWDNAV_LICENSE.
+
+The inherited deterministic baseline uses 80 moving actions, dt=0.25 s,
+24-frame history, and r+0.99V lookahead. The archive's evaluation settings also
+include clearance filtering, a risk penalty and action smoothing. They are
+retained explicitly in shixu/default.ini; this is not a reproduction of paper
+statistics based on a few episodes.
+
+Legacy metadata indices and spatial relational-coordinate conventions are
+preserved for checkpoint parity. Their audit is separate from method novelty;
+changing them together with a new memory would confound that comparison.
+
+The new training runner preserves the IL-to-MC-value-learning formulation, not
+every historical launcher's behavior: observations are recorded even during
+exploratory controls, teacher state is cleared between episodes, and test-case
+scheduling is explicit. All new training arms must share this runner. Legacy
+training numbers cannot be attributed to this cleanup without matched reruns.
+
+Simulator IDs are association keys attached to observed states, not neural
+features. Human goals/future states are not written into deployable inputs.
+Weights, data, videos, credentials and old experiment artifacts are excluded
+from version control.
+
+## Explicit Memory Architecture Pilot
+
+A separately authorized pilot compares two mechanisms without assuming the
+newer operator is better:
+
+```text
+observed actor prefix -> one shared GRU/KDA/GDN2 -> per-actor state
+candidate successor  -> query that state       -> current feature + memory
+                     -> original attention/max pool -> scalar value/lookahead
+```
+
+Training uses the first T-1 observed-history slots as the prefix and the last
+real frame as the query. Episode starts inherit first-frame replication padding.
+In inference, the query is an analytic candidate successor. It
+never changes the persistent observation history. All 80 queries share one
+prefix encoding. The full-window control updates a disposable state copy with
+the query; it also never persists hypothetical observations.
+
+KDA evidence fusion compares `f + gate(f,m,e)*m` with the same-capacity generic
+gate using zero evidence. GDN2 evidence revision supplies `e` to the existing
+channel-wise erase/write projections, compared with zero evidence at exactly
+the same parameter count. Here `e` is causal observed velocity innovation,
+signed speed change and a validity bit, computed only from real prefix frames.
+It is not a hidden intent, goal change timestamp or future truth.
+
+There is one actor memory, not separate motion/context networks. Channel-wise
+gates do not guarantee semantic motion/context separation or safe forgetting;
+that is a hypothesis to test, not an architectural property already proved.
+
+The compact cells implement the exact MIT FLA reference recurrence and omit
+language-model convolutions, hybrid attention and large decoders. They do not
+claim to reproduce the full Kimi Linear or GDN2 language-model architecture.
+They need no additional CUDA package. Credit/license: vendor/FLA_LICENSE;
+reference commit 9f38d24980c46d46bd38614e743cdacd21906578.
+
+| Arm | Temporal/read interface | Parameters |
+| --- | --- | ---: |
+| actor_gru | Original actor-first GRU | 300,417 |
+| gru_evidence | GRU prefix/read and evidence fusion | 366,593 |
+| kda_full | Compact KDA with disposable query write | 268,177 |
+| kda_read | KDA read-only query, current residual | 268,177 |
+| kda_gate | KDA generic gated residual | 301,585 |
+| kda_evidence | KDA evidence-gated residual | 301,585 |
+| gdn2_read | GDN2 read, zero evidence at write gates | 335,241 |
+| gdn2_revision | GDN2 evidence-conditioned write gates | 335,241 |
+
+The two evidence-specific contrasts are parameter matched; comparisons between
+different substrates are not. GRU evidence fusion is the strong cheap control.
+Matrix-state capacity is also different: at these dimensions KDA/GDN2 store
+40,960 floats versus the original GRU's 1,280, not a matched state-size control.
+The frozen protocol uses seeds 191/223, the same immutable 128-episode ORCA
+dataset, 50 IL epochs, 1,000 online MC episodes, four updates/episode, width128,
+depth2, T24, reward/actions/simulator and 96 development cases/model. These
+seeds are a new architecture pilot, not fresh confirmation of earlier trials.
+Two seeds and reused cases cannot establish METHOD_ENTRY_FOUND.
+
+```bash
+python -m experiments.temporal_memory queue --data data/demonstrations.pt \
+  --root outputs/memory_pilot --device cuda
+python -m experiments.temporal_memory summarize --root outputs/memory_pilot
+python -m experiments.temporal_memory latency --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+python -m experiments.temporal_memory events --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+```
+
+Tests compare recurrence and gradients, official reference equations, causal
+evidence, masks/re-entry, read-only candidate queries, shared-prefix versus
+full-window values/gradients, and native candidate scores. Operator provenance
+is not novelty: actor memory, separate current/history consumption and generic
+gating have close priors, including ReCAT (https://intuitive-robots.github.io/ReCAT/).
+TRACER (https://arxiv.org/html/2609.18776v1) also separates executed evidence
+updates from candidate-trajectory queries in social navigation. That principle
+is not a novel claim of this implementation.
+Navigation results and evidence-specific ablations must justify any narrower
+claim before the architecture is selected as a paper method.
+
+The latency replay also measures the original trained actor GRU with a shared
+prefix computation, preserving its value function. This prevents attributing
+generic prefix reuse to a new memory operator. Natural-event shadow comparisons
+use common roots from the first legal near-motion event in each pre-fixed parent
+episode, not the best events for a new arm. They remain exploratory supporting
+evidence, not a replacement for a negative paired SR result.
+
+## Completed Memory Pilot
+
+All eight arms finished both paired seeds (191/223): 16 final checkpoints,
+50 IL epochs and 1,000 online MC episodes each, with 1,536 fixed evaluation
+episodes in total. This cohort is separate from the older processing-order
+experiments. No reward, action support, demonstration data or training budget
+was changed after observing outcomes.
+
+| Arm | SR | Collision | Timeout | Successful time (s) | RTX 4090 score (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| actor_gru | 82.81% | 6.25% | 10.94% | 18.20 | 3.013 |
+| gru_evidence | 78.12% | 7.29% | 14.58% | 17.56 | 3.839 |
+| kda_full | 74.48% | 15.62% | 9.90% | 19.51 | 11.678 |
+| kda_read | 80.21% | 6.77% | 13.02% | 22.56 | 9.590 |
+| kda_gate | 84.90% | 7.81% | 7.29% | 20.56 | 9.726 |
+| kda_evidence | 75.52% | 6.25% | 18.23% | 23.47 | 9.716 |
+| gdn2_read | 77.08% | 8.85% | 14.06% | 20.46 | 9.788 |
+| gdn2_revision | 75.00% | 7.29% | 17.71% | 22.70 | 9.799 |
+
+The parameter-matched mechanism tests are negative in both seeds:
+
+- KDA evidence versus generic gate: SR -8.33 / -10.42 pp; mean -9.38 pp,
+  timeout +10.94 pp. Adding motion evidence does not justify this gate.
+- GDN2 evidence revision versus zero-evidence update: SR -1.04 / -3.13 pp;
+  mean -2.08 pp, timeout +3.65 pp.
+- Against the original actor GRU, the custom KDA/GDN2 arms lose 7.29 / 7.81 pp
+  mean SR. Neither beats the GRU evidence control either.
+
+Generic KDA gating has the highest mean SR, but its gain over actor GRU is only
++2.08 pp with one positive seed and one tie. Successful-episode time rises
+about 13%; different success sets make this a descriptive, not causal, time
+comparison. Its pooled 20-human SR is 76.56% versus 65.63% for actor GRU, but
+this secondary reused-case slice does not rescue the failed primary gate or
+establish a social-specific mechanism.
+
+Every frozen contrast returns NO_CONSISTENT_PILOT_GAIN. This is
+**VERSION_NEGATIVE, not FAMILY_NEGATIVE**; two seeds cannot establish permanent
+dominance or a paper-ready method. No extra fresh training was launched.
+
+### Cost and Validation
+
+The timing table measures the complete 80-action score on an otherwise idle
+RTX 4090, PyTorch 2.9.1+cu128, one CPU thread, 20 warmups and 100 synchronized
+samples. The output-equivalent cached actor GRU takes 3.373 ms, so generic
+prefix reuse is not a GPU speedup in this workload. KDA/GDN2 are roughly three
+times slower than the original GRU here. These compact PyTorch cells are not
+optimized official FLA kernels; this result does not benchmark those kernels.
+
+On the i7-1165G7 laptop (PyTorch 2.4.1, one thread), actor GRU / cached GRU
+take 64.032 / 5.530 ms. KDA evidence / GDN2 revision take 11.403 / 11.276 ms.
+Thus the CPU caching benefit is already available without a new operator.
+The local RTX 3060 replay is supplemental only: an unrelated RustDesk compute
+process was active, so it is not an idle-device performance claim. Timings
+across different devices/PyTorch versions are not pooled.
+
+Training wall times per model are 573-778 s for the GRU arms and 1,446-2,063 s
+for the matrix-memory arms. Varying concurrent worker counts and episode lengths
+make these descriptive resource records, not matched throughput estimates.
+Peak allocated memory is 692-724 MiB / 1,889-1,980 MiB respectively.
+
+The common-root shadow covers 12 native parent episodes, 4,365 person-frames
+and six first legal near-motion events. Over three-second continuations,
+KDA evidence versus generic gate has three progress wins and three losses;
+GDN2 revision versus its matched control has zero wins and four losses
+(>=0.05 m). All branches are collision-free. Changed root actions therefore
+do not establish recovery value or selective motion/context retention.
+
+All 16 artifacts were checked for finite weights/losses, 50 IL epochs,
+1,000 RL episodes, identical case sets and the shared data checksum. Source
+and result/checkpoint/log hashes were compared with the training host. Normal
+CLI loading was also checked for both custom checkpoints, not used as extra
+performance evidence. The final local suite passes 50 tests, including legacy
+Mamba parity and the NumPy-to-JSON shadow-export regression. The laptop runs
+50 tests with 46 passing and four explicit optional-asset skips. All remote
+artifacts were retrieved and checksum-verified before this run's temporary
+4090 workspace was removed; existing environments were left untouched.
+
+Full checkpoints and records remain local in outputs/memory_pilot, excluded
+from Git. The existing strategy report contains the detailed paired contrasts.
+The useful delivered result is a tested, compact architecture and reproducible
+negative mechanism comparison, not a successful new navigation algorithm.
+
+## Frozen KDA Gate Diagnostic
+
+```bash
+python -m experiments.temporal_memory gate-diagnostic \
+  --root outputs/memory_pilot --device cuda
+```
+
+No new training: 38 common roots from 12 fixed native parent episodes, using
+uniform ticks plus six first arrived near-motion events; both trained seeds.
+KDA gating changes memory **readout**, not erase/write. The GDN2 update
+mechanism is not tested by this read-gate diagnostic.
+
+Removing only explicit motion evidence changes 0/76 candidate selections;
+removing motion and validity changes 1/76. The direct mean gate change from
+motion is about 0.00063. This does not support attributing the 9.38 pp SR gap
+to harmful runtime motion gating on these states. Entire trained models differ,
+and online MC refinement collects policy-dependent trajectories.
+
+In the generic model, constant per-channel gates change 7/76 selections, a
+uniform 0.5 gate changes 18/76, and no attenuation changes 35/76. Its mean gate
+is 0.56, without broad saturation. This suggests readout scale calibration,
+not demonstrated semantic stale-motion erasure. Constants use this same root
+cohort; interventions are potentially out of distribution, final rankings
+include the inherited safety filter, and no closed-loop improvement is claimed.
+Raw diagnostics remain in outputs/memory_pilot/gate_diagnostic.json. A new
+read-only intervention/restoration regression brings the local suite to 51
+passing tests.
+
+## Frozen Static-versus-Dynamic Follow-up
+
+This follow-up trains read-only KDA with coefficient1, 128 learned
+state-independent sigmoid channel scales, or the existing generic dynamic
+gate. Actor GRU remains an external reference. Static scales initialize at0.5;
+all shared KDA weights have identical initialization for a paired seed.
+Parameters: 268,177 / 268,305 / 301,585; actor GRU has300,417. Capacity
+differences are reported, not hidden using unused new parameters.
+
+The separate frozen protocol uses four new seeds307/331/359/383 and cases
+400-415 in circle/square with5/10/20 humans. Data, reward, actions,
+50 IL epochs and1,000 MC-RL episodes are unchanged. Diagnostic IL50/RL500
+snapshots are retained, but only the final checkpoint is eligible for the
+primary comparison. Online trajectories still depend on the learned policy.
+
+```bash
+python -m experiments.temporal_memory queue \
+  --protocol experiments/temporal_scale_protocol.json \
+  --data data/demonstrations.pt --root outputs/scale_followup --device cuda
+python -m experiments.temporal_memory summarize \
+  --protocol experiments/temporal_scale_protocol.json --root outputs/scale_followup
+```
+
+Dynamic versus static is the primary contrast. A meaningful gain is at least
+3 pp SR with3/4 positive seed pairs and the unchanged safety/progress limits.
+Practical equivalence requires the paired90% t interval inside +/-3 pp for
+aggregate SR only; failure to find a gain is not equivalence. The protocol was
+frozen before any outcomes were inspected. Ordinary dynamic gating is not
+automatically a new social-navigation mechanism.
+
+### Four-seed Results (4 October 2026)
+
+All16 models completed the frozen budget and1,536 evaluations. Only final
+checkpoints are compared; neither intermediate snapshots nor the earlier
+two-seed pilot are pooled into these results.
+
+| Readout/reference | SR % | CR % | Timeout % | Successful time s | Successful path m |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Actor GRU | 79.17 | 10.16 | 10.68 | 16.62 | 11.69 |
+| KDA read, coefficient1 | 76.82 | 11.72 | 11.46 | 22.21 | 16.12 |
+| KDA static channel scale | 79.43 | 9.64 | 10.94 | 20.96 | 14.98 |
+| KDA dynamic gate | 79.69 | 10.94 | 9.38 | 19.43 | 14.56 |
+
+The primary dynamic-minus-static SR differences for307/331/359/383 are
+-1.04 /0.00 /-7.29 /+9.38 pp. Mean +0.26 pp; paired90% interval
+[-7.83,+8.35] pp. Only one positive pair, two negative and one tie:
+**NO_CONSISTENT_PILOT_GAIN**, and practical SR equivalence is **not** established.
+All five pre-fixed contrasts fail the pilot-gain rule. Dynamic-minus-GRU is
+only +0.52 pp with one positive pair and16.90% longer successful time;
+static-minus-GRU is +0.26 pp with26.09% longer successful time. Successful
+time/path averages concern different surviving episode sets, not paired
+progress equivalence. Six-cell supporting results remain in the raw summary.
+
+| Complete80-action score | Idle4090 median ms | Laptop CPU median ms |
+| --- | ---: | ---: |
+| Actor GRU, original batched implementation | 3.02 | 56.43 |
+| Actor GRU, mathematically equivalent prefix reuse | 3.37 | 5.38 |
+| KDA read | 9.65 | 11.00 |
+| KDA static | 9.65 | 11.07 |
+| KDA dynamic | 9.74 | 11.47 |
+
+These are100 repetitions after20 warmups, one pre-fixed five-human root,
+T24 and no simulator/smoothing time. Server timing starts after all training
+processes exit; CPU timing uses the laptop. KDA's apparent CPU advantage over
+the unreused GRU is absorbed by prefix reuse; no efficiency advantage is found
+over the stronger compute control. This compact recurrence is not the optimized
+FLA kernel. KDA actor state is160 KiB versus5 KiB for GRU at this configuration.
+
+Actual process training time is11.77-15.15 min for GRU,34.80-39.29 for KDA
+read,30.06-36.32 for static and28.30-41.77 for dynamic. Concurrent load varies
+from six to eight jobs; these are recorded costs, not isolated throughput
+benchmarks. Summed overlapping training/evaluation times are7.94/0.79 process
+hours, not GPU-hours. Peak allocated memory per training process is724 MiB
+for GRU and1,890 MiB for KDA.
+
+All48 checkpoints reload with exact configuration/parameter counts and finite
+weights. Each log contains50 IL epochs and1,000 RL episodes; every model has
+the same96 expected cases. The learned static coefficients finish near0.501,
+with the full four-seed range0.4982-0.5051, so this control is close to uniform
+attenuation rather than a strongly differentiated channel calibration.
+
+**Interpretation:** the old two-seed dynamic-gate advantage does not replicate
+as a stable gain here. This neither proves static/dynamic equivalence nor
+rejects temporal navigation, actor memory or KDA as a family. It does not
+support selective motion-evidence revision or a new method claim. Keep GRU
+as the health/reference baseline. The next justified diagnosis is to locate
+the divergence using retained IL50/RL500 snapshots under the same evaluator,
+then test one identified replay/readout-contract issue; do not search hundreds
+of outcome-selected gate variants or rescue a favorable seed.
+
+Scientific source is frozen at6dde31e. Local results are in
+/home/abc/workspace/shixu/outputs/scale_followup, including the protocol/source
+manifest, paired summary, full episode records, learning logs, three checkpoints
+per model and GPU/CPU latency arrays. Code is versioned; weights are not added
+to Git. All98 remote raw artifacts and nine scientific source files match
+local SHA256 checksums; laptop timing also matches its original checksum.
+The server-only temporary workspace is removed after verification, with the
+installed environment left intact. No additional training or architecture
+is started by this analysis.
+
+## Occlusion Research Loop
+
+The occlusion experiments use legal measured/retained tracks, five-person
+ORCA IL and online MC refinement, followed by reloaded-final-weight tests on
+5/10/20 people in circle and square. The frozen primary endpoint is equally
+weighted 10/20-person success, with collision, timeout and progress checks.
+The teacher may use simulator truth; the student receives only legal input.
+Temporary server outputs are copied locally before deletion. Development
+results are not final evidence: a promising mechanism needs unseen seeds and
+cases, with all controls retrained on the same host.
+
+The V5 private-successor comparison completed all four seeds419/443/467/491.
+Overall SR/CR/timeout are75.00/10.16/14.84% for measured-only KDA branches,
+77.34/10.68/11.98% for CV-pseudowrite branches, and85.94/5.99/8.07% for the
+strongest completed context-GRU reference. Their primary SRs are71.48/74.61/
+85.55%. Measured-only branching loses to that reference in4/4 pairs. Neither
+private branching nor excluding legal CV writes establishes a navigation gain.
+Results remain in outputs/occlusion_v5; this is a version-level negative result.
+
+A separate frozen-consumer shadow replaces only currently retained hidden
+positions/velocities with current simulator truth, without introducing unseen
+people or modifying tracker memory. Four-seed primary gain is only0.39 pp
+(one positive, two negative, one tie). This is not a full-future upper bound:
+it shows no large demonstrated hidden-state accuracy headroom for that frozen
+consumer, not that temporal reasoning or occlusion handling is unnecessary.
+Records remain in outputs/occlusion_v1/*/current/truth_retained.json.
+
+V6 tests physical actor memory before current candidate geometry/goal fusion.
+It uses the official-shaped KDA no-short-convolution mixer, verified against
+the pinned FLA layer, rather than claiming that mixer or its output gate as new.
+All motion-family models receive the same physical features and legal elapsed
+interval input. Only the custom elapsed-clock arm scales channel log-decay by
+the real interval; vanilla KDA uses unit decay per measurement. Controls include
+same-placement GRU, CV pseudowrites, identical-capacity zero motion history,
+current-only and the strong completed context-GRU. There is no extra loss or
+prediction model. The clock mechanism is a hypothesis, not a demonstrated win.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_motion_protocol.json \
+  --root outputs/occlusion_v6 --data outputs/occlusion_v6/demonstrations.pt \
+  --arms motion_gru motion_kda motion_elapsed motion_imputed motion_nohistory \
+  --device cuda --workers 2
+```
+
+Generic time-aware recurrence already exists in GRU-D and time-aware LSTM;
+actor memory and delta-rule erase/write are also existing mechanisms. The
+remaining question is whether legal observation-time semantics and this
+physical/current fusion improve closed-loop navigation beyond those controls.
+No novelty or safety guarantee is earned by passing numerical tests.
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-34b2eba9f7dc04b9"></a>
+
+## Historical Variant Source: /home/abc/workspace/shixu_query_design/README.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: 34b2eba9f7dc04b951d495a0ab5e7c12fe51ad30e5640403a61ede2486494b07
+
+<!-- BEGIN PRESERVED SOURCE -->
+# shixu
+
+A small temporal crowd-navigation research framework extracted from the user's
+local camrl Mamba-VL project. It contains the cleaned parent and explicit
+temporal architecture experiments, not an established new-method claim.
+
+## One Main Path
+
+```text
+legal observations -> frame encoder -> temporal encoder -> scalar value
+                    -> original candidate successor/value lookahead -> action
+
+ORCA demonstrations -> Monte Carlo value initialization -> online MC refinement
+```
+
+GRU is the default temporal baseline. Mamba is optional and retained only for
+legacy comparison. There are no Double-Q/PPO/SAC branches, auxiliary prediction
+heads, Bayesian modules, teacher networks at deployment, or fallback backbones.
+
+The explicit actor-first alternative moves temporal encoding before crowd pooling:
+
+```text
+identity-bound human histories -> shared temporal encoder -> crowd pooling
+                              -> scalar value -> unchanged lookahead
+```
+
+The processing-order prototype now compares scene-first and actor-first GRU
+using identical aligned observations and exactly the same parameters. Every
+human uses the same GRU weights, with independent histories. That trial adds no
+dual-memory system, contradiction detector or additional prediction head.
+That processing-order experiment remains a baseline, not a selective-revision method.
+
+The observation-only contract consumes robot raw state9 and human observed
+motion9 plus presence. It removes redundant legacy relation features rather
+than adding a predictor or another memory. The explicit legacy feature contract
+remains only for reproducing the first trial and loading its checkpoints.
+
+## Layout
+
+| File | Responsibility |
+| --- | --- |
+| shixu/features.py | Legacy observation contract and history windows |
+| shixu/observations.py | Episode-local observed association keys, never numeric ID features |
+| shixu/model.py | Frame encoder, replaceable temporal encoder, value head |
+| shixu/temporal.py | Compact GRU/KDA/GDN2 actor memories; real-write/candidate-read interface |
+| shixu/policy.py | Original action support and successor-value evaluation |
+| shixu/replay.py | Episode-safe windows and MC targets; no duplicated window archive |
+| shixu/runner.py | One runner for collection, training and evaluation |
+| shixu/training.py | ORCA value initialization and online MC refinement |
+| shixu/cli.py | Explicit collection/evaluation/training commands |
+| vendor/crowd_sim | Frozen local simulator dependency |
+| experiments/ | Frozen protocol, immutable ORCA collection and paired processing-order trial |
+
+## Occlusion Development Loop
+
+The new `occlusion` architecture removes the five-person input cap. It uses
+episode-local identity slots, actual-measurement write masks and a separate
+retained-track read mask. A previously observed actor can remain relevant while
+occluded; an actor that has never been seen cannot enter the model. Missing
+positions use the last legally measured velocity for at most two seconds.
+Predicted positions and candidate successors are read-only queries, not new
+measurements. There is one shared actor memory and no external memory gate,
+auxiliary predictor, dual-memory branch or changed reward.
+
+```text
+body-occluded observations -> legal track histories -> shared KDA memory
+                          -> retained-track candidate reads -> scalar value
+                          -> inherited 80-action value lookahead
+```
+
+This is a functional research prototype, not an established novelty or
+performance claim. The common retention interface is also used by the
+current-state and recurrent comparisons. Previously reported full-observation
+results are not occlusion results.
+
+```bash
+# Pin the vendored simulator when another CrowdNav is installed locally.
+export PYTHONPATH=vendor:.
+python -m unittest discover -s tests -v
+python -m experiments.occlusion collect \
+  --data outputs/occlusion_v1/demonstrations.pt
+python -m experiments.occlusion queue \
+  --root outputs/occlusion_v1 --data outputs/occlusion_v1/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize --root outputs/occlusion_v1
+```
+
+`experiments/occlusion_protocol.json` freezes shared demonstrations, four
+paired development seeds, 50 IL epochs, 1,000 online MC-RL episodes and
+5/10/20-person evaluation. Every reported model is reconstructed and loaded
+from its final saved checkpoint before evaluation. Development cases guide
+diagnosis; fresh seeds and separate confirmation cases remain reserved until
+an architecture is selected. A negative version is diagnosed, not relabeled
+as a failed research family. Raw weights, logs and episodes remain local.
+
+The second frozen version, `occlusion_observation_protocol.json`, changes only
+the read clock. Memory is read from the latest legal history frame once per
+actor, then shared by all candidate actions. Candidate geometry remains in the
+spatial value encoder, but it no longer changes the actor's temporal read vector.
+The weights and parameter count are unchanged by this switch. Both versions
+receive byte-identical episode observations and rewards. The current-track
+reference is reused because it has no learned temporal read; the temporal
+arms are retrained through the complete IL/MC-RL schedule.
+
+```bash
+python -m experiments.occlusion collect \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --data outputs/occlusion_v2/demonstrations.pt
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2 --data outputs/occlusion_v2/demonstrations.pt \
+  --arms gru kda --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_observation_protocol.json \
+  --root outputs/occlusion_v2
+```
+
+The observation-clock design is a hypothesis under test, not a correctness
+repair. Both versions leave the stored matrix state unchanged during candidate
+evaluation. Action-conditioned reads can legitimately retrieve different
+information for different decisions even when humans do not react to the
+robot. The new bias separates a shared temporal read vector from
+candidate-conditioned geometry evaluation and avoids replicating each actor's
+matrix memory 80 times. Frozen-weight read ablations are diagnostic, not
+substitutes for retraining or proof of better navigation.
+
+The first full four-seed occlusion trial is complete (384 held-out development
+episodes per arm, not the earlier full-observation trial):
+
+| Model | Overall SR | CR | Timeout | 10/20-person SR |
+|---|---:|---:|---:|---:|
+| CV-track current-value | 81.77% | 4.95% | 13.28% | 79.30% |
+| Actor-GRU | 77.34% | 6.25% | 16.41% | 75.78% |
+| Actor-KDA, candidate read | 78.39% | 11.20% | 10.42% | 75.78% |
+
+KDA does not pass: primary SR is unchanged against GRU, while primary collision
+increases by 5.86 percentage points. A frozen-weight switch to observation-clock
+reads also worsens seed 443 overall SR from 70.83% to 56.25%; this is a
+distribution-shifting diagnostic, not a trained comparison. The second version
+must therefore earn its own result through matched IL and RL.
+
+Completed final-IL checkpoints may be moved to a faster host using `--il-root`.
+The experiment verifies seed/configuration and all IL log epochs, restores the
+replay sampling stream, then starts a fresh, full-budget RL run. Interrupted RL
+work is archived and charged separately; it is not used for checkpoint selection.
+An exact CPU pipeline test checks identical full-run versus final-IL-reuse RL
+updates. Different GPU/software environments can still introduce numerical
+differences and are recorded with each run.
+
+The complete observation-read trial is negative: overall SR is 63.54% for
+KDA versus 79.43% for GRU; primary 10/20-person SR is 64.45% versus 76.56%.
+KDA loses primary SR in all four paired seeds. Fewer collisions come with
+substantially more timeouts (30.47% overall), so this version is not retained
+as the candidate architecture. Shared observation reads are not an established
+correction to the original action-dependent read design.
+
+The next structural test, `occlusion_context_protocol.json`, returns to the
+original candidate clock and moves the existing attention before actor memory:
+
+```text
+real actor observations -> attention (actor outputs, no scene pooling)
+                        -> shared, measurement-masked KDA writes
+candidate geometry     -> same attention -> read each actor memory
+                        -> masked max -> scalar value -> original lookahead
+```
+
+There is still one attention and one temporal operator. The parameter counts
+are unchanged. Prefix attention keys use actual measurements; hidden tracks
+cannot supply fresh write evidence. Query attention can use legally retained
+CV tracks. The non-temporal current-value arm is mathematically unchanged;
+its existing saved weights reproduce every executed action and terminal outcome
+in all 96 seed-419 development episodes after the helper refactor.
+
+This tests whether historical neighbour context is useful. The old actor
+memory is exactly insensitive to another actor's past when its own history is
+fixed. The replacement removes that insensitivity in a fixture, but this is
+not proof of navigation headroom or novelty. A separate episode-disjoint
+linear probe of 887 natural re-entries does not improve average velocity
+prediction over CV, so richer context is not presumed useful in every task.
+Archived collision replays also show visible colliders and no margin-safe
+action at the final step; they do not establish that occlusion caused the
+earlier poor decisions. DS-RNN and [PaS](https://github.com/yejimun/PaS_CrowdNav)
+already study temporal/social inference. Moving attention is an experimental
+representation choice, not a standalone new-method claim.
+
+The complete context-write trial is negative for KDA: overall SR/CR/timeout
+are 62.76/12.24/25.00%, versus 85.94/5.99/8.07% for GRU. Primary 10/20-person
+SR is 60.16% versus 85.55%, with KDA losses in all four paired seeds.
+On 836 uniformly sampled demonstration windows, seed-443 final KDA keys have
+mean inter-actor cosine 0.99926 in this version versus 0.77600 in V1.
+Separate per-actor matrices do not prevent homogenization when their inputs
+are almost identical. High cosine is a representation diagnostic, not a proof
+that it causes all observed navigation losses.
+
+The next test, `occlusion_address_protocol.json`, preserves local features:
+
+```text
+actor feature u_i -> u_i + attention(u, measured actors) -> memory content
+actor feature u_i -------------------------------------> KDA q/k (custom)
+candidate feature + same attention -> retained-memory read -> max -> value
+```
+
+All four arms share the residual spatial path. Current-value, contextual GRU,
+ordinary residual KDA and actor-addressed KDA are retrained; the old current
+reference is not reused because its query representation changes too. The
+two KDA arms have exactly the same parameters and initialization. Only q/k
+source differs; values, decay and write strength consume contextual content.
+At deeper layers both streams receive the same recurrent output. There is
+one attention, one shared actor memory and no additional loss or output head.
+Existing read/write versions remain available for their archived checkpoints.
+
+This is a mechanism test, not an established new method. Separate-source
+delta memory already appears in [DRAM](https://arxiv.org/abs/2609.32453), and
+retrieval design is studied in
+[Advantage-Driven Explicit Memory](https://arxiv.org/abs/2608.25610).
+The hypothesis here is narrower: retaining actor-local addresses while
+remembering observed social context helps legal hidden-track action evaluation.
+That claim still needs navigation gains and an occlusion-specific analysis.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4 --data outputs/occlusion_v4/demonstrations.pt \
+  --device cuda --workers 4
+python -m experiments.occlusion summarize \
+  --protocol experiments/occlusion_address_protocol.json \
+  --root outputs/occlusion_v4
+```
+
+Demonstrations are the same saved observations/rewards as V1, with protocol
+metadata retargeted for the matched run; there is no extra training data.
+Final IL and RL weights, all failed versions, raw episode controls and consumed
+compute are retained. Fresh seeds and unseen confirmation cases are not used
+to develop this version.
+
+The complete V4 result is negative. Overall SR/CR/timeout are 68.75/11.72/19.53%
+for actor-addressed KDA, 72.40/10.94/16.67% for vanilla residual KDA and
+77.08/5.47/17.45% for residual GRU. Primary SR falls by 11.72 pp against GRU;
+actor-local addresses do not rescue this version. The final seed-443 address
+probe does recover distinct keys (mean inter-actor cosine 0.8144), so loss of
+actor addresses alone is not an adequate explanation of the navigation failure.
+
+`occlusion_branch_protocol.json` tests the inherited successor-value interface,
+not a new gate or a claim that private branches are novel:
+
+```text
+actual measured actor frames -> shared KDA -> real-history matrix
+candidate CV successor      -> private one-step KDA calculation
+                            -> existing attention/max/value -> original lookahead
+```
+
+Candidate computations never commit into real history. The single-step read
+is algebraically identical to an explicit private matrix update, but avoids
+80 replicated matrices. Its paired control additionally accepts legally
+propagated CV tracks as history pseudomeasurements; it receives no hidden truth.
+Both new arms retain identical parameters, initialization and IL/RL budgets.
+The unchanged V1 current-value and read-only KDA references and the stronger V3
+context-GRU reference remain controls, with configuration and action-parity
+checks before reuse. Any positive development result still requires new seeds
+and unseen cases, with all confirmation arms trained anew.
+
+Engineering optimizations share matrix reads across candidates and pack measured
+GRU frames without changing their recurrence. An exclusive laptop CPU read-only
+benchmark falls from 5.91 to 2.37 ms for five actors and 27.67 to 9.90 ms for
+twenty actors; these are not full-controller latency or navigation gains.
+Frozen checkpoint actions and gradient/recurrence tests validate the changes.
+
+## Installation
+
+Install a PyTorch build appropriate for your machine first. Then:
+
+```bash
+git clone https://github.com/jinglongjiang/shixu.git
+cd shixu
+python -m pip install -e .
+python -m pip install 'git+https://github.com/sybrenstuvel/Python-RVO2.git'
+```
+
+Python-RVO2 needs its normal native build prerequisites. The GRU path does not
+require Mamba, Transformers or custom CUDA kernels. Legacy Mamba checkpoints
+require the optional mamba-ssm 1.2.0 dependency and a matching CUDA/PyTorch wheel;
+do not silently substitute another network if it fails to import.
+
+## Commands
+
+```bash
+# Interface checks only; this is not a trained policy result.
+python -m shixu.cli smoke --output outputs/smoke.json
+python -m unittest discover -s tests -v
+
+# Collect legal, identity-tagged observations and ORCA returns without training.
+python -m shixu.cli collect --cases 0 1 --output data/orca.json
+
+# Trained-checkpoint evaluation. Weights are intentionally not uploaded.
+python -m shixu.cli evaluate --backbone mamba --device cuda \
+  --weights /path/to/rl_model_ep10000_T24.pth --cases 0 1
+
+# Explicitly opt into training.
+python -m shixu.cli train --il-episodes 5 --rl-episodes 10 \
+  --device cuda --output weights/gru.pt
+```
+
+Models must use the same config when comparing them. The optional local-source
+regression tests use environment variables CAMRL_PARENT and CAMRL_CHECKPOINT;
+they check features, value outputs, actions and history against the original
+source. They skip explicitly when those local assets are unavailable.
+New checkpoints include their model/observation configuration; evaluation uses
+it automatically unless an explicit --config override is supplied.
+
+The matched trial is driven by experiments/temporal_protocol.json, not test
+results: four paired seeds, a shared 128-episode successful ORCA dataset,
+50 IL epochs, 1,000 MC-RL episodes per arm, and fixed circle/square cases at
+5/10/20 humans. The initial legacy contract has 302,337 parameters per arm;
+the observation-only contract has 300,417 at the same width 128 and depth 2.
+Only the final-budget checkpoint is evaluated. Processing-order prototype
+results cannot be represented as a new algorithm or proof of selective memory.
+
+```bash
+python experiments/temporal_collect.py --output data/demonstrations.pt
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --data data/demonstrations.pt --root outputs/temporal_v1 --device cuda
+python experiments/temporal_order.py summarize --root outputs/temporal_v1
+
+# One shared interface rescue: same data/budget, subtract legacy derived inputs.
+python experiments/temporal_order.py run --seed 17 --order pair \
+  --feature-contract observed --data data/demonstrations.pt \
+  --root outputs/temporal_v2 --device cuda
+```
+
+Run the other seeds in the protocol before requesting the paired summary.
+Native experiments assume perfect observed association and retain the original
+five-human neural input cap even when the simulator contains 10/20 humans.
+Missing observation masks preserve actor state; association errors and
+real-world re-identification are not solved by this interface.
+
+## Initial Matched Result
+
+Four paired seeds completed 50 IL epochs + 1,000 online MC-RL episodes per arm,
+followed by 96 fixed native evaluations each (768 total).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 9.90% | 14.58% | 302,337 |
+| Actor-first GRU | 78.39% | 8.33% | 13.28% | 302,337 |
+
+The +2.86 pp mean SR change has only 2/4 positive seed pairs and does not meet
+the frozen +3 pp / 3-of-4 direction gate: NO_STABLE_GAIN. Pooled square gains
+and smaller actor seed dispersion are exploratory, not a new-method claim.
+Same-device RTX 3060 scoring medians are 3.110 / 4.418 ms for scene / actor;
+actor-first is not a computation-saving result. No GDN/KDA/revision cell is
+claimed successful on the strength of these mixed outcomes.
+
+```bash
+python -m experiments.temporal_latency --root outputs/temporal_v1 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v1 --seed 17
+```
+
+The shadow uses arrived motion evidence and native scene replay. A masked-prefix
+intervention is an offline diagnostic, not a trained or deployable revision
+policy. Full results/checkpoints stay local under outputs; weights and data are
+not committed. The unchanged fresh follow-up used seeds 103/137: SR changes
+were +7.29 / -12.50 pp, so the initial seed-dispersion signal did not replicate.
+The common observation-only rescue is frozen separately in
+experiments/temporal_rescue_protocol.json; its results must not be pooled with
+the legacy-contract cohort.
+
+## Completed Observation-Only Rescue
+
+The one permitted rescue subtracts the inherited redundant/incorrect derived
+inputs for **both** arms, without changing data, reward, budget or network size.
+Four paired seeds again completed 50 IL epochs, 1,000 MC-RL episodes and 96
+fixed evaluations per arm (768 evaluations).
+
+| Model | SR | Collision | Timeout | Parameters |
+| --- | ---: | ---: | ---: | ---: |
+| Scene-first GRU | 75.52% | 11.20% | 13.28% | 300,417 |
+| Actor-first GRU | 75.00% | 6.25% | 18.75% | 300,417 |
+
+SR differences are +3.13, +5.21, -5.21 and -5.21 pp across seeds
+17/29/43/71. The mean is -0.52 pp with 2/4 positive pairs:
+**NO_STABLE_GAIN** under the unchanged gate. Collision decreases in all four
+pairs, but timeout increases; this is a safety-progress operating-point signal,
+not proof of better navigation. Pooled 20-human gains also remain only 2/4
+seed-positive. Same-device scoring medians are 3.012 / 4.163 ms (scene / actor),
+so actor-first is about 38% more expensive in this workload.
+
+The legal observed-change shadow finds four first events in 12 native
+episodes: targeted actor-history truncation changes no root rankings and gives
+no safe progress gain >=0.05 m. Selective-revision headroom remains unproven;
+the small masked-prefix intervention does not reject the research family.
+Attention and pooling both move relative to recurrence, so this comparison
+does not isolate identity continuity alone.
+
+Reserved fresh rescue seeds 191/223 were not run within that study because the
+primary gate failed. That study added no GDN/KDA, new reward or extra teacher.
+Across the separate initial, fresh and rescue cohorts, 20 models and 1,920
+matched evaluation episodes are retained locally. None is relabeled as a new
+method. All 38 local tests pass with the original comparison assets configured;
+the laptop passes 35 tests with three explicit original-asset skips.
+
+```bash
+python experiments/temporal_order.py summarize --root outputs/temporal_v2
+python -m experiments.temporal_latency --root outputs/temporal_v2 --seed 17
+python -m experiments.temporal_revision_shadow --root outputs/temporal_v2 --seed 17
+python -m shixu.cli evaluate --weights outputs/temporal_v2/17/actor/model.pt \
+  --device cuda --cases 0 1
+```
+
+## Baseline Boundary
+
+The source baseline comes from the user's
+CrowdNav(20260511_last_version_mamba_vl).zip, not the later Bayesian-replaced
+active camrl directory. The simulator preserves that archive's behavior;
+only trailing whitespace is cleaned.
+Its CrowdNav foundation is attributed in vendor/CROWDNAV_LICENSE.
+
+The inherited deterministic baseline uses 80 moving actions, dt=0.25 s,
+24-frame history, and r+0.99V lookahead. The archive's evaluation settings also
+include clearance filtering, a risk penalty and action smoothing. They are
+retained explicitly in shixu/default.ini; this is not a reproduction of paper
+statistics based on a few episodes.
+
+Legacy metadata indices and spatial relational-coordinate conventions are
+preserved for checkpoint parity. Their audit is separate from method novelty;
+changing them together with a new memory would confound that comparison.
+
+The new training runner preserves the IL-to-MC-value-learning formulation, not
+every historical launcher's behavior: observations are recorded even during
+exploratory controls, teacher state is cleared between episodes, and test-case
+scheduling is explicit. All new training arms must share this runner. Legacy
+training numbers cannot be attributed to this cleanup without matched reruns.
+
+Simulator IDs are association keys attached to observed states, not neural
+features. Human goals/future states are not written into deployable inputs.
+Weights, data, videos, credentials and old experiment artifacts are excluded
+from version control.
+
+## Explicit Memory Architecture Pilot
+
+A separately authorized pilot compares two mechanisms without assuming the
+newer operator is better:
+
+```text
+observed actor prefix -> one shared GRU/KDA/GDN2 -> per-actor state
+candidate successor  -> query that state       -> current feature + memory
+                     -> original attention/max pool -> scalar value/lookahead
+```
+
+Training uses the first T-1 observed-history slots as the prefix and the last
+real frame as the query. Episode starts inherit first-frame replication padding.
+In inference, the query is an analytic candidate successor. It
+never changes the persistent observation history. All 80 queries share one
+prefix encoding. The full-window control updates a disposable state copy with
+the query; it also never persists hypothetical observations.
+
+KDA evidence fusion compares `f + gate(f,m,e)*m` with the same-capacity generic
+gate using zero evidence. GDN2 evidence revision supplies `e` to the existing
+channel-wise erase/write projections, compared with zero evidence at exactly
+the same parameter count. Here `e` is causal observed velocity innovation,
+signed speed change and a validity bit, computed only from real prefix frames.
+It is not a hidden intent, goal change timestamp or future truth.
+
+There is one actor memory, not separate motion/context networks. Channel-wise
+gates do not guarantee semantic motion/context separation or safe forgetting;
+that is a hypothesis to test, not an architectural property already proved.
+
+The compact cells implement the exact MIT FLA reference recurrence and omit
+language-model convolutions, hybrid attention and large decoders. They do not
+claim to reproduce the full Kimi Linear or GDN2 language-model architecture.
+They need no additional CUDA package. Credit/license: vendor/FLA_LICENSE;
+reference commit 9f38d24980c46d46bd38614e743cdacd21906578.
+
+| Arm | Temporal/read interface | Parameters |
+| --- | --- | ---: |
+| actor_gru | Original actor-first GRU | 300,417 |
+| gru_evidence | GRU prefix/read and evidence fusion | 366,593 |
+| kda_full | Compact KDA with disposable query write | 268,177 |
+| kda_read | KDA read-only query, current residual | 268,177 |
+| kda_gate | KDA generic gated residual | 301,585 |
+| kda_evidence | KDA evidence-gated residual | 301,585 |
+| gdn2_read | GDN2 read, zero evidence at write gates | 335,241 |
+| gdn2_revision | GDN2 evidence-conditioned write gates | 335,241 |
+
+The two evidence-specific contrasts are parameter matched; comparisons between
+different substrates are not. GRU evidence fusion is the strong cheap control.
+Matrix-state capacity is also different: at these dimensions KDA/GDN2 store
+40,960 floats versus the original GRU's 1,280, not a matched state-size control.
+The frozen protocol uses seeds 191/223, the same immutable 128-episode ORCA
+dataset, 50 IL epochs, 1,000 online MC episodes, four updates/episode, width128,
+depth2, T24, reward/actions/simulator and 96 development cases/model. These
+seeds are a new architecture pilot, not fresh confirmation of earlier trials.
+Two seeds and reused cases cannot establish METHOD_ENTRY_FOUND.
+
+```bash
+python -m experiments.temporal_memory queue --data data/demonstrations.pt \
+  --root outputs/memory_pilot --device cuda
+python -m experiments.temporal_memory summarize --root outputs/memory_pilot
+python -m experiments.temporal_memory latency --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+python -m experiments.temporal_memory events --root outputs/memory_pilot \
+  --seeds 191 --device cuda
+```
+
+Tests compare recurrence and gradients, official reference equations, causal
+evidence, masks/re-entry, read-only candidate queries, shared-prefix versus
+full-window values/gradients, and native candidate scores. Operator provenance
+is not novelty: actor memory, separate current/history consumption and generic
+gating have close priors, including ReCAT (https://intuitive-robots.github.io/ReCAT/).
+TRACER (https://arxiv.org/html/2609.18776v1) also separates executed evidence
+updates from candidate-trajectory queries in social navigation. That principle
+is not a novel claim of this implementation.
+Navigation results and evidence-specific ablations must justify any narrower
+claim before the architecture is selected as a paper method.
+
+The latency replay also measures the original trained actor GRU with a shared
+prefix computation, preserving its value function. This prevents attributing
+generic prefix reuse to a new memory operator. Natural-event shadow comparisons
+use common roots from the first legal near-motion event in each pre-fixed parent
+episode, not the best events for a new arm. They remain exploratory supporting
+evidence, not a replacement for a negative paired SR result.
+
+## Completed Memory Pilot
+
+All eight arms finished both paired seeds (191/223): 16 final checkpoints,
+50 IL epochs and 1,000 online MC episodes each, with 1,536 fixed evaluation
+episodes in total. This cohort is separate from the older processing-order
+experiments. No reward, action support, demonstration data or training budget
+was changed after observing outcomes.
+
+| Arm | SR | Collision | Timeout | Successful time (s) | RTX 4090 score (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| actor_gru | 82.81% | 6.25% | 10.94% | 18.20 | 3.013 |
+| gru_evidence | 78.12% | 7.29% | 14.58% | 17.56 | 3.839 |
+| kda_full | 74.48% | 15.62% | 9.90% | 19.51 | 11.678 |
+| kda_read | 80.21% | 6.77% | 13.02% | 22.56 | 9.590 |
+| kda_gate | 84.90% | 7.81% | 7.29% | 20.56 | 9.726 |
+| kda_evidence | 75.52% | 6.25% | 18.23% | 23.47 | 9.716 |
+| gdn2_read | 77.08% | 8.85% | 14.06% | 20.46 | 9.788 |
+| gdn2_revision | 75.00% | 7.29% | 17.71% | 22.70 | 9.799 |
+
+The parameter-matched mechanism tests are negative in both seeds:
+
+- KDA evidence versus generic gate: SR -8.33 / -10.42 pp; mean -9.38 pp,
+  timeout +10.94 pp. Adding motion evidence does not justify this gate.
+- GDN2 evidence revision versus zero-evidence update: SR -1.04 / -3.13 pp;
+  mean -2.08 pp, timeout +3.65 pp.
+- Against the original actor GRU, the custom KDA/GDN2 arms lose 7.29 / 7.81 pp
+  mean SR. Neither beats the GRU evidence control either.
+
+Generic KDA gating has the highest mean SR, but its gain over actor GRU is only
++2.08 pp with one positive seed and one tie. Successful-episode time rises
+about 13%; different success sets make this a descriptive, not causal, time
+comparison. Its pooled 20-human SR is 76.56% versus 65.63% for actor GRU, but
+this secondary reused-case slice does not rescue the failed primary gate or
+establish a social-specific mechanism.
+
+Every frozen contrast returns NO_CONSISTENT_PILOT_GAIN. This is
+**VERSION_NEGATIVE, not FAMILY_NEGATIVE**; two seeds cannot establish permanent
+dominance or a paper-ready method. No extra fresh training was launched.
+
+### Cost and Validation
+
+The timing table measures the complete 80-action score on an otherwise idle
+RTX 4090, PyTorch 2.9.1+cu128, one CPU thread, 20 warmups and 100 synchronized
+samples. The output-equivalent cached actor GRU takes 3.373 ms, so generic
+prefix reuse is not a GPU speedup in this workload. KDA/GDN2 are roughly three
+times slower than the original GRU here. These compact PyTorch cells are not
+optimized official FLA kernels; this result does not benchmark those kernels.
+
+On the i7-1165G7 laptop (PyTorch 2.4.1, one thread), actor GRU / cached GRU
+take 64.032 / 5.530 ms. KDA evidence / GDN2 revision take 11.403 / 11.276 ms.
+Thus the CPU caching benefit is already available without a new operator.
+The local RTX 3060 replay is supplemental only: an unrelated RustDesk compute
+process was active, so it is not an idle-device performance claim. Timings
+across different devices/PyTorch versions are not pooled.
+
+Training wall times per model are 573-778 s for the GRU arms and 1,446-2,063 s
+for the matrix-memory arms. Varying concurrent worker counts and episode lengths
+make these descriptive resource records, not matched throughput estimates.
+Peak allocated memory is 692-724 MiB / 1,889-1,980 MiB respectively.
+
+The common-root shadow covers 12 native parent episodes, 4,365 person-frames
+and six first legal near-motion events. Over three-second continuations,
+KDA evidence versus generic gate has three progress wins and three losses;
+GDN2 revision versus its matched control has zero wins and four losses
+(>=0.05 m). All branches are collision-free. Changed root actions therefore
+do not establish recovery value or selective motion/context retention.
+
+All 16 artifacts were checked for finite weights/losses, 50 IL epochs,
+1,000 RL episodes, identical case sets and the shared data checksum. Source
+and result/checkpoint/log hashes were compared with the training host. Normal
+CLI loading was also checked for both custom checkpoints, not used as extra
+performance evidence. The final local suite passes 50 tests, including legacy
+Mamba parity and the NumPy-to-JSON shadow-export regression. The laptop runs
+50 tests with 46 passing and four explicit optional-asset skips. All remote
+artifacts were retrieved and checksum-verified before this run's temporary
+4090 workspace was removed; existing environments were left untouched.
+
+Full checkpoints and records remain local in outputs/memory_pilot, excluded
+from Git. The existing strategy report contains the detailed paired contrasts.
+The useful delivered result is a tested, compact architecture and reproducible
+negative mechanism comparison, not a successful new navigation algorithm.
+
+## Frozen KDA Gate Diagnostic
+
+```bash
+python -m experiments.temporal_memory gate-diagnostic \
+  --root outputs/memory_pilot --device cuda
+```
+
+No new training: 38 common roots from 12 fixed native parent episodes, using
+uniform ticks plus six first arrived near-motion events; both trained seeds.
+KDA gating changes memory **readout**, not erase/write. The GDN2 update
+mechanism is not tested by this read-gate diagnostic.
+
+Removing only explicit motion evidence changes 0/76 candidate selections;
+removing motion and validity changes 1/76. The direct mean gate change from
+motion is about 0.00063. This does not support attributing the 9.38 pp SR gap
+to harmful runtime motion gating on these states. Entire trained models differ,
+and online MC refinement collects policy-dependent trajectories.
+
+In the generic model, constant per-channel gates change 7/76 selections, a
+uniform 0.5 gate changes 18/76, and no attenuation changes 35/76. Its mean gate
+is 0.56, without broad saturation. This suggests readout scale calibration,
+not demonstrated semantic stale-motion erasure. Constants use this same root
+cohort; interventions are potentially out of distribution, final rankings
+include the inherited safety filter, and no closed-loop improvement is claimed.
+Raw diagnostics remain in outputs/memory_pilot/gate_diagnostic.json. A new
+read-only intervention/restoration regression brings the local suite to 51
+passing tests.
+
+## Frozen Static-versus-Dynamic Follow-up
+
+This follow-up trains read-only KDA with coefficient1, 128 learned
+state-independent sigmoid channel scales, or the existing generic dynamic
+gate. Actor GRU remains an external reference. Static scales initialize at0.5;
+all shared KDA weights have identical initialization for a paired seed.
+Parameters: 268,177 / 268,305 / 301,585; actor GRU has300,417. Capacity
+differences are reported, not hidden using unused new parameters.
+
+The separate frozen protocol uses four new seeds307/331/359/383 and cases
+400-415 in circle/square with5/10/20 humans. Data, reward, actions,
+50 IL epochs and1,000 MC-RL episodes are unchanged. Diagnostic IL50/RL500
+snapshots are retained, but only the final checkpoint is eligible for the
+primary comparison. Online trajectories still depend on the learned policy.
+
+```bash
+python -m experiments.temporal_memory queue \
+  --protocol experiments/temporal_scale_protocol.json \
+  --data data/demonstrations.pt --root outputs/scale_followup --device cuda
+python -m experiments.temporal_memory summarize \
+  --protocol experiments/temporal_scale_protocol.json --root outputs/scale_followup
+```
+
+Dynamic versus static is the primary contrast. A meaningful gain is at least
+3 pp SR with3/4 positive seed pairs and the unchanged safety/progress limits.
+Practical equivalence requires the paired90% t interval inside +/-3 pp for
+aggregate SR only; failure to find a gain is not equivalence. The protocol was
+frozen before any outcomes were inspected. Ordinary dynamic gating is not
+automatically a new social-navigation mechanism.
+
+### Four-seed Results (4 October 2026)
+
+All16 models completed the frozen budget and1,536 evaluations. Only final
+checkpoints are compared; neither intermediate snapshots nor the earlier
+two-seed pilot are pooled into these results.
+
+| Readout/reference | SR % | CR % | Timeout % | Successful time s | Successful path m |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Actor GRU | 79.17 | 10.16 | 10.68 | 16.62 | 11.69 |
+| KDA read, coefficient1 | 76.82 | 11.72 | 11.46 | 22.21 | 16.12 |
+| KDA static channel scale | 79.43 | 9.64 | 10.94 | 20.96 | 14.98 |
+| KDA dynamic gate | 79.69 | 10.94 | 9.38 | 19.43 | 14.56 |
+
+The primary dynamic-minus-static SR differences for307/331/359/383 are
+-1.04 /0.00 /-7.29 /+9.38 pp. Mean +0.26 pp; paired90% interval
+[-7.83,+8.35] pp. Only one positive pair, two negative and one tie:
+**NO_CONSISTENT_PILOT_GAIN**, and practical SR equivalence is **not** established.
+All five pre-fixed contrasts fail the pilot-gain rule. Dynamic-minus-GRU is
+only +0.52 pp with one positive pair and16.90% longer successful time;
+static-minus-GRU is +0.26 pp with26.09% longer successful time. Successful
+time/path averages concern different surviving episode sets, not paired
+progress equivalence. Six-cell supporting results remain in the raw summary.
+
+| Complete80-action score | Idle4090 median ms | Laptop CPU median ms |
+| --- | ---: | ---: |
+| Actor GRU, original batched implementation | 3.02 | 56.43 |
+| Actor GRU, mathematically equivalent prefix reuse | 3.37 | 5.38 |
+| KDA read | 9.65 | 11.00 |
+| KDA static | 9.65 | 11.07 |
+| KDA dynamic | 9.74 | 11.47 |
+
+These are100 repetitions after20 warmups, one pre-fixed five-human root,
+T24 and no simulator/smoothing time. Server timing starts after all training
+processes exit; CPU timing uses the laptop. KDA's apparent CPU advantage over
+the unreused GRU is absorbed by prefix reuse; no efficiency advantage is found
+over the stronger compute control. This compact recurrence is not the optimized
+FLA kernel. KDA actor state is160 KiB versus5 KiB for GRU at this configuration.
+
+Actual process training time is11.77-15.15 min for GRU,34.80-39.29 for KDA
+read,30.06-36.32 for static and28.30-41.77 for dynamic. Concurrent load varies
+from six to eight jobs; these are recorded costs, not isolated throughput
+benchmarks. Summed overlapping training/evaluation times are7.94/0.79 process
+hours, not GPU-hours. Peak allocated memory per training process is724 MiB
+for GRU and1,890 MiB for KDA.
+
+All48 checkpoints reload with exact configuration/parameter counts and finite
+weights. Each log contains50 IL epochs and1,000 RL episodes; every model has
+the same96 expected cases. The learned static coefficients finish near0.501,
+with the full four-seed range0.4982-0.5051, so this control is close to uniform
+attenuation rather than a strongly differentiated channel calibration.
+
+**Interpretation:** the old two-seed dynamic-gate advantage does not replicate
+as a stable gain here. This neither proves static/dynamic equivalence nor
+rejects temporal navigation, actor memory or KDA as a family. It does not
+support selective motion-evidence revision or a new method claim. Keep GRU
+as the health/reference baseline. The next justified diagnosis is to locate
+the divergence using retained IL50/RL500 snapshots under the same evaluator,
+then test one identified replay/readout-contract issue; do not search hundreds
+of outcome-selected gate variants or rescue a favorable seed.
+
+Scientific source is frozen at6dde31e. Local results are in
+/home/abc/workspace/shixu/outputs/scale_followup, including the protocol/source
+manifest, paired summary, full episode records, learning logs, three checkpoints
+per model and GPU/CPU latency arrays. Code is versioned; weights are not added
+to Git. All98 remote raw artifacts and nine scientific source files match
+local SHA256 checksums; laptop timing also matches its original checksum.
+The server-only temporary workspace is removed after verification, with the
+installed environment left intact. No additional training or architecture
+is started by this analysis.
+
+## Occlusion Research Loop
+
+The occlusion experiments use legal measured/retained tracks, five-person
+ORCA IL and online MC refinement, followed by reloaded-final-weight tests on
+5/10/20 people in circle and square. The frozen primary endpoint is equally
+weighted 10/20-person success, with collision, timeout and progress checks.
+The teacher may use simulator truth; the student receives only legal input.
+Temporary server outputs are copied locally before deletion. Development
+results are not final evidence: a promising mechanism needs unseen seeds and
+cases, with all controls retrained on the same host.
+
+The V5 private-successor comparison completed all four seeds419/443/467/491.
+Overall SR/CR/timeout are75.00/10.16/14.84% for measured-only KDA branches,
+77.34/10.68/11.98% for CV-pseudowrite branches, and85.94/5.99/8.07% for the
+strongest completed context-GRU reference. Their primary SRs are71.48/74.61/
+85.55%. Measured-only branching loses to that reference in4/4 pairs. Neither
+private branching nor excluding legal CV writes establishes a navigation gain.
+Results remain in outputs/occlusion_v5; this is a version-level negative result.
+
+A separate frozen-consumer shadow replaces only currently retained hidden
+positions/velocities with current simulator truth, without introducing unseen
+people or modifying tracker memory. Four-seed primary gain is only0.39 pp
+(one positive, two negative, one tie). This is not a full-future upper bound:
+it shows no large demonstrated hidden-state accuracy headroom for that frozen
+consumer, not that temporal reasoning or occlusion handling is unnecessary.
+Records remain in outputs/occlusion_v1/*/current/truth_retained.json.
+
+V6 tests physical actor memory before current candidate geometry/goal fusion.
+It uses the official-shaped KDA no-short-convolution mixer, verified against
+the pinned FLA layer, rather than claiming that mixer or its output gate as new.
+All motion-family models receive the same physical features and legal elapsed
+interval input. Only the custom elapsed-clock arm scales channel log-decay by
+the real interval; vanilla KDA uses unit decay per measurement. Controls include
+same-placement GRU, CV pseudowrites, identical-capacity zero motion history,
+current-only and the strong completed context-GRU. There is no extra loss or
+prediction model. The clock mechanism is a hypothesis, not a demonstrated win.
+
+```bash
+python -m experiments.occlusion queue \
+  --protocol experiments/occlusion_motion_protocol.json \
+  --root outputs/occlusion_v6 --data outputs/occlusion_v6/demonstrations.pt \
+  --arms motion_gru motion_kda motion_elapsed motion_imputed motion_nohistory \
+  --device cuda --workers 2
+```
+
+Generic time-aware recurrence already exists in GRU-D and time-aware LSTM;
+actor memory and delta-rule erase/write are also existing mechanisms. The
+remaining question is whether legal observation-time semantics and this
+physical/current fusion improve closed-loop navigation beyond those controls.
+No novelty or safety guarantee is earned by passing numerical tests.
+
+V6 scientific source is frozen at54d19cc. The 4090 runs PyTorch2.9.1/cu128,
+and the3060 runs2.1.0/cu121; development comparisons retain this host boundary.
+The CUDA packed-GRU test on2.9.1 differed from explicit stepping by2.36e-4
+with default cuDNN TF32, and3.86e-6 with TF32 disabled. Float64 validates the
+recurrence separately; production float32 kernels are not bitwise identical.
+The archived optimized seed419 GRU replay changes controls in9/96 episodes
+but changes no terminal outcomes. These checks cannot justify universal action
+parity. Fresh confirmation must use one frozen implementation on one host.
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-06621ce9d00e4313"></a>
+
+## Historical Variant Source: /home/abc/temp/cc_backstop_20261005/CC_REPORT_20261005.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: 06621ce9d00e4313d8331567b4939782d0d5726203fa78817049669876a50089
+
+<!-- BEGIN PRESERVED SOURCE -->
+# CC 工作报告
+
+截至 2026-10-05。角色：**兜底／查漏补缺**，不出第三条方法线。
+两个 Codex 分别负责贝叶斯母体资格核查与时序问题定位；本报告只写 CC 自己做的事。
+
+状态词只用三种：**已验证通过** / **未验证** / **已确认失败**。
+
+---
+
+## 一、10-03：Candidate 4–10 独立筛查（已完成）
+
+主文件 `/home/abc/temp/CC_SOCNAV_CANDIDATES_4_10.md`，证据 `cc_socnav_frontier/docs/CAND4..10.md`，
+git 时间线 `0e326cb → c1cb525 → 31a3226 → ffb9e00 → 1b66f4f → 6ad1936`（协议冻结在看到性能之前）。
+
+| # | 候选 | 判定 | 决定性证据 |
+|---|---|---|---|
+| 4 | Future continuation feasibility | `NO_ACTION_NEED` | F 相对 clearance/TTC/H步余隙的增量 ΔAUC −0.004…−0.013，3 seed 同向 1–2/5 |
+| 5 | Association-aware memory | `PRIOR_COVERED` | 身份关联值 +9.65%（5/10/20 人，15/15 折同向），但官方 DSRNN `crowd_sim_dict.py:59-62` 按人索引不排序，已是其设计 |
+| 6 | Executed-action representation | `BASELINE_SUFFICIENT` | 端点 vs 扫掠改变 4.34% argmax，但精确修正是确定性三行代码 |
+| 7 | Safe-mode consistency distillation | `BASELINE_SUFFICIENT` | 延迟占控制周期 2.51%；零训练几何 shield 把 CR 17%→3% |
+| 8 | Chunk suffix revision | `BASELINE_SUFFICIENT` | 抖动真实（比专家抖 7–9 倍、独立 ΔAUC +0.013 同向 5/5），但 `hyst=0.01` 已 SR 不劣 + 抖动 −35% |
+| 9 | Adaptive prediction resolution | `NO_ACTION_NEED` | 最高分辨率只花控制周期 0.38% |
+| 10 | Decision-sensitive test-time adapter | `NO_STABLE_GAIN` | 4 臂 × 4 配对 seed：C−P **+0.25 pp（同向 2/4）**、V−P −0.50 pp |
+
+**BEST = 无。** 7 个候选无一达到 `METHOD_ENTRY_FOUND` 或 `PROTOTYPE_POSITIVE`。
+
+**判定词的证据级别（与后面的证据边界统一）**：候选 6/7/8 的 `BASELINE_SUFFICIENT`
+依据是单 checkpoint / 单或双密度的零训练对照，**未跨 4 seed**。
+因此它支持的结论是「**当前这些复杂候选没有优先开发依据**」，
+**不是**「简单方法已稳定解决整个缺陷」。两者不能混用。
+
+附带的独立结果：Candidate 10 的 Strong-Simple 臂（混合密度训练，4 seed）**2/4 训练中崩溃**
+（一个终态 0 碰撞 / 100% 超时），存活的两个在 20 人上 60.50/63.50，低于 Parent 的 80.00/72.00。
+→ **该混合密度训练方案未解决密度漂移问题。已验证通过的只有这一条**，以及 20 人下 ORCA
+示范成功率低（600 条成功 31 条）。**示范筛选、训练配置、λ 退火尚未分离**，
+故「IL 示范质量／覆盖不足」只是**待验证解释**，不是已认定的唯一根因，
+也不否定其他匹配密度训练方案。
+
+### 三个零训练工程发现（非论文，状态：未跨 4 seed 验证 = 未验证）
+1. 几何 shield（margin 0.1）：20 人 CR 17%→3%、SR 81%→92%。
+2. value 边际滞回 `hyst=0.01`：20 人 SR 81→82%/CR 持平；10 人 SR 85→91%/CR 15→9%，抖动 −35%。
+3. 奖励模型几何修正（`compute_reward` 端点 → `point_to_segment_dist`）：当前实现系统性低估危险动作数约 35%。
+
+---
+
+## 二、10-05 上午：贝叶斯线决策损失面仪器（已完成，旧网格按指示不扩）
+
+复用 R1 已审计的 `realize()`，把真实损失从"四臂选中的 1–3 个指令"铺到**全部 17 个 feasible control**
+（R1 原本 8 个 context × 17 = 136 个可能 realize，实际只做了约 14 个）。
+
+**自检：逐位复现 R1 存档**（0.7872293618 / 0.7439466607）。**已验证通过。** 6 个 context 共 102 次 realize。
+
+| context | 真实最优 | headroom | posterior regret | MAP | near |
+|---|---|---|---|---|---|
+| case1 s4 r1 PASSIVE | #9 = 0.7269 | 0.2870 | 0.060（7.62%） | 0 | 7.62% |
+| case1 s4 r1 ACTIVE | #9 = 0.7439 | 0.2468 | 5.50% | 0 | 5.50% |
+| case1 s4 r0 PASSIVE | #9 = 0.7439 | 0.2468 | 5.50% | 0 | 5.50% |
+| case2 s17 r0 PASSIVE | #2 = 1.6455 | 1.2314 | 2.31% | 2.31% | 2.31% |
+| case2 s17 r1 ACTIVE | #2 = 1.6455 | 1.2314 | 2.31% | 2.31% | 2.31% |
+| case2 s17 r1 PASSIVE | #9 = 1.6203 | 1.6696 | 0 | 1.03% | **16.6%** |
+
+**我在此处写错过两条，已撤回：**
+1. 撤回「可赚额度已拿到 79%、天花板只剩 3–21%」——`最差−最优` 是我选的动作集合的跨度，
+   多塞坏动作就能把比例做漂亮，不能当问题性质。正确量是相对自身代价的 regret（0–7.6%）。
+2. 撤回「损失面不平 ⇒ 不同 belief 需要不同动作」——只排除了"所有动作后果相同"。
+   MAP 精确最优 3/6、posterior 1/6、并列 2/6，**方向不稳定**。
+
+**结论：仪器有效，但未产生新的方法机会。** 旧网格按指示不扩，不重启旧算法。
+
+---
+
+## 三、10-05：时序线「零历史臂更好」归因（已完成）
+
+### 第一步：84.38% vs 81.25% 不能归因于「执行时使用历史本身」。**已验证通过。**
+- 四臂每 seed 的 `model.pt` SHA256 全不同；`il_inputs[3].origin = occlusion_v6/419/motion_nohistory`
+  → **独立训练**，不是同权重干预。
+- 容量相同（268,873 参数），这项不是混淆。
+- **时钟不是混淆（我先前的推断已撤回）**：`use_history=False` 时 `encode_history` 整段跳过，
+  零状态下 `MotionKDACell.successor` 对 `intervals` 的依赖实测 **0.000e+00**。
+- 效应量 = 每 seed **2 个 episode**（64 episodes/格，1 ep = 1.5625 pp）；逐 seed +4/+4/−2/+2。
+- "追平两组 GRU"由一个崩溃种子驱动：gru_context 491 = 62.50，其余 85.94/87.50/89.06。
+- **撤回两条越界归因**：不能说"模型提取了不可替代的历史信息"，也不能说"这是可训练性的陈述"
+  （我没做过可训练性实验）。结论只停在否证上。
+
+### 第二／三步：分支与后果（已完成）
+256 episodes（原测试集 cases 30000–30015 × {10,20}人 × {circle,square} × 4 seed），
+确定性自检 **256/256 通过**；重放恢复用 `rtol=0, atol=0` 断言。
+
+- 无分歧 episode：**1/256 = 0.4%**；分歧步占比中位 51.9%。
+- 三分类（tol=0.02）：有益 24 / 有害 28 / 后果相近 203。
+- 终局改变 19/255；历史有益 9、有害 9、不明 1。
+- Δ 均值 −0.0017；按 case 聚类 95% [−0.0343, +0.0332]。
+
+**结论（已按修正收紧）：未发现稳定平均增益。** 不能写"已证明无实用差别"，也不能写"方向就是抛硬币"
+（19 个终局翻转、Δ 标准差 0.2266 说明个别 episode 变化明显）。
+关于 ±0.02 等效界：**case 聚类区间未支持该界**；按 seed 聚类 [−0.0184, +0.0137] 虽落在界内，
+但仅 4 簇，**不据此宣布等效**。
+
+### 收尾核查暴露的两重限制（决定性）
+1. **取样几乎没有历史**：首次分歧处实际时间中位 **0.250 s**、过去帧中位 **1**、
+   **padding 占比中位 0.913**、过去 measured 帧/人 = 0 的占 **27.8%**；>10 帧的桶只有 **n=3**。
+   → 无法代表 24 帧记忆形成后的决策。偏置来自"取首次分歧"这一设计本身。
+2. **旧开关范围超出"过去信息"**：零有效过去帧时 `use_history=False` 仍改变打分 0.2427 并翻转 argmax。
+
+### 过程中修掉一个会静默作废全部结果的问题
+`crowd_sim` 原本解析到 `soc-nav-training` 下的另一份副本（`env.step` 返回 4 值 vs shixu vendor 的 5 值）。
+已强制 vendor 优先并加硬断言。
+
+---
+
+## 四、10-05：诊断开关补丁（已完成，独立归档未合入）
+
+新增 `mask_past_writes`：**屏蔽过去观测的记忆写入**，保留当前帧的编码与写入。
+**不是"移除全部过去信息"** —— `gaps`/`query_gap`/`seen` 等派生量保留不动，
+所以它测的是：这些标量不变时，过去观测**写入记忆**的额外作用。
+
+| 测试 | motion_kda | gru_context | motion_gru |
+|---|---|---|---|
+| 无过去帧：完整 vs 新模式 | **0.000e+00** | **0.000e+00** | **0.000e+00** |
+| 有 8 过去帧（开关起作用） | 0.142 | 0.184 | 0.061 |
+| prefix/queries/参数/派生量未改动 | 全 True | 全 True | 全 True |
+| 无残留 + 幂等 | True/True | True/True | True/True |
+| 回归：关闭态与原版逐位一致 | 4/4 指纹 | 4/4 | 4/4 |
+
+**已验证通过。** 补丁 33 行，覆盖三个类，`patch -p1 --dry-run` 可干净应用。
+T6 的 0.449（gru_context 隐藏人）只说明该测试输入下输出对该通道敏感，**不能**比较成
+"GRU 比 KDA 更依赖历史"，**不能**当导航收益。
+
+---
+
+## 五、我这一轮犯过并已更正的错误（完整列出）
+
+| 错误 | 怎么发现的 | 更正 |
+|---|---|---|
+| 用 `ps\|grep <pattern>` 判进程存在（违反 CLAUDE.md §17.1 自匹配禁令） | 自查 | 改成完成标记判据，并验证两种状态都判得对 |
+| 混合密度 trainer 用 `random.shuffle` 污染共用 RNG 流 | 回归检查**失败** | 改确定性交错，复测**逐位一致、最大差异 0.000e+00** |
+| 「天花板只剩 3–21%」 | 用户指出 | 撤回，改用 regret 相对自身代价 |
+| 「损失面不平 ⇒ 不同 belief 需不同动作」 | 用户指出 | 撤回 |
+| 「时钟是活跃混淆通道」 | 我自己实测否定 | 撤回（零状态对 intervals 依赖为 0） |
+| 「这是可训练性/架构的陈述」「模型提取了不可替代的历史信息」 | 用户指出 | 撤回，结论只停在否证 |
+| 「没有实用差别／方向就是抛硬币」 | 用户指出 | 改为「未发现稳定平均增益」 |
+| 「只适配价值头是瓶颈」（Cand 10 假设） | 我自己实测否定 | 撤回（放开全部层也不能救） |
+| `crowd_sim` 解析到错误副本 | `env.step` 4 vs 5 值报错 | 强制 vendor 优先 + 硬断言 |
+| 主文件写进了工作区子目录，指定路径停留在 28 行初版 | 本次报告前核查 | 已同步完整 114 行版本到 `/home/abc/temp/CC_SOCNAV_CANDIDATES_4_10.md` |
+
+---
+
+## 六、当前未验证／未完成项
+
+- 三个零训练工程发现均为单/双 seed，**未跨 4 seed 验证**。
+- Candidate 10 的"每 episode 重置适配"变体未跑。
+- Candidate 10 的 novelty boundary **未确立**（只用本地资产核查，未做公开文献检索）。
+- `MemoryValueModel` 已打补丁但**本轮无对应 V8 权重，未实测**。
+- 混合密度训练崩溃的触发因素（混合密度本身 vs 与 λ 退火的交互）**未做拆分实验**。
+- 补丁是否采用**待你明确**；不自动转成 80009 实验。
+
+## 七、机器与边界
+
+4090 归时序 Codex（`/dev/shm/shixu_temporal_problem_20261005`），我全程未碰其进程与目录。
+本地跑贝叶斯网格（必须与 R1 同栈才可比）与时序分支；笔记本做独立复制与探索性探针。
+Codex 的两个工作区我只读，未写入；`/home/abc/workspace/shixu` 未被修改。
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-769b75d67fe6e1f6"></a>
+
+## Historical Variant Source: /home/abc/temp/cc_backstop_20261005/docs/STEP1_NOHISTORY_ATTRIBUTION.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: 769b75d67fe6e1f6369b412fc348862872a7d1f30c6d6493c3685b7e37e9661b
+
+<!-- BEGIN PRESERVED SOURCE -->
+# 第一步交付：V8「零 committed-history 臂更好」是什么性质的证据
+
+日期 2026-10-05。只读核查，未跑任何新训练或新评测。
+
+## 结论
+
+**观察到的 84.38% vs 81.25% 不能归因于「执行时使用历史本身」。**
+
+## 依据
+
+### 1. 它是独立训练的模型，不是同权重推理干预
+- 四臂在每个种子下的 `model.pt` SHA256 全不相同（419/443/467/491 各 4 个，逐一核过）。
+- `outputs/occlusion_v8/input_manifest.json` 的 `il_inputs[3].origin =
+  outputs/occlusion_v6/419/motion_nohistory` —— nohistory 有自己的 IL 起点和自己的 3,000 RL。
+- → 差异里混着「不带历史**训练**」的效果，不只是「不带历史**执行**」。
+
+### 2. 容量相同，这一项不是混淆
+`motion_kda` 与 `motion_nohistory` 参数量同为 **268,873**。
+（但 nohistory 训练 2,256/2,185/1,532/2,003 s，kda 为 4,805/4,683/5,031/3,780 s；
+推理中位 9.05/8.99/4.59/5.46 ms vs 13.31/14.17/9.54/11.27 ms —— 省掉的是 history encode。）
+
+### 3. 时钟不是混淆（撤回我先前的推断）
+manifest 里 `motion_nohistory` 的 `clock='elapsed'`，`motion_kda` 为 `'observation'`，
+我先前据此认为存在第二个因子。**实测否定：**
+- `shixu/motion.py:177` —— `use_history=False` 时 `encode_history` 整段 `encode(...)` 被跳过，
+  只返回 `temporal_encoder.empty(...)`，所以 encode 侧的 `durations` 不起作用。
+- 读取侧 `read_history` 仍把 `durations` 传入 `successor`，但 `MotionKDACell.successor`
+  的 `discount` 只乘 `state` 项（`motion.py:76-82`）；零状态下该项消失。
+  实测：零状态下 `intervals=1` 与 `intervals=7` 的输出**最大绝对差 0.000e+00**。
+- → 时钟对零历史臂是惰性的。**我撤回"时钟是活跃混淆通道"这一说法。**
+
+### 4. 效应量是每种子 2 个 episode
+每格 64 episodes → 1 episode = 1.5625 pp；3.125 pp = **2 episodes**。
+逐种子主指标（419/443/467/491）：
+
+| 臂 | 419 | 443 | 467 | 491 | pooled |
+|---|---|---|---|---|---|
+| gru_context | 87.50 | 85.94 | 89.06 | **62.50** | 81.25 |
+| motion_gru | 82.81 | 84.38 | 76.56 | 81.25 | 81.25 |
+| motion_kda | 78.13 | 78.13 | 82.81 | 85.94 | 81.25 |
+| motion_nohistory | 84.38 | 84.38 | 79.69 | 89.06 | **84.38** |
+
+nohistory − kda 逐种子 = **+4 / +4 / −2 / +2 episodes**（3/4 同向）。
+
+### 5.「追平两组 GRU」由一个崩溃种子驱动
+gru_context 的 491 = 62.50，其余三个 85.94 / 87.50 / 89.06。
+剔掉该种子后 gru_context 三种子均值 **87.50**，高于 nohistory 对应三种子的 **82.81**。
+（这不是说可以剔种子，而是说 pooled 相等掩盖了一个异常种子。）
+
+## 同权重证据指向相反方向
+
+- `outputs/query_contract/closure_ranking_audit.json`（**已存在**，330 条 = 55 状态 × 2 臂 × 3 阶段）：
+  RL3000 阶段同权重 `use_history=False`，首选动作改变 **47.3%（motion_gru）/ 56.4%（motion_kda）**，
+  均值 |Δvalue| 0.182 / 0.167。IL50 阶段只有 14.5% / 29.1%，说明在线 MC 之后历史被消费得更重。
+- 报告 §7.3 闭环屏蔽（48 episodes）：原始 83.33% → 屏蔽隐藏人记忆 79.17% → **屏蔽全部 54.17%**，四种子都降。
+
+**合起来只能说到这里**：同权重清空历史会改动作、闭环会大跌，这证明该模型**依赖**这段输入。
+
+**以下两条是我先前越界的归因，已撤回：**
+1. 撤回「这证明模型提取了不可替代的历史信息」—— 依赖某个输入通道不等于该通道携带的信息
+   不可被其它方式替代；清空属于**分布外干预**，退化可能来自输入分布偏移本身。
+2. 撤回「这是关于可训练性/架构的陈述」—— 我没有做任何可训练性实验。
+   两套分别训练的系统之间 3.125 pp 的差距，目前**没有**已验证的归因对象；
+   只能说它**不是**「执行时删历史更好」。
+
+因此第一步的结论就停在否证上，不替换成新的正面归因。
+
+## 旧实验的覆盖边界
+
+| 第二步要求 | 是否已覆盖 |
+|---|---|
+| 同权重定位首次动作分歧 | **已覆盖**（closure_ranking_audit，不重跑） |
+| 从同一恢复状态执行两个动作、共同续跑 + 配对随机数、比真实回报与终局 | **未覆盖**。现有 `future_reference` 是 2 秒几何参考，其 scope 自述"不是 optimal navigation Q，也不是完成的闭环干预" |
+| 保留普通成功案例 | **未覆盖**。现有 55 状态全部**失败条件化**（每臂每种子首个碰撞与超时，锚点为失败前 10/8/6/4/2 秒） |
+
+另：该 scope 自述 "Zero-history changes are out-of-distribution sensitivity tests"，
+所以任何结论只能说明该干预的影响，不能直接证明历史有害 —— 与用户给定的边界一致。
+
+## 因此第二步的授权条件成立
+只缺「执行两个动作并比真实回报」这一段，且必须补上普通成功案例。
+不重训、不复活 KDA 开发；若权重或轨迹不足则报缺失。
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-4a268b11ef52d698"></a>
+
+## Historical Variant Source: /home/abc/temp/cc_backstop_20261005/docs/STEP2_HISTORY_ACTION_CONSEQUENCE.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: 4a268b11ef52d698e5d22494c713453b0743a94ff0815387de440550048aaf9f
+
+<!-- BEGIN PRESERVED SOURCE -->
+# 第二/三步交付：已训练 KDA 因历史而改变的动作，真实后果如何
+
+日期 2026-10-05。权重 = `outputs/occlusion_v8/{419,443,467,491}/motion_kda/model.pt`（V8 最终权重）。
+样本 = 原测试集 cases 30000–30015 × {10,20} 人 × {circle,square} = 每 seed 64，共 **256 episodes**。
+不剔种子、不重训、不新建母体。
+
+## 结论（已按用户修正收紧措辞）
+
+**在这批首次分歧状态的一次动作替换中，未发现稳定的平均增益。**
+
+tol=0.02 下：有益 24（9.4%）、有害 28（11.0%）、后果相近 203（79.6%）。
+Δ（有历史回报 − 零历史回报）均值 −0.0017；逐 seed 均值 −0.0069 / +0.0199 / −0.0271 / +0.0076。
+
+**以下两种说法是我先前写重了，已撤回：**
+1. 撤回「没有实用差别 / 已证明实用等效」。区间跨零不等于等效。按 ±0.02 等效界：
+   episode 级 [−0.0303, +0.0267]、按 case 聚类 [−0.0343, +0.0332]、按 case×格聚类
+   [−0.0322, +0.0315] **均未支持**该界；按 seed 聚类 [−0.0184, +0.0137] **确实落在界内**，
+   但仅 4 个簇，**不据此宣布等效**。正确表述只能是「未发现稳定平均增益」。
+2. 撤回「方向就是抛硬币」。个别 episode 的明显变化仍然存在（19 个终局翻转，Δ 标准差 0.2266）。
+
+**并且本结论的适用范围被取样严重限制，见 §「范围限制」。**
+
+## 方法与自检
+
+- 首次分歧只在**同一条冻结参考轨迹**上寻找。`env`/`tracks` 含 rvo2 C 扩展，`deepcopy` 实测失败
+  （`TypeError: no default __reduce__`），改用确定性重放：执行参考记录的动作，并对 robot 全状态、
+  全部行人状态、`global_time` 做 `rtol=0, atol=0` 逐位断言。
+- 恢复的五项：真实状态（env）、记忆（`policy.history`，24 帧窗口）、跟踪器（`OccludedTracks`）、
+  平滑器（`policy.last_action`，`action_smoothing=0.3`）、随机状态（`np.random.get_state()`；
+  `predict` 在 epsilon=0 时仍消耗一次抽样，两分支从同一状态出发）。
+- 清空只作用于**根动作**；根步之后两分支都走正常 `predict`（带历史），各自从自己的真实观测更新。
+  评分对 history 只读（`window(list(history)+[...])` 是拷贝；KDA 无跨步持久矩阵状态，每次从窗口重建），
+  故两次候选查询都不污染续跑记忆。
+- 每 episode 只取**一个**锚点（首次分歧），不存在多锚点当独立样本；统计与 bootstrap 均按 episode。
+- 自检：同 RNG 起点重跑参考轨迹必须逐位一致 —— **256/256 通过**。
+- 过程中修掉一个会静默作废全部结果的问题：`crowd_sim` 原本解析到 `soc-nav-training` 下的另一份副本
+  （其 `env.step` 返回 4 值 vs shixu vendor 的 5 值）。已强制 `shixu/vendor` 优先并加硬断言。
+
+## 分歧有多普遍
+
+| 项 | 值 |
+|---|---|
+| 始终无动作分歧的 episode | **1 / 256 = 0.4%** |
+| 有分歧 | 255 / 256 = 99.6% |
+| 有分歧 episode 内分歧步占比（中位） | 51.9% |
+| 首次分歧步（中位） | 1 |
+
+与已有 `closure_ranking_audit.json` 的 RL3000 阶段 56.4% 动作改动率一致，互为印证。
+
+## 逐 seed（按 episode 分组）
+
+| seed | 无分歧 | 有分歧 | 有益 | 有害 | 相近 | Δ 均值 | Δ 中位 |
+|---|---|---|---|---|---|---|---|
+| 419 | 0 | 64 | 8 | 15 | 41 | −0.0069 | −0.0021 |
+| 443 | 1 | 63 | 5 | 3 | 55 | +0.0199 | 0.0000 |
+| 467 | 0 | 64 | 4 | 6 | 54 | −0.0271 | 0.0000 |
+| 491 | 0 | 64 | 7 | 4 | 53 | +0.0076 | +0.0013 |
+
+## 终局是否改变
+
+236 / 255 两分支终局相同。改变的 19 个（7.5%）：
+
+| 有历史 → 零历史 | n | 方向 |
+|---|---|---|
+| reach_goal → collision | 5 | 历史有益 |
+| reach_goal → timeout | 4 | 历史有益 |
+| collision → reach_goal | **7** | 历史有害 |
+| timeout → reach_goal | 2 | 历史有害 |
+| timeout → collision | 1 | 安全变好、进度变差，方向不明 |
+
+**终局层面：历史有益 9，有害 9，不明 1。**
+
+## 阈值敏感性
+
+| tol | 有益 | 有害 | 相近 |
+|---|---|---|---|
+| 0.00 | 103 | 104 | 48 |
+| 0.01 | 45 | 45 | 165 |
+| 0.02 | 24 | 28 | 203 |
+| 0.05 | 17 | 17 | 221 |
+| 0.10 | 13 | 12 | 230 |
+
+**每一个阈值下两侧都近乎相等**，包括 tol=0 的 103 vs 104。所以"对称"不是阈值造成的。
+
+## 范围限制（只读收尾核查，决定性）
+
+### 首次分歧处实际上几乎没有历史
+用 V8 存档动作重放（零次模型前向）读取首次分歧时刻的窗口，n=255：
+
+| 项 | 中位 | 均值 | p10 | p90 |
+|---|---|---|---|---|
+| 实际时间（秒） | **0.250** | 0.498 | 0.000 | 1.250 |
+| 过去帧数 `len(history)` | **1** | 1.99 | 0 | 5 |
+| 23 帧 prefix 里非 padding 帧数 | **2** | 2.99 | 1 | 6 |
+| **padding 占比** | **0.913** | 0.870 | 0.739 | 0.957 |
+| 过去 measured 帧数/人 | **1.0** | 1.64 | 0.00 | 3.81 |
+
+- 过去 measured 帧数/人 **= 0** 的 episode：**71/255 = 27.8%**
+- 首次分歧在 k ≤ 1 的 episode：146/255 = 57.3%
+
+按历史量分桶后：
+
+| 过去 measured 帧/人 | n | 有益 | 有害 | 相近 | Δ 均值 |
+|---|---|---|---|---|---|
+| 0 | 71 | 8 | 7 | 56 | +0.0363 |
+| (0,1] | 75 | 6 | 6 | 63 | −0.0202 |
+| (1,3] | 73 | 5 | 7 | 61 | −0.0203 |
+| (3,10] | 33 | 5 | 7 | 21 | +0.0019 |
+| >10 | **3** | 0 | 1 | 2 | −0.0278 |
+
+历史量与结果之间**无单调趋势**，而且 >10 帧的桶只有 **n=3**。
+→ **这批样本无法代表 24 帧记忆形成后的决策。** 该偏置来自「取首次分歧」这一设计本身
+（它适合隔离单次动作干预，但偏向任务起始阶段），不是数据噪声。
+
+### `use_history` 开关不只移除过去信息
+`shixu/policy.py:119` —— `prefix = window(list(self.history) + [current], 24, "zero")`，随后 `prefix[1:]`。
+**prefix 的最后一帧就是当前帧**；而 `use_history=False` 使 `encode_history` 整段不写入记忆
+（`shixu/motion.py:177`），因此**当前帧的记忆写入也被一并移除**。
+
+纯张量单元测试（`proto/step3_switch_scope.py`，无导航）：构造零有效过去帧的 prefix，
+
+| 有效过去帧 | \|Δscore\| 最大 | argmax 有历史 / 零历史 |
+|---|---|---|
+| **0** | **2.4269e-01** | 26 / 20（不同） |
+| 1 | 2.1109e-01 | 26 / 20 |
+| 3 | 1.5664e-01 | 26 / 20 |
+| 10 | 1.9067e-01 | 26 / 20 |
+
+→ 零过去帧时开关仍翻转动作。因此上表中 **27.8% 过去 measured 帧为 0 的分歧，
+不能归因于「历史信息」**，它们至少部分来自当前帧记忆写入被移除。
+
+### 分组敏感性（case 在 4 个 seed 间复用）
+| 分组 | 簇数 | Δ 均值的 95% 区间 |
+|---|---|---|
+| episode 级（假设 255 独立，偏窄） | — | [−0.0303, +0.0267] |
+| 按 case 聚类 | 16 | [−0.0343, +0.0332] |
+| 按 case×格 聚类 | 64 | [−0.0322, +0.0315] |
+| 按 seed 聚类（簇数过少，仅供参考） | 4 | [−0.0184, +0.0137] |
+
+考虑 case 复用后区间变宽至约 ±0.033。
+**关于 ±0.02 等效界（已更正）**：按 case 聚类 [−0.0343, +0.0332] 与按 case×格聚类
+[−0.0322, +0.0315] **未支持**该等效界；按 seed 聚类的 [−0.0184, +0.0137] **确实落在界内**，
+但只有 4 个簇，**不据此宣布等效**。
+
+## 必须同时说明的三点
+
+1. **这测的是单步边际价值，不是历史的累积价值。** 本设计（按要求）只替换一个根动作随即归队，
+   因此"单个决策上历史几乎不值钱"与报告 §7.3 的"全程屏蔽记忆 83.33% → 54.17%"**并不矛盾**：
+   后者是持续干预，可能是逐步累积，也可能是更严重的分布外。两者不能互相推翻。
+2. **清空记忆是分布外干预**，以上只说明该干预的影响，不证明历史有害，也不证明模型没有提取
+   不可替代的历史信息。
+3. **分歧子集的 Δ 不能换算成整体 SR**；Δ 标准差 0.2266 而均值 −0.0017，说明单个 episode 的
+   摆动很大（19 个终局翻转）但方向是抛硬币，相互抵消。
+
+原始数据：`results/step2/s{419,443,467,491}/step2_history_branch.json`。
+
+<!-- END PRESERVED SOURCE -->
+
+
+---
+
+<a id="variant-2a18c938f3db74b5"></a>
+
+## Historical Variant Source: /home/abc/temp/cc_backstop_20261005/docs/TOOL_PAST_WRITE_MASK_CLOSEOUT.md
+
+Preserved during variant cleanup. This is historical text, not a new experiment or an applied patch. Full-source SHA-256: 2a18c938f3db74b585dfda67764d338662999fbf4f49a4048e4979dcabf26330
+
+<!-- BEGIN PRESERVED SOURCE -->
+# 收尾：屏蔽过去观测记忆写入的诊断开关
+
+日期 2026-10-05。**状态：工具任务完成。补丁独立归档，未合入主仓库，是否采用另行明确。**
+
+## 这个开关到底测什么（限定表述）
+
+`mask_past_writes = True` ⇒ **屏蔽过去观测的记忆写入**，保留当前帧的编码与写入。
+
+**它不是「移除全部过去信息」。** `gaps` / `query_gap` / `seen` 等历史派生量一律保留不动
+（这是按要求，避免意外改动时间间隔）。因此它测的是：
+**在这些标量信息不变的前提下，过去观测【写入记忆】的额外作用。**
+
+## 与旧开关的区别（这是本次修正的核心）
+
+| | 旧 `use_history=False` | 新 `mask_past_writes=True` |
+|---|---|---|
+| 当前帧的记忆写入 | **也被移除** | 保留 |
+| 过去观测的记忆写入 | 移除 | 移除 |
+| 无过去帧时与完整模式 | **不同**（motion_kda 0.200 / motion_gru 0.058） | **逐位相同（0.000e+00）** |
+
+旧开关的这一混杂是此前归因范围受限的根源。
+
+## 单测结果（三个类 / 三个臂，无导航）
+
+| 测试 | motion_kda | gru_context | motion_gru |
+|---|---|---|---|
+| T1 无过去帧：完整 vs 新模式 | 0.000e+00，argmax 48/48 | 0.000e+00，48/48 | 0.000e+00，51/51 |
+| T1b 连当前帧也无 measured | 0.000e+00 | 0.000e+00 | 0.000e+00 |
+| T2 有 8 过去帧（开关起作用） | 0.142 | 0.184 | 0.061 |
+| T4 prefix/queries/参数/派生量未改动 | 全 True | 全 True | 全 True |
+| T5 无残留 + 幂等 | True / True | True / True | True / True |
+| 回归：关闭态与原版逐位一致 | 4/4 指纹一致 | 4/4 | 4/4 |
+
+覆盖类：`MotionValueModel`（motion_kda / motion_gru）、`OcclusionValueModel`（gru_context）、
+`MemoryValueModel`（已打补丁，本轮无对应 V8 权重故未实测）。
+
+## T6 的 0.449 必须这样读（限定表述）
+
+隐藏人（有过去观测、当前不可测）时 \|Δscore\| 最大值：
+motion_kda 0.047 / gru_context **0.449** / motion_gru 0.059。
+
+**只能说明：在该合成测试的输入下，该模型输出对「过去观测写入」这一通道敏感。**
+
+不能据此说：
+- GRU 比 KDA 更依赖历史（不同类、不同输入构造、单一合成样本，不构成跨模型比较）；
+- 这是导航收益（它是打分差，不是任何闭环结果）。
+
+## 边界
+
+- 单测通过只说明**工具行为正确**，不说明历史有价值。
+- 本轮未跑任何导航，未重跑此前的 256 个 episode。
+- 补丁**不合入** `/home/abc/workspace/shixu`；改动仅存在于隔离副本与 `.patch` 文件。
+- 后续是否采用该补丁另行明确，**不自动转成 80009 实验**；我不再索要 CV419 权重。
+
+## 交付清单
+
+| 文件 | 内容 |
+|---|---|
+| `past_write_mask.patch` | 33 行变更，覆盖三个类；已验证可干净应用到原版树（`patch -p1 --dry-run` 通过） |
+| `test_past_write_mask.py` | 单测，含回归指纹；`TREE` 环境变量切换原版/补丁树 |
+| `results/unittest_past_write_mask_pristine.json` | 原版树结果 |
+| `results/unittest_past_write_mask_patched.json` | 补丁树结果 |
+| `shixu_patched/` | 隔离副本（不含 outputs/权重） |
+
+<!-- END PRESERVED SOURCE -->
